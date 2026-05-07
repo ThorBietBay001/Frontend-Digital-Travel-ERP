@@ -1,0 +1,7504 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/san-pham/tour-mau/{id}": {
+      "get": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "chiTiet",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourMauChiTietResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "capNhat",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapNhatTourMauRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourMauResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "xoa",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/tour-mau/{id}/lich-trinh/{maLichTrinh}": {
+      "put": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "suaLichTrinh",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maLichTrinh",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LichTrinhRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLichTrinhResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "xoaLichTrinh",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maLichTrinh",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/loai-phong/{id}": {
+      "put": {
+        "tags": [
+          "loai-phong-controller"
+        ],
+        "operationId": "capNhat_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoaiPhongRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoaiPhongResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "loai-phong-controller"
+        ],
+        "operationId": "xoa_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/hanh-dong-xanh/{id}": {
+      "get": {
+        "tags": [
+          "hanh-dong-xanh-controller"
+        ],
+        "operationId": "chiTiet_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHanhDongXanhResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "hanh-dong-xanh-controller"
+        ],
+        "operationId": "capNhat_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HanhDongXanhRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHanhDongXanhResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "hanh-dong-xanh-controller"
+        ],
+        "operationId": "xoa_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/dich-vu-them/{id}": {
+      "put": {
+        "tags": [
+          "dich-vu-them-controller"
+        ],
+        "operationId": "capNhat_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DichVuThemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDichVuThemResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "dich-vu-them-controller"
+        ],
+        "operationId": "xoa_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/tham-so-he-thong/{maThamSo}": {
+      "get": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "chiTietThamSo",
+        "parameters": [
+          {
+            "name": "maThamSo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseThamSoHeThongResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "capNhatThamSo",
+        "parameters": [
+          {
+            "name": "maThamSo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThamSoHeThongRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseThamSoHeThongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/tham-so-he-thong/{maThamSo}/mo-khoa": {
+      "put": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "moKhoaThamSo",
+        "parameters": [
+          {
+            "name": "maThamSo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/tham-so-he-thong/{maThamSo}/khoa": {
+      "put": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "khoaThamSo",
+        "parameters": [
+          {
+            "name": "maThamSo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/nhan-vien/{maNhanVien}/vai-tro": {
+      "put": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "ganVaiTro",
+        "parameters": [
+          {
+            "name": "maNhanVien",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GanVaiTroRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNhanVienResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/nhan-vien/{maNhanVien}/mo-khoa": {
+      "put": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "moKhoaTaiKhoan",
+        "parameters": [
+          {
+            "name": "maNhanVien",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/nhan-vien/{maNhanVien}/khoa": {
+      "put": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "khoaTaiKhoan",
+        "parameters": [
+          {
+            "name": "maNhanVien",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/yeu-cau-ho-tro/{maYeuCau}": {
+      "put": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "xuLyYeuCauHoTro",
+        "parameters": [
+          {
+            "name": "maYeuCau",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/XuLyHoTroRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/voucher/{maVoucher}": {
+      "get": {
+        "tags": [
+          "voucher-admin-controller"
+        ],
+        "operationId": "chiTiet_2",
+        "parameters": [
+          {
+            "name": "maVoucher",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoucherResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "voucher-admin-controller"
+        ],
+        "operationId": "capNhatVoucher",
+        "parameters": [
+          {
+            "name": "maVoucher",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoucherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoucherResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/voucher/{maVoucher}/vo-hieu": {
+      "put": {
+        "tags": [
+          "voucher-admin-controller"
+        ],
+        "operationId": "voHieuVoucher",
+        "parameters": [
+          {
+            "name": "maVoucher",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoucherResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/dat-tour/{maDatTour}/xac-nhan": {
+      "put": {
+        "tags": [
+          "kinh-doanh-dat-tour-controller"
+        ],
+        "operationId": "xacNhanDon",
+        "parameters": [
+          {
+            "name": "maDatTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDonDatTourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/ho-so": {
+      "get": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "layHoSo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHoChieuSoResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "capNhatHoSo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapNhatHoChieuSoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHoChieuSoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/quyet-toan/{maQuyetToan}/chot": {
+      "put": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "chotQuyetToan",
+        "parameters": [
+          {
+            "name": "maQuyetToan",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseQuyetToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/giao-dich-hoan/{maGiaoDich}/xac-nhan": {
+      "put": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "xacNhanHoanTien",
+        "parameters": [
+          {
+            "name": "maGiaoDich",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseThanhToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/chi-phi/{maChiPhi}/tu-choi": {
+      "put": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "tuChoiChiPhi",
+        "parameters": [
+          {
+            "name": "maChiPhi",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseChiPhiThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/chi-phi/{maChiPhi}/duyet": {
+      "put": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "duyetChiPhi",
+        "parameters": [
+          {
+            "name": "maChiPhi",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseChiPhiThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/su-co/{maSuCo}": {
+      "put": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "capNhatSuCo",
+        "parameters": [
+          {
+            "name": "maSuCo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaoCaoSuCoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNhatKySuCoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/tour-thuc-te/{id}": {
+      "get": {
+        "tags": [
+          "tour-thuc-te-controller"
+        ],
+        "operationId": "chiTiet_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tour-thuc-te-controller"
+        ],
+        "operationId": "capNhat_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapNhatTourThucTeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tour-thuc-te-controller"
+        ],
+        "operationId": "xoa_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/nhan-vien/{maNhanVien}/nang-luc": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "nangLucNhanVien",
+        "parameters": [
+          {
+            "name": "maNhanVien",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNangLucResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "capNhatNangLuc",
+        "parameters": [
+          {
+            "name": "maNhanVien",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NangLucRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNangLucResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/thanh-toan/khoi-tao": {
+      "post": {
+        "tags": [
+          "thanh-toan-controller"
+        ],
+        "operationId": "khoiTaoThanhToan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KhoiTaoThanhToanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseThanhToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/tour-mau": {
+      "get": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "danhSach",
+        "parameters": [
+          {
+            "name": "tieuDe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thoiLuongMin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "thoiLuongMax",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageTourMauResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "taoMoi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaoTourMauRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourMauChiTietResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/tour-mau/{id}/sao-chep": {
+      "post": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "saoChep",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourMauChiTietResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/tour-mau/{id}/lich-trinh": {
+      "post": {
+        "tags": [
+          "tour-mau-controller"
+        ],
+        "operationId": "themLichTrinh",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LichTrinhRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLichTrinhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/loai-phong": {
+      "get": {
+        "tags": [
+          "loai-phong-controller"
+        ],
+        "operationId": "danhSach_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListLoaiPhongResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "loai-phong-controller"
+        ],
+        "operationId": "taoMoi_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoaiPhongRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoaiPhongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/hanh-dong-xanh": {
+      "get": {
+        "tags": [
+          "hanh-dong-xanh-controller"
+        ],
+        "operationId": "danhSach_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListHanhDongXanhResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hanh-dong-xanh-controller"
+        ],
+        "operationId": "taoMoi_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HanhDongXanhRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHanhDongXanhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/san-pham/dich-vu-them": {
+      "get": {
+        "tags": [
+          "dich-vu-them-controller"
+        ],
+        "operationId": "danhSach_3",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListDichVuThemResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "dich-vu-them-controller"
+        ],
+        "operationId": "taoMoi_3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DichVuThemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDichVuThemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/tham-so-he-thong": {
+      "get": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "danhSachThamSo",
+        "parameters": [
+          {
+            "name": "tuKhoa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageThamSoHeThongResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "taoThamSo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThamSoHeThongRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseThamSoHeThongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/dang-ky-nhan-vien": {
+      "post": {
+        "tags": [
+          "tai-khoan-admin-controller"
+        ],
+        "operationId": "dangKyNhanVien",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DangKyNhanVienRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/yeu-cau-huy/{maYeuCau}/tu-choi": {
+      "post": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "tuChoiHuyTour",
+        "parameters": [
+          {
+            "name": "maYeuCau",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/XuLyYeuCauRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/yeu-cau-huy/{maYeuCau}/duyet": {
+      "post": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "duyetHuyTour",
+        "parameters": [
+          {
+            "name": "maYeuCau",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/XuLyYeuCauRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/voucher": {
+      "get": {
+        "tags": [
+          "voucher-admin-controller"
+        ],
+        "operationId": "danhSach_4",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageVoucherResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "voucher-admin-controller"
+        ],
+        "operationId": "taoVoucher",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoucherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoucherResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/voucher/{maVoucher}/phat-hanh": {
+      "post": {
+        "tags": [
+          "voucher-admin-controller"
+        ],
+        "operationId": "phatHanh",
+        "parameters": [
+          {
+            "name": "maVoucher",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhatHanhVoucherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseKhuyenMaiKhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/yeu-cau-ho-tro": {
+      "get": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "danhSachYeuCauCuaToi",
+        "parameters": [
+          {
+            "name": "loaiYeuCau",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "taoYeuCau",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/YeuCauHoTroRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/doi-diem": {
+      "post": {
+        "tags": [
+          "voucher-controller"
+        ],
+        "operationId": "doiDiem",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DoiDiemVoucherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseKhuyenMaiKhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/dat-tour": {
+      "get": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "danhSachDatTour",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageDonDatTourResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "datTour",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatTourRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDonDatTourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/dat-tour/{maDatTour}/huy": {
+      "post": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "yeuCauHuyTour",
+        "parameters": [
+          {
+            "name": "maDatTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HuyTourRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/danh-gia": {
+      "post": {
+        "tags": [
+          "danh-gia-controller"
+        ],
+        "operationId": "guiDanhGia",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanhGiaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDanhGiaKhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/ap-voucher": {
+      "post": {
+        "tags": [
+          "voucher-controller"
+        ],
+        "operationId": "apVoucher",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApVoucherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoucherResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/quyet-toan/{maTour}": {
+      "post": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "taoQuyetToan",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuyetToanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseQuyetToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/tour/{maTour}/su-co": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "danhSachSuCo",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListNhatKySuCoResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "baoCaoSuCo",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaoCaoSuCoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNhatKySuCoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/tour/{maTour}/hanh-dong-xanh": {
+      "post": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "ghiNhanHanhDong",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GhiNhanHanhDongRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHanhDongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/tour/{maTour}/diem-danh": {
+      "post": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "diemDanh",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiemDanhRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDiemDanhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/tour/{maTour}/chi-phi": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "chiPhiCuaTour",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListChiPhiThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "khaiChiPhi",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KhaiChiPhiRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseChiPhiThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/tour-thuc-te": {
+      "get": {
+        "tags": [
+          "tour-thuc-te-controller"
+        ],
+        "operationId": "danhSach_5",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maTourMau",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "giaTu",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "giaDen",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "thoiLuongMin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "thoiLuongMax",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "congKhai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageTourThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tour-thuc-te-controller"
+        ],
+        "operationId": "taoMoi_4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaoTourThucTeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/phan-cong": {
+      "post": {
+        "tags": [
+          "phan-cong-controller"
+        ],
+        "operationId": "phanCong",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhanCongHdvRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePhanCongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/quen-mat-khau": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "quenMatKhau",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuenMatKhauRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/doi-mat-khau": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "doiMatKhau",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DoiMatKhauRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/dat-lai-mat-khau": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "datLaiMatKhau",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatLaiMatKhauRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/dang-xuat": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "dangXuat",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/dang-nhap": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "dangNhap",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DangNhapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDangNhapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/dang-ky": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "dangKy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DangKyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDangNhapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/thanh-toan/{maDatTour}/ket-qua": {
+      "get": {
+        "tags": [
+          "thanh-toan-controller"
+        ],
+        "operationId": "ketQua",
+        "parameters": [
+          {
+            "name": "maDatTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseThanhToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/nhat-ky-bao-mat": {
+      "get": {
+        "tags": [
+          "quan-tri-controller"
+        ],
+        "operationId": "nhatKyBaoMat",
+        "parameters": [
+          {
+            "name": "maTaiKhoan",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hanhDong",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ketQua",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tuThoiDiem",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "denThoiDiem",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageNhatKyBaoMatResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/nhan-vien": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "danhSachNhanVien",
+        "parameters": [
+          {
+            "name": "hoTen",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maVaiTro",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageNhanVienResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quan-tri/nhan-vien/{maNhanVien}": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "chiTietNhanVien",
+        "parameters": [
+          {
+            "name": "maNhanVien",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNhanVienResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/tour": {
+      "get": {
+        "tags": [
+          "tour-cong-khai-controller"
+        ],
+        "operationId": "danhSachTour",
+        "parameters": [
+          {
+            "name": "giaTu",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "giaDen",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "thoiLuongMin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "thoiLuongMax",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageTourThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/tour/{maTourThucTe}": {
+      "get": {
+        "tags": [
+          "tour-cong-khai-controller"
+        ],
+        "operationId": "chiTietTour",
+        "parameters": [
+          {
+            "name": "maTourThucTe",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTourCongKhaiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/tour/{maTourThucTe}/danh-gia": {
+      "get": {
+        "tags": [
+          "tour-cong-khai-controller"
+        ],
+        "operationId": "danhGiaTour",
+        "parameters": [
+          {
+            "name": "maTourThucTe",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageDanhGiaKhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/yeu-cau-huy": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "danhSachYeuCau",
+        "parameters": [
+          {
+            "name": "loaiYeuCau",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/yeu-cau-ho-tro": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "danhSachYeuCauHoTro",
+        "parameters": [
+          {
+            "name": "loaiYeuCau",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageYeuCauHoTroResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/khach-hang": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "timKiemKhachHang",
+        "parameters": [
+          {
+            "name": "hoTen",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "soDienThoai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageHoChieuSoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/khach-hang/{maKhachHang}": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "chiTietKhachHang",
+        "parameters": [
+          {
+            "name": "maKhachHang",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHoChieuSoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/don-dat-tour": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "danhSachDonDatTour",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maTourThucTe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageDonDatTourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/dat-tour": {
+      "get": {
+        "tags": [
+          "kinh-doanh-dat-tour-controller"
+        ],
+        "operationId": "danhSachTatCa",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maTourThucTe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageDonDatTourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kinh-doanh/danh-gia": {
+      "get": {
+        "tags": [
+          "danh-gia-controller"
+        ],
+        "operationId": "tatCaDanhGia",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageDanhGiaKhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/vi-voucher": {
+      "get": {
+        "tags": [
+          "voucher-controller"
+        ],
+        "operationId": "viVoucher",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageKhuyenMaiKhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/lich-su-tour": {
+      "get": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "lichSuTour",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageLichSuTourResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/khach-hang/dat-tour/{maDatTour}": {
+      "get": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "chiTietDatTour",
+        "parameters": [
+          {
+            "name": "maDatTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDonDatTourResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "khach-hang-controller"
+        ],
+        "operationId": "huyDatTour",
+        "parameters": [
+          {
+            "name": "maDatTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/tour-can-quyet-toan": {
+      "get": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "tourCanQuyetToan",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageQuyetToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/tinh-toan/{maTour}": {
+      "get": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "tinhToan",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseQuyetToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/quyet-toan": {
+      "get": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "danhSach_6",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageQuyetToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/quyet-toan/{maQuyetToan}": {
+      "get": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "chiTiet_4",
+        "parameters": [
+          {
+            "name": "maQuyetToan",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseQuyetToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/giao-dich-hoan": {
+      "get": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "danhSachChoHoanTien",
+        "parameters": [
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageThanhToanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/chi-phi": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "danhSachChiPhi",
+        "parameters": [
+          {
+            "name": "trangThai",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageChiPhiThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ke-toan/bao-cao/doanh-thu": {
+      "get": {
+        "tags": [
+          "quyet-toan-controller"
+        ],
+        "operationId": "baoCaoDoanhThu",
+        "parameters": [
+          {
+            "name": "tuNgay",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "denNgay",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseBaoCaoDoanhThuResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/tour/{maTour}/su-co": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "danhSachSuCo_1",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListNhatKySuCoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/tour/{maTour}/doan": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "danhSachDoan",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListDiemDanhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/tour/{maTour}/doan": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "danhSachDoan_1",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListDiemDanhResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/tour/{maTour}/chi-phi": {
+      "get": {
+        "tags": [
+          "van-hanh-controller"
+        ],
+        "operationId": "chiPhiCuaTour_1",
+        "parameters": [
+          {
+            "name": "maTour",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListChiPhiThucTeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/tour-cua-toi": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "tourCuaToi",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListPhanCongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/nang-luc": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "nangLucCuaToi",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseNangLucResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/huong-dan-vien/lich-cong-tac": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "lichCongTac",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListPhanCongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/lich-cong-tac": {
+      "get": {
+        "tags": [
+          "nhan-vien-controller"
+        ],
+        "operationId": "lichCongTac_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListPhanCongResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/hdv-kha-dung": {
+      "get": {
+        "tags": [
+          "phan-cong-controller"
+        ],
+        "operationId": "hdvKhaDung",
+        "parameters": [
+          {
+            "name": "maTourThucTe",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListNhanVienResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dieu-hanh/phan-cong/{maPhanCong}": {
+      "delete": {
+        "tags": [
+          "phan-cong-controller"
+        ],
+        "operationId": "huyPhanCong",
+        "parameters": [
+          {
+            "name": "maPhanCong",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CapNhatTourMauRequest": {
+        "type": "object",
+        "properties": {
+          "tieuDe": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "giaSan": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseTourMauResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TourMauResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "TourMauResponse": {
+        "type": "object",
+        "properties": {
+          "maTourMau": {
+            "type": "string"
+          },
+          "tieuDe": {
+            "type": "string"
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "giaSan": {
+            "type": "number"
+          },
+          "danhGia": {
+            "type": "number"
+          },
+          "soDanhGia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "taoBoi": {
+            "type": "string"
+          }
+        }
+      },
+      "LichTrinhRequest": {
+        "type": "object",
+        "properties": {
+          "ngayThu": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "hoatDong": {
+            "type": "string",
+            "minLength": 1
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "thucDon": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hoatDong",
+          "ngayThu"
+        ]
+      },
+      "ApiResponseLichTrinhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LichTrinhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "LichTrinhResponse": {
+        "type": "object",
+        "properties": {
+          "maLichTrinhTour": {
+            "type": "string"
+          },
+          "ngayThu": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hoatDong": {
+            "type": "string"
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "thucDon": {
+            "type": "string"
+          }
+        }
+      },
+      "LoaiPhongRequest": {
+        "type": "object",
+        "properties": {
+          "tenLoai": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "mucPhuThu": {
+            "type": "number",
+            "minimum": 0
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenLoai"
+        ]
+      },
+      "ApiResponseLoaiPhongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoaiPhongResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "LoaiPhongResponse": {
+        "type": "object",
+        "properties": {
+          "maLoaiPhong": {
+            "type": "string"
+          },
+          "tenLoai": {
+            "type": "string"
+          },
+          "mucPhuThu": {
+            "type": "number"
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        }
+      },
+      "HanhDongXanhRequest": {
+        "type": "object",
+        "properties": {
+          "tenHanhDong": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "diemCong": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "diemCong",
+          "tenHanhDong"
+        ]
+      },
+      "ApiResponseHanhDongXanhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HanhDongXanhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "HanhDongXanhResponse": {
+        "type": "object",
+        "properties": {
+          "maHanhDongXanh": {
+            "type": "string"
+          },
+          "tenHanhDong": {
+            "type": "string"
+          },
+          "diemCong": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        }
+      },
+      "DichVuThemRequest": {
+        "type": "object",
+        "properties": {
+          "ten": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "donViTinh": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "donGia": {
+            "type": "number",
+            "minimum": 0
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "donGia",
+          "ten"
+        ]
+      },
+      "ApiResponseDichVuThemResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DichVuThemResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "DichVuThemResponse": {
+        "type": "object",
+        "properties": {
+          "maDichVuThem": {
+            "type": "string"
+          },
+          "ten": {
+            "type": "string"
+          },
+          "donViTinh": {
+            "type": "string"
+          },
+          "donGia": {
+            "type": "number"
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        }
+      },
+      "ThamSoHeThongRequest": {
+        "type": "object",
+        "properties": {
+          "tenThamSo": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "giaTri": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "kieuDuLieu": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "moTa": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "giaTri",
+          "kieuDuLieu",
+          "tenThamSo"
+        ]
+      },
+      "ApiResponseThamSoHeThongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ThamSoHeThongResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ThamSoHeThongResponse": {
+        "type": "object",
+        "properties": {
+          "maThamSo": {
+            "type": "string"
+          },
+          "tenThamSo": {
+            "type": "string"
+          },
+          "giaTri": {
+            "type": "string"
+          },
+          "kieuDuLieu": {
+            "type": "string"
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "GanVaiTroRequest": {
+        "type": "object",
+        "properties": {
+          "maVaiTro": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "maVaiTro"
+        ]
+      },
+      "ApiResponseNhanVienResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/NhanVienResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "NhanVienResponse": {
+        "type": "object",
+        "properties": {
+          "maNhanVien": {
+            "type": "string"
+          },
+          "maTaiKhoan": {
+            "type": "string"
+          },
+          "tenDangNhap": {
+            "type": "string"
+          },
+          "hoTen": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "soDienThoai": {
+            "type": "string"
+          },
+          "maVaiTro": {
+            "type": "string"
+          },
+          "trangThaiTaiKhoan": {
+            "type": "string"
+          },
+          "trangThaiLamViec": {
+            "type": "string"
+          },
+          "loaiNhanVien": {
+            "type": "string"
+          },
+          "ngayVaoLam": {
+            "type": "string",
+            "format": "date"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "XuLyHoTroRequest": {
+        "type": "object",
+        "properties": {
+          "maNhanVienXuLy": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ghiChu": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "trangThai"
+        ]
+      },
+      "ApiResponseYeuCauHoTroResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/YeuCauHoTroResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "YeuCauHoTroResponse": {
+        "type": "object",
+        "properties": {
+          "maYeuCau": {
+            "type": "string"
+          },
+          "maDatTour": {
+            "type": "string"
+          },
+          "loaiYeuCau": {
+            "type": "string"
+          },
+          "noiDung": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "maNhanVienXuLy": {
+            "type": "string"
+          },
+          "soTienHoan": {
+            "type": "number"
+          },
+          "tiLeHoan": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "VoucherRequest": {
+        "type": "object",
+        "properties": {
+          "maCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "loaiUuDai": {
+            "type": "string",
+            "minLength": 1
+          },
+          "giaTriGiam": {
+            "type": "number",
+            "minimum": 0
+          },
+          "dieuKienApDung": {
+            "type": "string"
+          },
+          "soLuotPhatHanh": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "ngayHieuLuc": {
+            "type": "string",
+            "format": "date"
+          },
+          "ngayHetHan": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "giaTriGiam",
+          "loaiUuDai",
+          "maCode",
+          "ngayHetHan",
+          "ngayHieuLuc",
+          "soLuotPhatHanh"
+        ]
+      },
+      "ApiResponseVoucherResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/VoucherResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "VoucherResponse": {
+        "type": "object",
+        "properties": {
+          "maVoucher": {
+            "type": "string"
+          },
+          "maCode": {
+            "type": "string"
+          },
+          "loaiUuDai": {
+            "type": "string"
+          },
+          "giaTriGiam": {
+            "type": "number"
+          },
+          "dieuKienApDung": {
+            "type": "string"
+          },
+          "soLuotPhatHanh": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "soLuotDaDung": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ngayHieuLuc": {
+            "type": "string",
+            "format": "date"
+          },
+          "ngayHetHan": {
+            "type": "string",
+            "format": "date"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "taoBoi": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseDonDatTourResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DonDatTourResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ChiTietDatTourResponse": {
+        "type": "object",
+        "properties": {
+          "maChiTietDat": {
+            "type": "string"
+          },
+          "maKhachHang": {
+            "type": "string"
+          },
+          "hoTen": {
+            "type": "string"
+          },
+          "maLoaiPhong": {
+            "type": "string"
+          },
+          "tenLoaiPhong": {
+            "type": "string"
+          },
+          "mucPhuThu": {
+            "type": "number"
+          },
+          "giaTaiThoiDiemDat": {
+            "type": "number"
+          }
+        }
+      },
+      "ChiTietDichVuResponse": {
+        "type": "object",
+        "properties": {
+          "maChiTietDichVu": {
+            "type": "string"
+          },
+          "maDichVuThem": {
+            "type": "string"
+          },
+          "tenDichVu": {
+            "type": "string"
+          },
+          "donViTinh": {
+            "type": "string"
+          },
+          "soLuong": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "donGia": {
+            "type": "number"
+          },
+          "thanhTien": {
+            "type": "number"
+          }
+        }
+      },
+      "DonDatTourResponse": {
+        "type": "object",
+        "properties": {
+          "maDatTour": {
+            "type": "string"
+          },
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "tieuDeTour": {
+            "type": "string"
+          },
+          "ngayKhoiHanh": {
+            "type": "string",
+            "format": "date"
+          },
+          "giaHienHanh": {
+            "type": "number"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maKhachHang": {
+            "type": "string"
+          },
+          "tenKhachHang": {
+            "type": "string"
+          },
+          "ngayDat": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tongTien": {
+            "type": "number"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiGianHetHan": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ghiChu": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "chiTietKhach": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChiTietDatTourResponse"
+            }
+          },
+          "chiTietDichVu": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChiTietDichVuResponse"
+            }
+          }
+        }
+      },
+      "CapNhatHoChieuSoRequest": {
+        "type": "object",
+        "properties": {
+          "diUng": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "ghiChuYTe": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseHoChieuSoResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HoChieuSoResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "HoChieuSoResponse": {
+        "type": "object",
+        "properties": {
+          "maKhachHang": {
+            "type": "string"
+          },
+          "maTaiKhoan": {
+            "type": "string"
+          },
+          "tenDangNhap": {
+            "type": "string"
+          },
+          "hoTen": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "soDienThoai": {
+            "type": "string"
+          },
+          "diUng": {
+            "type": "string"
+          },
+          "ghiChuYTe": {
+            "type": "string"
+          },
+          "hangThanhVien": {
+            "type": "string"
+          },
+          "diemXanh": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseQuyetToanResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QuyetToanResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "QuyetToanResponse": {
+        "type": "object",
+        "properties": {
+          "maQuyetToan": {
+            "type": "string"
+          },
+          "maTour": {
+            "type": "string"
+          },
+          "tenTour": {
+            "type": "string"
+          },
+          "tongDoanhThu": {
+            "type": "number"
+          },
+          "tongChiPhi": {
+            "type": "number"
+          },
+          "loiNhuan": {
+            "type": "number"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "ghiChu": {
+            "type": "string"
+          },
+          "ngayQuyetToan": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maNhanVien": {
+            "type": "string"
+          },
+          "tenNhanVien": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseThanhToanResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ThanhToanResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ThanhToanResponse": {
+        "type": "object",
+        "properties": {
+          "maGiaoDich": {
+            "type": "string"
+          },
+          "maDatTour": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "phuongThuc": {
+            "type": "string"
+          },
+          "soTien": {
+            "type": "number"
+          },
+          "ngayThanhToan": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payUrl": {
+            "type": "string"
+          },
+          "thongBao": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseChiPhiThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ChiPhiThucTeResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ChiPhiThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "maChiPhi": {
+            "type": "string"
+          },
+          "maTour": {
+            "type": "string"
+          },
+          "maNhanVien": {
+            "type": "string"
+          },
+          "tenNhanVien": {
+            "type": "string"
+          },
+          "danhMuc": {
+            "type": "string"
+          },
+          "thanhTien": {
+            "type": "number"
+          },
+          "hoaDonAnh": {
+            "type": "string"
+          },
+          "trangThaiDuyet": {
+            "type": "string"
+          },
+          "ngayKhai": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaoCaoSuCoRequest": {
+        "type": "object",
+        "properties": {
+          "moTa": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "giaiPhap": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "moTa"
+        ]
+      },
+      "ApiResponseNhatKySuCoResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/NhatKySuCoResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "NhatKySuCoResponse": {
+        "type": "object",
+        "properties": {
+          "maNhatKySuCo": {
+            "type": "string"
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "giaiPhap": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiGianBaoCao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CapNhatTourThucTeRequest": {
+        "type": "object",
+        "properties": {
+          "giaHienHanh": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "soKhachToiDa": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "soKhachToiThieu": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseTourThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TourThucTeResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "TourThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "maTourMau": {
+            "type": "string"
+          },
+          "tieuDeTour": {
+            "type": "string"
+          },
+          "ngayKhoiHanh": {
+            "type": "string",
+            "format": "date"
+          },
+          "ngayKetThuc": {
+            "type": "string",
+            "format": "date"
+          },
+          "giaHienHanh": {
+            "type": "number"
+          },
+          "soKhachToiDa": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "soKhachToiThieu": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "choConLai": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "taoBoi": {
+            "type": "string"
+          }
+        }
+      },
+      "NangLucRequest": {
+        "type": "object",
+        "properties": {
+          "ngonNgu": {
+            "type": "string"
+          },
+          "chungChi": {
+            "type": "string"
+          },
+          "chuyenMon": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseNangLucResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/NangLucResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "NangLucResponse": {
+        "type": "object",
+        "properties": {
+          "maNangLucNhanVien": {
+            "type": "string"
+          },
+          "maNhanVien": {
+            "type": "string"
+          },
+          "ngonNgu": {
+            "type": "string"
+          },
+          "chungChi": {
+            "type": "string"
+          },
+          "chuyenMon": {
+            "type": "string"
+          },
+          "danhGia": {
+            "type": "number"
+          },
+          "soDanhGia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "KhoiTaoThanhToanRequest": {
+        "type": "object",
+        "properties": {
+          "maDonDatTour": {
+            "type": "string",
+            "minLength": 1
+          },
+          "phuongThuc": {
+            "type": "string"
+          },
+          "mock": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "maDonDatTour"
+        ]
+      },
+      "TaoTourMauRequest": {
+        "type": "object",
+        "properties": {
+          "tieuDe": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "giaSan": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "lichTrinh": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LichTrinhRequest"
+            }
+          }
+        },
+        "required": [
+          "giaSan",
+          "thoiLuong",
+          "tieuDe"
+        ]
+      },
+      "ApiResponseTourMauChiTietResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TourMauChiTietResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "TourMauChiTietResponse": {
+        "type": "object",
+        "properties": {
+          "maTourMau": {
+            "type": "string"
+          },
+          "tieuDe": {
+            "type": "string"
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "giaSan": {
+            "type": "number"
+          },
+          "danhGia": {
+            "type": "number"
+          },
+          "soDanhGia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capNhatVao": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "taoBoi": {
+            "type": "string"
+          },
+          "lichTrinh": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LichTrinhResponse"
+            }
+          }
+        }
+      },
+      "DangKyNhanVienRequest": {
+        "type": "object",
+        "properties": {
+          "tenDangNhap": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 4
+          },
+          "matKhau": {
+            "type": "string",
+            "maxLength": 2147483647,
+            "minLength": 6
+          },
+          "hoTen": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "soDienThoai": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "maVaiTro": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "hoTen",
+          "maVaiTro",
+          "matKhau",
+          "tenDangNhap"
+        ]
+      },
+      "XuLyYeuCauRequest": {
+        "type": "object",
+        "properties": {
+          "ghiChu": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          }
+        }
+      },
+      "PhatHanhVoucherRequest": {
+        "type": "object",
+        "properties": {
+          "maKhachHang": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "maKhachHang"
+        ]
+      },
+      "ApiResponseKhuyenMaiKhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/KhuyenMaiKhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "KhuyenMaiKhResponse": {
+        "type": "object",
+        "properties": {
+          "maVoucher": {
+            "type": "string"
+          },
+          "maCode": {
+            "type": "string"
+          },
+          "loaiUuDai": {
+            "type": "string"
+          },
+          "giaTriGiam": {
+            "type": "number"
+          },
+          "dieuKienApDung": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "ngayHetHan": {
+            "type": "string",
+            "format": "date"
+          },
+          "ngayNhan": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "YeuCauHoTroRequest": {
+        "type": "object",
+        "properties": {
+          "maDatTour": {
+            "type": "string"
+          },
+          "loaiYeuCau": {
+            "type": "string",
+            "minLength": 1
+          },
+          "noiDung": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "loaiYeuCau",
+          "noiDung"
+        ]
+      },
+      "DoiDiemVoucherRequest": {
+        "type": "object",
+        "properties": {
+          "maVoucher": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "maVoucher"
+        ]
+      },
+      "DatTourRequest": {
+        "type": "object",
+        "properties": {
+          "maTourThucTe": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maLoaiPhong": {
+            "type": "string"
+          },
+          "danhSachDichVu": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DichVuThemDatRequest"
+            }
+          },
+          "ghiChu": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "maTourThucTe"
+        ]
+      },
+      "DichVuThemDatRequest": {
+        "type": "object",
+        "properties": {
+          "maDichVuThem": {
+            "type": "string",
+            "minLength": 1
+          },
+          "soLuong": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "maDichVuThem",
+          "soLuong"
+        ]
+      },
+      "HuyTourRequest": {
+        "type": "object",
+        "properties": {
+          "lyDo": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "lyDo"
+        ]
+      },
+      "DanhGiaRequest": {
+        "type": "object",
+        "properties": {
+          "maTourThucTe": {
+            "type": "string",
+            "minLength": 1
+          },
+          "soSao": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "nhanXet": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "maTourThucTe",
+          "soSao"
+        ]
+      },
+      "ApiResponseDanhGiaKhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DanhGiaKhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "DanhGiaKhResponse": {
+        "type": "object",
+        "properties": {
+          "maDanhGia": {
+            "type": "string"
+          },
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "tieuDeTour": {
+            "type": "string"
+          },
+          "maKhachHang": {
+            "type": "string"
+          },
+          "hoTenKhachHang": {
+            "type": "string"
+          },
+          "soSao": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nhanXet": {
+            "type": "string"
+          },
+          "ngayDanhGia": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trangThai": {
+            "type": "string"
+          }
+        }
+      },
+      "ApVoucherRequest": {
+        "type": "object",
+        "properties": {
+          "maDatTour": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maVoucher": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "maDatTour",
+          "maVoucher"
+        ]
+      },
+      "QuyetToanRequest": {
+        "type": "object",
+        "properties": {
+          "ghiChu": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          }
+        }
+      },
+      "GhiNhanHanhDongRequest": {
+        "type": "object",
+        "properties": {
+          "maKhachHang": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maHanhDongXanh": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minhChung": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "maHanhDongXanh",
+          "maKhachHang"
+        ]
+      },
+      "ApiResponseHanhDongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HanhDongResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "HanhDongResponse": {
+        "type": "object",
+        "properties": {
+          "maGhiNhan": {
+            "type": "string"
+          },
+          "maKhachHang": {
+            "type": "string"
+          },
+          "hoTenKhachHang": {
+            "type": "string"
+          },
+          "maHanhDongXanh": {
+            "type": "string"
+          },
+          "tenHanhDong": {
+            "type": "string"
+          },
+          "diemCong": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "minhChung": {
+            "type": "string"
+          },
+          "thoiGian": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DiemDanhRequest": {
+        "type": "object",
+        "properties": {
+          "maKhachHang": {
+            "type": "string",
+            "minLength": 1
+          },
+          "diaDiem": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "maKhachHang"
+        ]
+      },
+      "ApiResponseDiemDanhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DiemDanhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "DiemDanhResponse": {
+        "type": "object",
+        "properties": {
+          "maDiemDanh": {
+            "type": "string"
+          },
+          "maKhachHang": {
+            "type": "string"
+          },
+          "hoTenKhachHang": {
+            "type": "string"
+          },
+          "diaDiem": {
+            "type": "string"
+          },
+          "thoiGian": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "KhaiChiPhiRequest": {
+        "type": "object",
+        "properties": {
+          "danhMuc": {
+            "type": "string",
+            "minLength": 1
+          },
+          "thanhTien": {
+            "type": "number"
+          },
+          "hoaDonAnh": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "danhMuc"
+        ]
+      },
+      "TaoTourThucTeRequest": {
+        "type": "object",
+        "properties": {
+          "maTourMau": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ngayKhoiHanh": {
+            "type": "string",
+            "format": "date"
+          },
+          "soKhachToiDa": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "soKhachToiThieu": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "giaHienHanh": {
+            "type": "number",
+            "minimum": 0.01
+          }
+        },
+        "required": [
+          "giaHienHanh",
+          "maTourMau",
+          "ngayKhoiHanh",
+          "soKhachToiDa"
+        ]
+      },
+      "PhanCongHdvRequest": {
+        "type": "object",
+        "properties": {
+          "maTourThucTe": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maNhanVien": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ghiChu": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "maNhanVien",
+          "maTourThucTe"
+        ]
+      },
+      "ApiResponsePhanCongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PhanCongResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PhanCongResponse": {
+        "type": "object",
+        "properties": {
+          "maPhanCong": {
+            "type": "string"
+          },
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "tenTour": {
+            "type": "string"
+          },
+          "maNhanVien": {
+            "type": "string"
+          },
+          "tenNhanVien": {
+            "type": "string"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "ngayPhanCong": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "QuenMatKhauRequest": {
+        "type": "object",
+        "properties": {
+          "tenDangNhap": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "tenDangNhap"
+        ]
+      },
+      "ApiResponseString": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "DoiMatKhauRequest": {
+        "type": "object",
+        "properties": {
+          "matKhauCu": {
+            "type": "string",
+            "minLength": 1
+          },
+          "matKhauMoi": {
+            "type": "string",
+            "maxLength": 2147483647,
+            "minLength": 6
+          },
+          "xacNhanMatKhau": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "matKhauCu",
+          "matKhauMoi",
+          "xacNhanMatKhau"
+        ]
+      },
+      "DatLaiMatKhauRequest": {
+        "type": "object",
+        "properties": {
+          "resetToken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "matKhauMoi": {
+            "type": "string",
+            "maxLength": 2147483647,
+            "minLength": 6
+          },
+          "xacNhanMatKhau": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "matKhauMoi",
+          "resetToken",
+          "xacNhanMatKhau"
+        ]
+      },
+      "DangNhapRequest": {
+        "type": "object",
+        "properties": {
+          "tenDangNhap": {
+            "type": "string",
+            "minLength": 1
+          },
+          "matKhau": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "matKhau",
+          "tenDangNhap"
+        ]
+      },
+      "ApiResponseDangNhapResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DangNhapResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "DangNhapResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string"
+          },
+          "maVaiTro": {
+            "type": "string"
+          },
+          "tenHienThi": {
+            "type": "string"
+          },
+          "hoTen": {
+            "type": "string"
+          }
+        }
+      },
+      "DangKyRequest": {
+        "type": "object",
+        "properties": {
+          "tenDangNhap": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 4
+          },
+          "matKhau": {
+            "type": "string",
+            "maxLength": 2147483647,
+            "minLength": 6
+          },
+          "xacNhanMatKhau": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hoTen": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "soDienThoai": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "hoTen",
+          "matKhau",
+          "tenDangNhap",
+          "xacNhanMatKhau"
+        ]
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponsePageTourMauResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageTourMauResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageTourMauResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TourMauResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageableObject": {
+        "type": "object",
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paged": {
+            "type": "boolean"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "unpaged": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SortObject": {
+        "type": "object",
+        "properties": {
+          "empty": {
+            "type": "boolean"
+          },
+          "sorted": {
+            "type": "boolean"
+          },
+          "unsorted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseListLoaiPhongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoaiPhongResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListHanhDongXanhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HanhDongXanhResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListDichVuThemResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DichVuThemResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponsePageThamSoHeThongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageThamSoHeThongResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageThamSoHeThongResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThamSoHeThongResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageNhatKyBaoMatResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageNhatKyBaoMatResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "NhatKyBaoMatResponse": {
+        "type": "object",
+        "properties": {
+          "maNhatKyBaoMat": {
+            "type": "string"
+          },
+          "maTaiKhoan": {
+            "type": "string"
+          },
+          "tenDangNhap": {
+            "type": "string"
+          },
+          "hanhDong": {
+            "type": "string"
+          },
+          "diaChiIp": {
+            "type": "string"
+          },
+          "userAgent": {
+            "type": "string"
+          },
+          "ketQua": {
+            "type": "string"
+          },
+          "noiDung": {
+            "type": "string"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageNhatKyBaoMatResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NhatKyBaoMatResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageNhanVienResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageNhanVienResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageNhanVienResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NhanVienResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageTourThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageTourThucTeResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageTourThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TourThucTeResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseTourCongKhaiResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TourCongKhaiResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "TourCongKhaiResponse": {
+        "type": "object",
+        "properties": {
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "maTourMau": {
+            "type": "string"
+          },
+          "tieuDeTour": {
+            "type": "string"
+          },
+          "moTa": {
+            "type": "string"
+          },
+          "ngayKhoiHanh": {
+            "type": "string",
+            "format": "date"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "giaHienHanh": {
+            "type": "number"
+          },
+          "soKhachToiDa": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "choConLai": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trangThai": {
+            "type": "string"
+          },
+          "diemDanhGia": {
+            "type": "number"
+          },
+          "soDanhGia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lichTrinh": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LichTrinhResponse"
+            }
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponsePageDanhGiaKhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageDanhGiaKhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageDanhGiaKhResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DanhGiaKhResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageYeuCauHoTroResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageYeuCauHoTroResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageYeuCauHoTroResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YeuCauHoTroResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageVoucherResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageVoucherResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageVoucherResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoucherResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageHoChieuSoResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageHoChieuSoResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageHoChieuSoResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoChieuSoResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageDonDatTourResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageDonDatTourResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageDonDatTourResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DonDatTourResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageKhuyenMaiKhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageKhuyenMaiKhResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageKhuyenMaiKhResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KhuyenMaiKhResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageLichSuTourResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageLichSuTourResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "LichSuTourResponse": {
+        "type": "object",
+        "properties": {
+          "maLichSuTour": {
+            "type": "string"
+          },
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "tieuDeTour": {
+            "type": "string"
+          },
+          "ngayKhoiHanh": {
+            "type": "string",
+            "format": "date"
+          },
+          "thoiLuong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ngayThamGia": {
+            "type": "string",
+            "format": "date"
+          },
+          "thoiDiemTao": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageLichSuTourResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LichSuTourResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageQuyetToanResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageQuyetToanResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageQuyetToanResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuyetToanResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageThanhToanResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageThanhToanResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageThanhToanResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThanhToanResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponsePageChiPhiThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageChiPhiThucTeResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PageChiPhiThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChiPhiThucTeResponse"
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageable": {
+            "$ref": "#/components/schemas/PageableObject"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SortObject"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseBaoCaoDoanhThuResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BaoCaoDoanhThuResponse"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "BaoCaoDoanhThuResponse": {
+        "type": "object",
+        "properties": {
+          "tongDoanhThu": {
+            "type": "number"
+          },
+          "soTourHoanThanh": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "soTourDaQuyetToan": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "soDonDatTour": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "topTour": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTourItem"
+            }
+          }
+        }
+      },
+      "TopTourItem": {
+        "type": "object",
+        "properties": {
+          "maTourThucTe": {
+            "type": "string"
+          },
+          "tieuDeTour": {
+            "type": "string"
+          },
+          "soDon": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "doanhThu": {
+            "type": "number"
+          }
+        }
+      },
+      "ApiResponseListNhatKySuCoResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NhatKySuCoResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListDiemDanhResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiemDanhResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListChiPhiThucTeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChiPhiThucTeResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListPhanCongResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PhanCongResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListNhanVienResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NhanVienResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
