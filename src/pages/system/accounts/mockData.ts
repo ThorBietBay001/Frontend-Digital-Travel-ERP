@@ -95,6 +95,8 @@ export interface Account {
 }
 
 export const allRoles = [
+  'Hướng dẫn viên',
+
   'Quản trị viên',
   'Nhân viên sản phẩm',
   'Nhân viên kinh doanh',
@@ -128,6 +130,7 @@ export const permissionsMap: Record<string, string[]> = {
   ],
   'Nhân viên điều hành': ['Điều phối HDV', 'Quản lý khiếu nại'],
   'Nhân viên kế toán': ['Tài chính kế toán'],
+  'Hướng dẫn viên': ['Quản lý tour thực tế'],
   'Khách hàng': [],
 };
 

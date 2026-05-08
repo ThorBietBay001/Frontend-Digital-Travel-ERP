@@ -23,6 +23,8 @@ export const ROLE_MAP: Record<string, string> = {
   'KINHDOANH': 'Nhân viên kinh doanh',
   'DIEUHANH': 'Nhân viên điều hành',
   'KETOAN': 'Nhân viên kế toán',
+  'HDV': 'Hướng dẫn viên',
+  'KHACHHANG': 'Khách hàng',
 };
 export const ROLE_VALUE_MAP: Record<string, string> = {
   'Quản trị viên': 'ADMIN',
@@ -30,6 +32,8 @@ export const ROLE_VALUE_MAP: Record<string, string> = {
   'Nhân viên kinh doanh': 'KINHDOANH',
   'Nhân viên điều hành': 'DIEUHANH',
   'Nhân viên kế toán': 'KETOAN',
+  'Hướng dẫn viên': 'HDV',
+  'Khách hàng': 'KHACHHANG',
 };
 
 const AccountList: React.FC = () => {
@@ -107,7 +111,7 @@ const AccountList: React.FC = () => {
         phone: nv.soDienThoai || '',
         username: nv.tenDangNhap || '',
         role: ROLE_MAP[nv.maVaiTro?.replace('ROLE_', '') || ''] || 'Khách hàng',
-        status: nv.trangThaiTaiKhoan === 'ACTIVE' ? 'active' : 'locked',
+        status: nv.trangThaiTaiKhoan === 'HOAT_DONG' ? 'active' : 'locked',
         avatar: undefined
       }));
       setAccounts(mapped);
@@ -195,6 +199,7 @@ const AccountList: React.FC = () => {
       'Nhân viên kinh doanh': 'warning',
       'Nhân viên điều hành': 'info',
       'Nhân viên kế toán': 'warning',
+      'Hướng dẫn viên': 'success',
       'Khách hàng': 'success',
     };
 
