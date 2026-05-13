@@ -42,13 +42,17 @@ const TourTemplateList: React.FC = () => {
       nights: Math.max(0, (apiData.thoiLuong || 1) - 1),
     },
     basePrice: apiData.giaSan || 0,
-    status: (apiData.trangThai?.toLowerCase() === 'active' ? 'active' : 'inactive') as 'active' | 'inactive',
+    status: apiData.trangThai === 'HOAT_DONG' ? 'active' : 'inactive',
     image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500&q=80',
     tags: 'Tour Mẫu',
     schedule: [],
   });
 
   const { user } = useAuth();
+
+  const mapStatusToApi = (status: TourTemplate['status']) => (
+    status === 'active' ? 'HOAT_DONG' : 'KHOA'
+  );
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'tour-template')) return;
@@ -97,7 +101,7 @@ const TourTemplateList: React.FC = () => {
            moTa: tourData.description,
            thoiLuong: tourData.duration.days,
            giaSan: tourData.basePrice,
-           trangThai: tourData.status.toUpperCase()
+           trangThai: mapStatusToApi(tourData.status)
         };
         await tourTemplateService.capNhat(tourData.id, payload);
       } else if (modalState.mode === 'copy') {

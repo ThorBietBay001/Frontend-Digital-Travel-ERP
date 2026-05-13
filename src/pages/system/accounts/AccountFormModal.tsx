@@ -107,25 +107,34 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
   const handleSubmit = async () => {
     if (!validateForm()) return;
     
-    if (mode === 'edit') {
-      alert('Chức năng cập nhật thông tin tài khoản hiện chưa được hỗ trợ từ phía Backend.');
-      return;
-    }
-
     try {
-      await accountsService.dangKyNhanVien({
-        tenDangNhap: formData.username.trim(),
-        matKhau: password,
-        hoTen: formData.name.trim(),
-        email: formData.email.trim(),
-        soDienThoai: formData.phone.trim(),
-        maVaiTro: ROLE_VALUE_MAP[formData.role] || 'KINHDOANH'
-      });
-      alert('Tạo tài khoản thành công.');
+      if (mode === 'edit') {
+        await accountsService.ganVaiTro(formData.id, {
+          maVaiTro: ROLE_VALUE_MAP[formData.role] || 'KINHDOANH',
+        });
+        if (formData.status !== initialData?.status) {
+          if (formData.status === 'active') {
+            await accountsService.moKhoaTaiKhoan(formData.id);
+          } else {
+            await accountsService.khoaTaiKhoan(formData.id);
+          }
+        }
+        alert('Cập nhật tài khoản thành công.');
+      } else {
+        await accountsService.dangKyNhanVien({
+          tenDangNhap: formData.username.trim(),
+          matKhau: password,
+          hoTen: formData.name.trim(),
+          email: formData.email.trim(),
+          soDienThoai: formData.phone.trim(),
+          maVaiTro: ROLE_VALUE_MAP[formData.role] || 'KINHDOANH'
+        });
+        alert('Tạo tài khoản thành công.');
+      }
       onSubmit();
       onClose();
     } catch (err) {
-      alert('Lỗi tạo tài khoản. ' + (err instanceof Error ? err.message : ''));
+      alert('Lỗi lưu tài khoản. ' + (err instanceof Error ? err.message : ''));
     }
   };
 
@@ -155,14 +164,15 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
           <label className="text-[14px] font-semibold text-gray-700">
             Họ tên <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, name: event.target.value }))
-            }
-            className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
-          />
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, name: event.target.value }))
+              }
+              disabled={mode === 'edit'}
+              className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
+            />
           {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
         </div>
 
@@ -170,41 +180,44 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
           <label className="text-[14px] font-semibold text-gray-700">
             Email <span className="text-red-500">*</span>
           </label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, email: event.target.value }))
-            }
-            className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
-          />
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, email: event.target.value }))
+              }
+              disabled={mode === 'edit'}
+              className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
+            />
           {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
         </div>
 
         <div>
           <label className="text-[14px] font-semibold text-gray-700">Số điện thoại</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, phone: event.target.value }))
-            }
-            className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
-          />
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, phone: event.target.value }))
+              }
+              disabled={mode === 'edit'}
+              className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
+            />
         </div>
 
         <div>
           <label className="text-[14px] font-semibold text-gray-700">
             Username <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={formData.username}
-            onChange={(event) =>
-              setFormData((prev) => ({ ...prev, username: event.target.value }))
-            }
-            className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
-          />
+            <input
+              type="text"
+              value={formData.username}
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, username: event.target.value }))
+              }
+              disabled={mode === 'edit'}
+              className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
+            />
           {errors.username && (
             <p className="mt-1 text-xs text-red-500">{errors.username}</p>
           )}

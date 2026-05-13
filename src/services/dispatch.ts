@@ -17,6 +17,14 @@ export type {
     NhanVienResponse
 };
 
+interface ApiResponseListPhanCongResponse {
+    status?: number;
+    success?: boolean;
+    message?: string;
+    data?: PhanCongResponse[];
+    error?: string;
+}
+
 
 export const dispatchService = {
     phanCong: async (data: PhanCongHdvRequest) => {
@@ -29,6 +37,10 @@ export const dispatchService = {
     },
     huyPhanCong: async (maPhanCong: string) => {
         const response = await api.delete<ApiResponseVoid>(`/api/dieu-hanh/phan-cong/${maPhanCong}`);
+        return response.data.data;
+    },
+    tourCuaToi: async () => {
+        const response = await api.get<ApiResponseListPhanCongResponse>('/api/huong-dan-vien/tour-cua-toi');
         return response.data.data;
     }
 };

@@ -46,22 +46,39 @@ const TourInstanceList: React.FC = () => {
       : 0,
     currentPrice: api.giaHienHanh || 0,
     basePrice: api.giaHienHanh || 0,
-    status: mapStatus(api.trangThai),
+    status: mapStatus(api),
     templateId: api.maTourMau || '',
     schedule: [],
   });
 
-  const mapStatus = (s?: string): TourInstance['status'] => {
-    switch (s?.toUpperCase()) {
-      case 'ACTIVE': return 'active';
-      case 'FULL': return 'full';
-      case 'CANCELLED': return 'cancelled';
-      case 'COMPLETED': return 'completed';
+  const mapStatus = (tour: TourThucTeResponse): TourInstance['status'] => {
+    if (tour.soKhachToiDa != null && tour.choConLai === 0 && tour.trangThai === 'MO_BAN') {
+      return 'full';
+    }
+    switch (tour.trangThai) {
+      case 'MO_BAN': return 'active';
+      case 'HUY': return 'cancelled';
+      case 'KET_THUC':
+      case 'DA_QUYET_TOAN': return 'completed';
+      case 'CHO_KICH_HOAT':
+      case 'SAP_DIEN_RA':
+      case 'DANG_DIEN_RA': return 'pending_activation';
       default: return 'pending_activation';
     }
   };
 
   const { user } = useAuth();
+
+  const mapStatusToApi = (status: TourInstance['status']) => {
+    switch (status) {
+      case 'active': return 'MO_BAN';
+      case 'cancelled': return 'HUY';
+      case 'completed': return 'KET_THUC';
+      case 'pending_activation': return 'CHO_KICH_HOAT';
+      case 'full': return 'MO_BAN';
+      default: return 'CHO_KICH_HOAT';
+    }
+  };
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'tour-instance')) return;
@@ -128,7 +145,7 @@ const TourInstanceList: React.FC = () => {
         const payload: CapNhatTourThucTeRequest = {
           giaHienHanh: tourData.currentPrice,
           soKhachToiDa: tourData.maxSeats,
-          trangThai: tourData.status.toUpperCase(),
+          trangThai: mapStatusToApi(tourData.status),
         };
         await tourInstanceService.capNhat_4(tourData.id, payload);
       }

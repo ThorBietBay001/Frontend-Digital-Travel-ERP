@@ -2,6 +2,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { normalizeRole } from '../config/rolePermissions';
 
 interface ProtectedRouteProps {
   allowedRoles: string[];
@@ -15,7 +16,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children 
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(user.maVaiTro)) {
+  const normalizedRole = normalizeRole(user.maVaiTro);
+
+  if (!allowedRoles.includes(normalizedRole)) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md text-center">
