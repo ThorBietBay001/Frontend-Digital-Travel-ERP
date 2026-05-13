@@ -26,12 +26,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const apiMessage = error.response?.data?.message || error.response?.data?.error;
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
     if (error.response?.status === 403) {
-      return Promise.reject(new Error('Bạn không có quyền thực hiện thao tác này (403 Forbidden).'));
+      return Promise.reject(new Error(apiMessage || 'Bạn không có quyền thực hiện thao tác này (403 Forbidden).'));
+    }
+    if (apiMessage) {
+      return Promise.reject(new Error(apiMessage));
     }
     return Promise.reject(error);
   }

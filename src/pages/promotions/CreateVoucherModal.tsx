@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Save } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
@@ -7,10 +7,13 @@ import type { Voucher } from './mockData';
 interface CreateVoucherModalProps {
   isOpen: boolean;
   onClose: () => void;
+  mode?: 'create' | 'edit';
+  initialData?: Voucher | null;
   onSubmit: (data: Voucher) => void;
 }
 
-const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose, mode = 'create', initialData, onSubmit }) => {
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
   const [startDate, setStartDate] = useState('');
@@ -21,6 +24,21 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
   const [maxDiscount, setMaxDiscount] = useState<number | ''>('');
   const [minOrderValue, setMinOrderValue] = useState<number | ''>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setCode(initialData?.code || '');
+    setName(initialData?.name || '');
+    setQuantity(initialData?.quantity || '');
+    setStartDate('');
+    setEndDate(initialData?.expiryDate || '');
+    setIsActive(initialData?.status !== 'disabled');
+    setDiscountType(initialData?.discountType || 'percent');
+    setDiscountValue(initialData?.discountValue || '');
+    setMaxDiscount(initialData?.maxDiscount || '');
+    setMinOrderValue(initialData?.minOrderValue || '');
+    setErrors({});
+  }, [initialData, isOpen]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -37,8 +55,8 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     if (!validate()) return;
 
     const newVoucher: Voucher = {
-      id: Math.random().toString(36).substr(2, 9),
-      code: `VC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      id: initialData?.id || Math.random().toString(36).substr(2, 9),
+      code: code.trim() || `VC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
       name,
       discountType,
       discountValue: Number(discountValue),
@@ -51,6 +69,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     };
 
     onSubmit(newVoucher);
+    setCode('');
     setName('');
     setQuantity('');
     setStartDate('');
@@ -67,18 +86,29 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tạo Chương Trình Khuyến Mãi"
+      title={mode === 'edit' ? 'Cập Nhật Chương Trình Khuyến Mãi' : 'Tạo Chương Trình Khuyến Mãi'}
       size="2xl"
       footer={
         <div className="flex justify-end gap-3 w-full">
           <Button variant="secondary" onClick={onClose}>Hủy</Button>
-          <Button variant="primary" icon={<Save size={18} />} onClick={handleSubmit}>Lưu & Kích hoạt</Button>
+          <Button variant="primary" icon={<Save size={18} />} onClick={handleSubmit}>Lưu</Button>
         </div>
       }
     >
       <div className="grid grid-cols-2 gap-6 pb-6">
         {/* Cột trái */}
         <div className="space-y-4">
+          <div>
+            <label className="block text-[#00668A] text-sm font-semibold mb-2">Mã voucher</label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className="w-full px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent"
+              placeholder="Tự sinh nếu để trống"
+            />
+          </div>
+
           <div>
             <label className="block text-[#00668A] text-sm font-semibold mb-2">Tên chương trình <span className="text-red-500">*</span></label>
             <input

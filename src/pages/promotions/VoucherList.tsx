@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle, Send, Ban } from 'lucide-react';
+import { PlusCircle, Send, Ban, Pencil } from 'lucide-react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -42,6 +42,7 @@ const VoucherList: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
   const [distributeVoucher, setDistributeVoucher] = useState<Voucher | null>(null);
   const itemsPerPage = 5;
 
@@ -64,22 +65,28 @@ const VoucherList: React.FC = () => {
 
   React.useEffect(() => { getAll(); }, [user]);
 
-  const handleCreateVoucher = async (newVoucher: Voucher) => {
+  const mapToRequest = (voucher: Voucher): VoucherRequest => ({
+    maCode: voucher.code,
+    loaiUuDai: voucher.discountType === 'percent' ? 'PERCENT' : 'AMOUNT',
+    giaTriGiam: voucher.discountValue,
+    soLuotPhatHanh: voucher.quantity,
+    ngayHieuLuc: new Date().toISOString().split('T')[0],
+    ngayHetHan: voucher.expiryDate,
+    dieuKienApDung: voucher.name,
+  });
+
+  const handleSaveVoucher = async (voucher: Voucher) => {
     try {
-      const payload: VoucherRequest = {
-        maCode: newVoucher.code,
-        loaiUuDai: newVoucher.discountType === 'percent' ? 'PERCENT' : 'AMOUNT',
-        giaTriGiam: newVoucher.discountValue,
-        soLuotPhatHanh: newVoucher.quantity,
-        ngayHieuLuc: new Date().toISOString().split('T')[0],
-        ngayHetHan: newVoucher.expiryDate,
-        dieuKienApDung: newVoucher.name,
-      };
-      await promotionsService.taoVoucher(payload);
+      if (editingVoucher) {
+        await promotionsService.capNhatVoucher(voucher.id, mapToRequest(voucher));
+      } else {
+        await promotionsService.taoVoucher(mapToRequest(voucher));
+      }
       setIsCreateModalOpen(false);
+      setEditingVoucher(null);
       getAll();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi tạo voucher';
+      const msg = err instanceof Error ? err.message : 'Lỗi khi lưu voucher';
       alert('Lỗi: ' + msg);
     }
   };
@@ -162,6 +169,13 @@ const VoucherList: React.FC = () => {
               <Send size={18} />
             </button>
             <button
+              onClick={(e) => { e.stopPropagation(); setEditingVoucher(record); setIsCreateModalOpen(true); }}
+              className="p-2 text-gray-500 hover:text-[#00668A] hover:bg-[#E1F1FF] rounded-full transition-colors"
+              title="Chỉnh sửa"
+            >
+              <Pencil size={18} />
+            </button>
+            <button
               onClick={(e) => { e.stopPropagation(); handleBanVoucher(record); }}
               className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50 rounded-full transition-colors"
               title="Vô hiệu hóa"
@@ -217,14 +231,17 @@ const VoucherList: React.FC = () => {
 
       <CreateVoucherModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateVoucher}
+        onClose={() => { setIsCreateModalOpen(false); setEditingVoucher(null); }}
+        mode={editingVoucher ? 'edit' : 'create'}
+        initialData={editingVoucher}
+        onSubmit={handleSaveVoucher}
       />
 
       <DistributeVoucherModal
         isOpen={!!distributeVoucher}
         onClose={() => setDistributeVoucher(null)}
         voucher={distributeVoucher}
+        onSuccess={getAll}
       />
     </MainLayout>
   );

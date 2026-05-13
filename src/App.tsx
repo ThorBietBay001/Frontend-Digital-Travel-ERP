@@ -19,11 +19,14 @@ import MainLayout from './components/layouts/MainLayout'
 import Dashboard from './pages/dashboard/Dashboard'
 import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
+import GuideSchedule from './pages/guide/GuideSchedule'
 
-const ROLES_SANPHAM = ['ADMIN', 'SANPHAM'];
-const ROLES_KINHDOANH = ['ADMIN', 'KINHDOANH'];
-const ROLES_DIEUHANH = ['ADMIN', 'DIEUHANH'];
-const ROLES_KETOAN = ['ADMIN', 'KETOAN'];
+const ROLES_DASHBOARD = ['ADMIN', 'SANPHAM', 'KINHDOANH', 'DIEUHANH', 'KETOAN', 'HDV', 'KHACHHANG'];
+const ROLES_SANPHAM = ['SANPHAM'];
+const ROLES_KINHDOANH = ['KINHDOANH'];
+const ROLES_DIEUHANH = ['DIEUHANH'];
+const ROLES_KETOAN = ['KETOAN'];
+const ROLES_HDV = ['HDV'];
 const ROLES_ADMIN = ['ADMIN'];
 
 function App() {
@@ -32,7 +35,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={
-        <ProtectedRoute allowedRoles={[...ROLES_ADMIN, ...ROLES_SANPHAM, ...ROLES_KINHDOANH, ...ROLES_DIEUHANH, ...ROLES_KETOAN]}>
+        <ProtectedRoute allowedRoles={ROLES_DASHBOARD}>
           <Dashboard />
         </ProtectedRoute>
       } />
@@ -44,7 +47,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/tour-instance" element={
-        <ProtectedRoute allowedRoles={[...ROLES_SANPHAM, ...ROLES_DIEUHANH]}>
+        <ProtectedRoute allowedRoles={ROLES_DIEUHANH}>
           <TourInstanceList />
         </ProtectedRoute>
       } />
@@ -111,6 +114,13 @@ function App() {
         </ProtectedRoute>
       } />
 
+      {/* Hướng dẫn viên */}
+      <Route path="/guide/schedule" element={
+        <ProtectedRoute allowedRoles={ROLES_HDV}>
+          <GuideSchedule />
+        </ProtectedRoute>
+      } />
+
       {/* Hệ thống - chỉ ADMIN */}
       <Route path="/system/accounts" element={
         <ProtectedRoute allowedRoles={ROLES_ADMIN}>
@@ -118,7 +128,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/system/hr" element={
-        <ProtectedRoute allowedRoles={[...ROLES_ADMIN, ...ROLES_DIEUHANH]}>
+        <ProtectedRoute allowedRoles={ROLES_ADMIN}>
           <StaffList />
         </ProtectedRoute>
       } />
