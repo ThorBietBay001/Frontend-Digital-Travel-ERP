@@ -8,7 +8,6 @@ export default function Schedule() {
     <div className="space-y-3.5 animate-slide-up">
       {/* Select Itinerary Day Pills (Ultra-Premium Segmented Control) */}
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-slate-500 px-1 uppercase tracking-wider block">Lịch trình</span>
         <div className="bg-sky-50/60 backdrop-blur-md p-1.5 rounded-2xl border border-sky-100/50 flex space-x-1">
           {itinerary.map(day => (
             <button

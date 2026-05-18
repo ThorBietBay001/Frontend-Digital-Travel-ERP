@@ -73,9 +73,13 @@ export default function IncidentReport({ passengers, incidents, setIncidents }: 
       {/* Incident Form Card Title Outside */}
       <div className="px-1 py-1">
         <div className="flex items-center justify-between">
-          <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider">BÁO CÁO SỰ CỐ MỚI</h3>
+          <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5">
+            <AlertTriangle size={14} className="text-rose-500" />
+            <span>BÁO CÁO SỰ CỐ MỚI</span>
+          </h3>
           <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300">PQ001</span>
         </div>
+        <p className="text-[11px] text-slate-500 mt-0.5">Ghi nhận nhanh sự cố tại hiện trường và gửi hỗ trợ SOS</p>
       </div>
 
       {/* Incident Form Card */}
