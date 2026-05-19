@@ -61,7 +61,7 @@ export default function Login({
   const displayError = errorMsg || loginError;
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 relative overflow-hidden bg-gradient-to-tr from-sky-100/50 via-white to-sky-50 animate-fade-in min-h-screen">
+    <div className="flex-1 flex flex-col justify-between p-6 relative overflow-y-auto overflow-x-hidden bg-gradient-to-tr from-sky-100/50 via-white to-sky-50 animate-fade-in">
       {/* Background elements */}
       <div className="absolute -right-20 -top-20 w-60 h-60 rounded-full bg-sky-300/10 blur-2xl animate-float"></div>
       <div className="absolute -left-20 bottom-10 w-60 h-60 rounded-full bg-indigo-300/10 blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
@@ -377,16 +377,26 @@ export default function Login({
           </div>
         )}
 
-        {/* Simplified Corporate Footer */}
-        <footer className="pt-3 border-t border-slate-100/80 text-center space-y-1 w-full max-w-[280px] mx-auto">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hệ thống ERP Digital Travel</p>
+        {/* Modern Premium Footer */}
+        <footer className="mt-6 text-center space-y-2 w-full pb-2">
+          <div className="flex items-center justify-center space-x-3 text-[10px] text-slate-400 font-medium">
+            <a href="#" className="hover:text-sky-500 transition">Hỗ trợ</a>
+            <span className="text-slate-300">•</span>
+            <a href="#" className="hover:text-sky-500 transition">Bảo mật</a>
+            <span className="text-slate-300">•</span>
+            <a href="#" className="hover:text-sky-500 transition">Điều khoản</a>
+          </div>
+          
           <div className="flex items-center justify-center space-x-2 text-[9px] text-slate-400">
-            <span>Phiên bản PWA 2.4.0</span>
-            <span>•</span>
-            <span className="flex items-center">
-              <span className="w-1.2 h-1.2 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-              Kết nối an toàn
-            </span>
+            <span>© 2026 Digital Travel ERP</span>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            <div className="flex items-center space-x-1">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <span>v2.4.0</span>=
+            </div>
           </div>
         </footer>
       </div>

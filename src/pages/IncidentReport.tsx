@@ -64,8 +64,8 @@ export default function IncidentReport({ passengers, incidents, setIncidents }: 
     <div className="space-y-4 animate-slide-up">
       {/* Sent Toast notification */}
       {incidentToast && (
-        <div className="p-3 bg-sky-400 text-white text-xs font-bold rounded-2xl shadow-lg border border-sky-500 flex items-center space-x-2 animate-bounce">
-          <CheckCircle size={16} />
+        <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-2xl shadow-sm border border-emerald-200 flex items-center space-x-2 animate-slide-up">
+          <CheckCircle size={16} className="text-emerald-500" />
           <p>{incidentToast}</p>
         </div>
       )}

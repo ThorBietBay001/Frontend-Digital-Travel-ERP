@@ -41,6 +41,7 @@ export interface Expense {
   status: 'CHO_DUYET' | 'DA_DUYET' | 'TU_CHOI';
   notes: string;
   date: string;
+  photoUrl?: string;
 }
 
 export interface IncidentReport {

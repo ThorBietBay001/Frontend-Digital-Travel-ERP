@@ -91,8 +91,8 @@ export default function GreenPoints({ passengers, setPassengers }: GreenPointsPr
 
       {/* Confirmed green toast */}
       {greenConfirmToast && (
-        <div className="p-3 bg-emerald-505 bg-emerald-500 border border-emerald-600 text-white text-xs font-bold rounded-2xl shadow-lg flex items-center space-x-2 animate-bounce">
-          <ThumbsUp size={16} />
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-2xl shadow-sm flex items-center space-x-2 animate-slide-up">
+          <ThumbsUp size={16} className="text-emerald-500" />
           <p className="leading-snug">{greenConfirmToast.text}</p>
         </div>
       )}
@@ -119,11 +119,11 @@ export default function GreenPoints({ passengers, setPassengers }: GreenPointsPr
               <div
                 key={p.code}
                 onClick={() => toggleSelectGreenGuest(p.code)}
-                className={`p-2 rounded-xl border text-left cursor-pointer transition flex items-center justify-between ${isChosen ? 'bg-sky-400 border-sky-500 text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                className={`p-2 rounded-xl border text-left cursor-pointer transition-all duration-200 flex items-center justify-between ${isChosen ? 'bg-sky-50 border-sky-300 text-sky-800 shadow-sm ring-1 ring-sky-100' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
               >
-                <span className="text-[11px] font-bold truncate">{p.name}</span>
-                {isChosen && <Check size={11} className="shrink-0 ml-1" />}
+                <span className={`text-[11px] truncate ${isChosen ? 'font-bold' : 'font-semibold'}`}>{p.name}</span>
+                {isChosen && <Check size={14} className="shrink-0 ml-1 text-sky-500" />}
               </div>
             );
           })}

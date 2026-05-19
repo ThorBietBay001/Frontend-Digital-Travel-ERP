@@ -94,7 +94,7 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
 
         <div className="absolute inset-0 p-4 z-20 flex flex-col justify-between">
           <div className="flex justify-between items-start">
-            <span className="text-[11px] bg-sky-400 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="text-[10px] bg-gradient-to-r from-sky-400/90 to-blue-500/90 backdrop-blur-md border border-sky-300/50 font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-[0_0_15px_rgba(56,189,248,0.4)]">
               Đang diễn ra
             </span>
             <span className="text-xs bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full font-mono">
@@ -290,18 +290,27 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
               </button>
             </div>
 
-            <div className="p-3 bg-gradient-to-tr from-sky-400 to-sky-500 text-white rounded-2xl relative overflow-hidden shadow-md shadow-sky-100">
-              <div className="flex items-center space-x-2 mb-1.5">
-                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-black uppercase shrink-0 font-mono">
-                  {selectedUpcomingTour.code}
-                </span>
-                <h4 className="font-black text-xs truncate">
-                  {selectedUpcomingTour.name}
-                </h4>
+            <div className="p-3 bg-sky-50 border border-sky-200 rounded-2xl relative overflow-hidden shadow-sm">
+              <div className="relative z-10">
+                <div className="flex items-center space-x-2 mb-1.5 overflow-hidden">
+                  <span className="text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-black uppercase shrink-0 font-mono border border-sky-200/50">
+                    {selectedUpcomingTour.code}
+                  </span>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="animate-marquee">
+                      <h4 className="font-black text-sm text-sky-900 pr-8">
+                        {selectedUpcomingTour.name}
+                      </h4>
+                      <h4 className="font-black text-sm text-sky-900 pr-8" aria-hidden="true">
+                        {selectedUpcomingTour.name}
+                      </h4>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Khởi hành: <span className="font-bold text-slate-700">{selectedUpcomingTour.departureDate}</span> • Quy mô: <span className="font-bold text-slate-700">{selectedUpcomingTour.guestsCount} khách</span>
+                </p>
               </div>
-              <p className="text-[11px] text-sky-100">
-                Khởi hành: {selectedUpcomingTour.departureDate} • Quy mô: {selectedUpcomingTour.guestsCount} khách
-              </p>
             </div>
 
             {/* Ultra-Premium Segmented Tab Control */}

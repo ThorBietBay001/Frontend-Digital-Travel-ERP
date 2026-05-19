@@ -17,8 +17,20 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
   });
 
   const [expenseToast, setExpenseToast] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [receiptPhoto, setReceiptPhoto] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
+
+  // Simulated capture function
+  const handleCaptureReceipt = () => {
+    setIsCapturing(true);
+    setTimeout(() => {
+      setReceiptPhoto('MOCK_RECEIPT_URL');
+      setIsCapturing(false);
+    }, 1200);
+  };
 
   // Helper: Format price currency
   const formatCurrency = (val: number) => {
@@ -28,8 +40,23 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
   // Expense Submit
   const handleExpenseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    if (!expenseForm.amount.trim() || !expenseForm.notes.trim()) {
+      setFormError("Vui lòng điền đầy đủ số tiền và ghi chú chi phí!");
+      return;
+    }
+
     const amountVal = parseFloat(expenseForm.amount.replace(/[^0-9]/g, ''));
-    if (isNaN(amountVal)) return;
+    if (isNaN(amountVal) || amountVal <= 0) {
+      setFormError("Số tiền không hợp lệ. Vui lòng nhập bằng số!");
+      return;
+    }
+
+    if (!receiptPhoto) {
+      setFormError("Bạn bắt buộc phải chụp ảnh minh chứng hóa đơn thực tế!");
+      return;
+    }
 
     const newExpense: Expense = {
       id: `EXP00${expenses.length + 1}`,
@@ -37,7 +64,8 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
       amount: amountVal,
       status: 'CHO_DUYET',
       notes: expenseForm.notes,
-      date: expenseForm.date
+      date: expenseForm.date,
+      photoUrl: receiptPhoto || undefined
     };
 
     setExpenses(prev => [newExpense, ...prev]);
@@ -52,6 +80,7 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
       notes: '',
       date: '19/05/2026'
     });
+    setReceiptPhoto(null);
 
     setTimeout(() => {
       setExpenseToast(null);
@@ -67,8 +96,8 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
     <div className="space-y-4 animate-slide-up">
       {/* Expense feedback toast */}
       {expenseToast && (
-        <div className="p-3 bg-blue-400 text-white text-[11px] font-bold rounded-2xl shadow-lg border border-blue-500 flex items-center space-x-2 animate-bounce">
-          <CheckCircle size={16} />
+        <div className="p-3 bg-emerald-50 text-emerald-700 text-[11px] font-semibold rounded-2xl shadow-sm border border-emerald-200 flex items-center space-x-2 animate-slide-up">
+          <CheckCircle size={16} className="text-emerald-500" />
           <p>{expenseToast}</p>
         </div>
       )}
@@ -105,7 +134,7 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
       {/* Add expense Full-Width actions */}
       <button
         onClick={() => setExpenseModalOpen(true)}
-        className="w-full py-2.75 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[11px] rounded-2xl shadow-md shadow-sky-100 transition active:scale-95 flex items-center justify-center space-x-1.5"
+        className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[11px] rounded-2xl shadow-md shadow-sky-100 transition active:scale-95 flex items-center justify-center space-x-1.5"
       >
         <Plus size={16} strokeWidth={3} />
         <span className="tracking-wide uppercase">Thêm yêu cầu quyết toán</span>
@@ -152,12 +181,13 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
               {/* Expanded receipt detail */}
               {expandedExpense === e.id && (
                 <div className="px-3 pb-3 border-t border-slate-100 animate-slide-up relative z-0">
-                  {/* Receipt image placeholder */}
-                  <div className="mt-2 bg-slate-50 rounded-xl h-32 flex items-center justify-center border border-slate-100">
-                    <div className="text-center space-y-1">
-                      <Camera size={24} className="text-slate-300 mx-auto" />
-                      <p className="text-[10px] text-slate-400 font-medium">Ảnh hóa đơn</p>
-                    </div>
+                  {/* Receipt image */}
+                  <div className="mt-2 rounded-xl h-36 overflow-hidden bg-slate-100 border border-slate-200">
+                    <img
+                      src={e.photoUrl === 'MOCK_RECEIPT_URL' ? "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?q=80&w=320" : "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=320"}
+                      alt="Receipt Proof"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   {/* Separator + metadata */}
                   <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100/80 text-[10px] text-slate-600 font-bold">
@@ -205,6 +235,11 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
 
             {/* Manual addition forms */}
             <form onSubmit={handleExpenseSubmit} className="space-y-3.5 text-xs">
+              {formError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-100 text-rose-600 font-semibold rounded-xl text-[11px] animate-slide-up">
+                  {formError}
+                </div>
+              )}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">Hạng mục chi</label>
                 <select
@@ -229,7 +264,6 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
                   value={expenseForm.amount}
                   onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))}
                   className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:border-amber-400 bg-white font-black text-slate-800 text-xs select-text"
-                  required
                 />
               </div>
 
@@ -241,22 +275,53 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
                   onChange={(e) => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Mô tả chi tiết..."
                   className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:border-amber-400 bg-white text-slate-600 select-text"
-                  required
                 />
               </div>
 
               {/* Receipt Photo Area */}
-              <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-sky-300 flex flex-col items-center justify-center space-y-3 cursor-pointer hover:bg-sky-50/50 transition">
-                <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center">
-                  <Camera size={20} className="text-sky-400" />
-                </div>
-                <span className="text-[11px] text-sky-500 font-bold italic">Nhấp vào đây để chụp ảnh thực tế</span>
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 block mb-1.5 uppercase">Ảnh hóa đơn thực tế *</label>
+                {receiptPhoto ? (
+                  <div className="relative rounded-2xl overflow-hidden h-28 bg-slate-900 border border-slate-200">
+                    <img
+                      src="https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?q=80&w=320"
+                      alt="Receipt Proof"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setReceiptPhoto(null)}
+                      className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full hover:bg-black transition text-[10px] font-bold"
+                    >
+                      Chụp lại
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleCaptureReceipt}
+                    disabled={isCapturing}
+                    className="w-full h-30 border-2 border-dashed border-sky-300 hover:border-sky-400 rounded-2xl flex flex-col items-center justify-center text-sky-500 hover:text-sky-600 transition-colors bg-sky-50/20 active:scale-[0.98]"
+                  >
+                    {isCapturing ? (
+                      <>
+                        <div className="w-6 h-6 border-3 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-[11px] font-bold text-sky-500 mt-2">Đang kích hoạt Camera...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={24} className="text-sky-400" />
+                        <span className="text-[11px] font-bold mt-1.5 italic">Nhấp để chụp ảnh hóa đơn (Bắt buộc)</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-amber-900 font-black rounded-xl shadow-md transition active:scale-95 text-xs uppercase tracking-wide"
+                  className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-amber-900 font-black rounded-xl shadow-md transition active:scale-95 text-xs uppercase tracking-wide"
                 >
                   Lưu chi phí
                 </button>
