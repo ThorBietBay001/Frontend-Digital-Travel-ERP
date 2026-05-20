@@ -1,0 +1,771 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router';
+import {
+  Star, ArrowLeft, Check, X, Leaf, Eye, Utensils, ChevronRight, Compass, MapPin, ThumbsUp
+} from 'lucide-react';
+import { mockTours } from '../data/mockData';
+import BookingModal from '../components/booking/BookingModal';
+import AuthModal from '../components/modals/AuthModal';
+
+export default function TourDetail() {
+  const { tourId } = useParams();
+  const tour = mockTours.find(t => t.id === tourId);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showItineraryModal, setShowItineraryModal] = useState(false);
+  const [selectedItineraryDay, setSelectedItineraryDay] = useState<number | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Reviews filters and likes state
+  const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'high' | 'images' | 'vip'>('all');
+  const [helpfulCounts, setHelpfulCounts] = useState<Record<number, number>>({});
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tourId]);
+
+  // Smooth scroll to selected day in itinerary detail modal
+  useEffect(() => {
+    if (showItineraryModal && selectedItineraryDay !== null) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`itinerary-day-${selectedItineraryDay}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showItineraryModal, selectedItineraryDay]);
+
+  const getDayMeals = (tId: string, day: number) => {
+    if (tId === '1') {
+      if (day === 1) return 'tự túc ăn chiều';
+      if (day === 2) return 'Ăn sáng, trưa, tối';
+      return 'Ăn sáng, trưa';
+    }
+    if (tId === '2') {
+      if (day === 1) return 'tự túc ăn tối';
+      if (day === 2) return 'Ăn sáng, trưa, tối';
+      if (day === 3) return 'Ăn sáng, trưa, tối';
+      return 'Ăn sáng, trưa';
+    }
+    return 'Ăn sáng, trưa';
+  };
+
+  const getDayImage = (tId: string, day: number) => {
+    const images: Record<string, string[]> = {
+      '1': [
+        'https://images.unsplash.com/photo-1528127269322-539801943592?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600',
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600',
+        'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600'
+      ],
+      '2': [
+        'https://images.unsplash.com/photo-1609412058473-c199497c3c5d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600',
+        'https://images.unsplash.com/photo-1508873696983-2df519f0397e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600',
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600',
+        'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600'
+      ]
+    };
+    const tourImgs = images[tId] || images['1'];
+    return tourImgs[(day - 1) % tourImgs.length];
+  };
+
+  if (!tour) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Không tìm thấy tour</h2>
+        <Link to="/" className="text-blue-600 hover:text-blue-700 mt-4 inline-block">
+          Quay về trang chủ
+        </Link>
+      </div>
+    );
+  }
+
+  // Scenery Galleries database
+  const tourGalleries: Record<string, string[]> = {
+    '1': [
+      'https://images.unsplash.com/photo-1528127269322-539801943592?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      'https://images.unsplash.com/photo-1555661530-68c8e98db4e6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1547950518-c0b021f7c54e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800'
+    ],
+    '2': [
+      'https://images.unsplash.com/photo-1609412058473-c199497c3c5d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      'https://images.unsplash.com/photo-1508873696983-2df519f0397e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1528127269322-539801943592?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1547950518-c0b021f7c54e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800'
+    ],
+    '3': [
+      'https://images.unsplash.com/photo-1562005094-c724030f99bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      'https://images.unsplash.com/photo-1599708153386-62e2d53bf59e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1588066532230-0584b723fcfb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1547950518-c0b021f7c54e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+      'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800'
+    ]
+  };
+
+  const defaultSceneries = [
+    tour.image,
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+    'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+    'https://images.unsplash.com/photo-1547950518-c0b021f7c54e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
+    'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800'
+  ];
+  const gallery = tourGalleries[tour.id] || defaultSceneries;
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Automatically cycle scenery images every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveImageIndex((prev) => (prev + 1) % gallery.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [gallery.length]);
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
+  // Authentic Customer Reviews List
+  const tourReviewsList = [
+    {
+      name: 'Nguyễn Thị Mai',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
+      rating: 5,
+      date: '15/04/2026',
+      tag: 'Gia đình 4 người',
+      tier: 'Vàng',
+      comment: 'Chuyến đi Hạ Long tuyệt vời! Hướng dẫn viên cực kỳ nhiệt tình, lịch trình 3 ngày 2 đêm sắp xếp vô cùng hợp lý, không bị mệt. Khách sạn sạch đẹp, đồ ăn hải sản tươi ngon phong phú. Cả gia đình tôi đều rất hài lòng. Sẽ tiếp tục đặt tour tại Digital Travel!',
+      helpful: 24,
+      images: [
+        'https://images.unsplash.com/photo-1528127269322-539801943592?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=300',
+        'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=300'
+      ],
+      greenAction: 'Đã mang bình nước cá nhân (+50 Điểm Xanh)'
+    },
+    {
+      name: 'Trần Văn Hùng',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
+      rating: 5,
+      date: '10/04/2026',
+      tag: 'Cặp đôi du lịch',
+      tier: 'Bạch kim',
+      comment: 'Cảnh đẹp xuất sắc, dịch vụ chuẩn 5 sao từ đón tiễn đến chăm sóc khách hàng. Đặc biệt ấn tượng với triết lý Du lịch Xanh của công ty - chúng tôi được tặng bình nước cá nhân để hạn chế rác thải nhựa. Rất văn minh và ý nghĩa!',
+      helpful: 18,
+      images: [
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=300'
+      ],
+      greenAction: 'Đã tham gia dọn rác bãi biển (+100 Điểm Xanh)'
+    },
+    {
+      name: 'Lê Hoàng Nam',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
+      rating: 4,
+      date: '05/04/2026',
+      tag: 'Khách lẻ tự do',
+      tier: 'Bạc',
+      comment: 'Mọi thứ từ chỗ ở, ăn uống đến tàu tham quan đều xuất sắc. Điểm trừ duy nhất là thời tiết ngày thứ hai hơi mưa nhẹ nên không thể tham gia chèo thuyền kayak lâu. Tuy nhiên, hướng dẫn viên đã linh hoạt bù đắp bằng tiệc trà hoàng hôn rất dễ chịu!',
+      helpful: 12,
+      images: [],
+      greenAction: 'Đã thuê xe đạp thay xe máy (+80 Điểm Xanh)'
+    }
+  ];
+
+  const handleHelpfulClick = (idx: number) => {
+    setHelpfulCounts(prev => {
+      const current = prev[idx] !== undefined ? prev[idx] : tourReviewsList[idx].helpful;
+      const isAlreadyClicked = prev[idx] !== undefined && prev[idx] > tourReviewsList[idx].helpful;
+      return {
+        ...prev,
+        [idx]: isAlreadyClicked ? current - 1 : current + 1
+      };
+    });
+  };
+
+  const filteredReviewsList = tourReviewsList.filter((review) => {
+    if (activeReviewFilter === 'high') return review.rating === 5;
+    if (activeReviewFilter === 'images') return review.images && review.images.length > 0;
+    if (activeReviewFilter === 'vip') return review.tier === 'Vàng' || review.tier === 'Bạch kim';
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-50/50 pb-16 font-sans">
+      {/* Sticky Quick Access Bar */}
+      <div className="bg-white/90 backdrop-blur-md border-b border-slate-150 sticky top-16 z-40 transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <Link to="/" className="inline-flex items-center text-slate-600 hover:text-blue-600 transition-colors font-bold text-sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span>Danh sách Tour</span>
+          </Link>
+          <div className="flex items-center space-x-6">
+            <span className="hidden sm:inline text-xs font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
+              Khởi hành: {new Date(tour.departureDate).toLocaleDateString('vi-VN')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+
+      {/* Prominent Tour Title Header Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-1 animate-fadeIn">
+        <div className="space-y-3">
+
+          {/* Nổi bật tên Tour */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            {tour.name}
+          </h1>
+
+          {/* Tags row */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100">
+              {tour.destination}
+            </span>
+            <span className="bg-green-50 text-green-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-100 flex items-center space-x-1">
+              <Leaf className="w-3 h-3 text-green-600" />
+              <span>Chuyến đi Xanh (Eco-Tour)</span>
+            </span>
+            <span className="bg-yellow-50 text-amber-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-yellow-100">
+              {tour.duration}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Dynamic Premium Image Gallery (Grid-based Bento Layout) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[350px] sm:h-[480px] rounded-3xl overflow-hidden shadow-xl border border-white">
+
+          {/* Main Large View */}
+          <div className="lg:col-span-3 relative group h-full">
+            <img
+              src={gallery[activeImageIndex]}
+              alt={tour.name}
+              className="w-full h-full object-cover transition-all duration-700 ease-out"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute bottom-6 left-6 right-6 text-white pointer-events-none">
+              <span className="inline-flex items-center space-x-1.5 bg-slate-900/60 backdrop-blur-md text-white font-extrabold text-[9px] uppercase tracking-widest px-3 py-1.2 rounded-xl shadow-md border border-white/10">
+                <span>Hình ảnh thực tế {activeImageIndex + 1}/{gallery.length}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Scrollable Thumbnail Bento Panel (Right Sidebar) */}
+          <div className="hidden lg:flex flex-col space-y-3 h-full overflow-y-auto pr-1 scrollbar-thin">
+            {gallery.map((imgUrl, idx) => {
+              const isActive = activeImageIndex === idx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImageIndex(idx)}
+                  className={`relative h-[105px] w-full flex-shrink-0 rounded-r-2xl rounded-l-none overflow-hidden border-2 transition-all duration-300 ${isActive ? 'border-blue-500 shadow-md ring-2 ring-blue-500/20 scale-[0.98]' : 'border-transparent hover:border-slate-350'
+                    }`}
+                >
+                  <img
+                    src={imgUrl}
+                    alt="Scenic view thumbnail"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolright oute inset-0 bg-slate-950/15 hover:bg-transparent transition-colors" />
+                  {isActive && (
+                    <div className="absolute inset-0 bg-blue-600/10 flex items-center justify-center">
+                      <span className="bg-blue-600 text-white p-1 rounded-full shadow">
+                        <Eye className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Small thumbnail picker (visible on mobile only) */}
+        <div className="flex lg:hidden justify-center space-x-2 mt-3">
+          {gallery.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveImageIndex(idx)}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${activeImageIndex === idx ? 'bg-blue-600 w-6' : 'bg-slate-300'
+                }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content Sections */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          {/* Left Column - Detailed Itinerary and Information */}
+          <div className="lg:col-span-2 space-y-8">
+
+            {/* Quick Tour Highlights */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-6">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-3">
+                <span className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Compass className="w-5 h-5 text-blue-600" />
+                </span>
+                <span>Thông tin hành trình</span>
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                {tour.description}
+              </p>
+
+              <div className="grid grid-cols-3 gap-3 pt-3">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 p-4 rounded-2xl border border-blue-100/50 text-center space-y-1">
+                  <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Thời gian</span>
+                  <span className="block text-slate-900 font-extrabold text-xs sm:text-sm">{tour.duration}</span>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50/50 p-4 rounded-2xl border border-green-100/50 text-center space-y-1">
+                  <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Đánh giá</span>
+                  <span className="block text-slate-900 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-0.5">
+                    <Star className="w-3.5 h-3.5 fill-current text-yellow-500" />
+                    <span>{tour.rating}</span>
+                  </span>
+                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50/50 p-4 rounded-2xl border border-orange-100/50 text-center space-y-1">
+                  <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Chỗ trống</span>
+                  <span className="block text-orange-650 font-extrabold text-xs sm:text-sm">{tour.availableSeats} ghế</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-6">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-3">
+                <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-indigo-600" />
+                </span>
+                <span>Lịch trình</span>
+              </h2>
+
+              <div className="divide-y divide-slate-100">
+                {tour.itinerary.map((day) => (
+                  <button
+                    key={day.day}
+                    type="button"
+                    onClick={() => {
+                      setSelectedItineraryDay(day.day);
+                      setShowItineraryModal(true);
+                    }}
+                    className="w-full flex items-center justify-between py-4 text-left hover:bg-slate-50/50 px-2 rounded-xl transition-all group"
+                  >
+                    <div className="space-y-1">
+                      <span className="block font-black text-slate-800 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
+                        Ngày {day.day}: {day.title}
+                      </span>
+                      <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
+                        <Utensils className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{getDayMeals(tour.id, day.day)}</span>
+                      </span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Detailed Timeline Modal */}
+            {showItineraryModal && (
+              <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-fadeIn">
+                <div className="bg-white rounded-[2rem] max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden relative shadow-2xl border border-slate-100">
+
+                  {/* Modal Header */}
+                  <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                    <h3 className="text-xl font-black text-slate-900">LỊCH TRÌNH</h3>
+                    <button
+                      onClick={() => setShowItineraryModal(false)}
+                      className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-all"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Modal Scrollable Content */}
+                  <div className="flex-1 overflow-y-auto p-6 scrollbar-thin space-y-8">
+                    <div className="relative pl-5 sm:pl-7 border-l border-slate-200 ml-3 space-y-10 py-2">
+
+                      {tour.itinerary.map((day) => {
+                        const isSelected = selectedItineraryDay === day.day;
+                        return (
+                          <div
+                            key={day.day}
+                            id={`itinerary-day-${day.day}`}
+                            className="relative group scroll-mt-20"
+                          >
+                            {/* Timeline Pin Indicator */}
+                            <div className="absolute -left-[40px] sm:-left-[48px] top-6 w-6 h-6 bg-white rounded-full flex items-center justify-center z-10 border border-slate-100 shadow-sm transition-all duration-300">
+                              <MapPin className={`w-3.5 h-3.5 transition-all duration-300 ${isSelected
+                                ? 'text-slate-950 fill-slate-950 scale-110'
+                                : 'text-slate-400 fill-slate-400'
+                                }`} />
+                            </div>
+
+                            <div className="space-y-4">
+                              {/* Day Blue Info Card with Image */}
+                              <div className={`rounded-2xl flex items-stretch border transition-all overflow-hidden min-h-[110px] sm:min-h-[130px] ${isSelected
+                                ? 'bg-[#eaf4ff] border-blue-150 shadow-sm'
+                                : 'bg-slate-50 border-slate-100'
+                                }`}>
+                                <div className="w-3/5 space-y-1 p-4 sm:p-5 pr-4 flex flex-col justify-center">
+                                  <span className="block font-black text-blue-600 text-sm sm:text-base">
+                                    Ngày {day.day}
+                                  </span>
+                                  <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
+                                    {day.title}
+                                  </h4>
+                                  <span className="flex items-center text-slate-500 text-[10px] sm:text-xs font-semibold space-x-1.5 mt-1.5">
+                                    <Utensils className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>{getDayMeals(tour.id, day.day)}</span>
+                                  </span>
+                                </div>
+                                <div className="w-2/5 relative flex-shrink-0">
+                                  <img
+                                    src={getDayImage(tour.id, day.day)}
+                                    alt={`Scenery of Day ${day.day}`}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Activity White Card */}
+                              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
+                                <p className="font-extrabold text-slate-800 text-xs sm:text-sm">
+                                  Hoạt động chính: {day.description}
+                                </p>
+                                <ul className="space-y-2">
+                                  {day.activities.map((activity, idx) => (
+                                    <li key={idx} className="flex items-start text-xs font-semibold text-slate-650">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 mr-2.5 mt-2 flex-shrink-0" />
+                                      <span className="leading-relaxed">{activity}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
+            {/* Inclusions and Exclusions */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <span className="block font-black text-slate-900 text-sm uppercase tracking-wide flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    <span>Dịch vụ bao gồm</span>
+                  </span>
+                  <ul className="space-y-2">
+                    {tour.includes.map((item, idx) => (
+                      <li key={idx} className="flex items-start text-xs font-semibold text-slate-650">
+                        <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-4">
+                  <span className="block font-black text-slate-900 text-sm uppercase tracking-wide flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span>Không bao gồm</span>
+                  </span>
+                  <ul className="space-y-2">
+                    {tour.excludes.map((item, idx) => (
+                      <li key={idx} className="flex items-start text-xs font-semibold text-slate-650">
+                        <X className="w-4 h-4 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Eco Commitments section */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50/50 rounded-3xl p-6 sm:p-8 border border-green-150 shadow-sm space-y-6">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-10 h-10 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-md flex-shrink-0">
+                  <Leaf className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Cam kết du lịch xanh & bền vững</h3>
+                  <p className="text-[10px] text-green-700 font-black uppercase tracking-wider mt-0.5">Mỗi hành động nhỏ, bảo vệ hành tinh xanh</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {tour.greenActions.map((action) => (
+                  <div key={action.id} className="bg-white p-4.5 rounded-2xl border border-green-100/80 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-extrabold text-slate-900 text-xs">{action.title}</span>
+                      <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-[10px] font-black whitespace-nowrap">
+                        +{action.points} Điểm Xanh
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{action.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Highly Authentic Customer Reviews */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-6">
+              {/* Streamlined Airbnb-style Header */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+                <div className="space-y-1">
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+                    <span>Đánh giá từ khách hàng</span>
+                    <span className="flex items-center text-amber-500 font-extrabold text-base sm:text-lg ml-1">
+                      <Star className="w-4.5 h-4.5 fill-current mr-1 animate-pulse" />
+                      {tour.rating}
+                    </span>
+                  </h2>
+                  <p className="text-[11px] font-semibold text-slate-400">
+                    Dựa trên {tour.reviews} đánh giá thực tế đã đối soát qua ERP du lịch
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[10px] font-extrabold text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100">
+                  <span className="flex items-center gap-1">Dịch vụ <strong className="text-slate-800">4.9 ★</strong></span>
+                  <span className="text-slate-300">•</span>
+                  <span className="flex items-center gap-1">Lịch trình <strong className="text-slate-800">4.8 ★</strong></span>
+                  <span className="text-slate-300">•</span>
+                  <span className="flex items-center gap-1">Độ hài lòng <strong className="text-slate-800">4.9 ★</strong></span>
+                </div>
+              </div>
+
+              {/* Minimalist Filter Chips */}
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: 'all', label: 'Tất cả', count: tourReviewsList.length },
+                  { id: 'high', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
+                  { id: 'images', label: 'Có ảnh', count: tourReviewsList.filter(r => r.images && r.images.length > 0).length },
+                  { id: 'vip', label: 'VIP', count: tourReviewsList.filter(r => r.tier === 'Thành viên Vàng' || r.tier === 'Thành viên Bạch kim').length }
+                ].map((chip) => (
+                  <button
+                    key={chip.id}
+                    onClick={() => setActiveReviewFilter(chip.id as any)}
+                    className={`flex items-center space-x-1.5 px-3 py-1.2 rounded-xl text-[10px] font-bold border transition-all duration-200 ${activeReviewFilter === chip.id
+                      ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                  >
+                    <span>{chip.label}</span>
+                    <span className={`px-1 py-0.2 rounded-full text-[9px] ${activeReviewFilter === chip.id ? 'bg-slate-850 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                      {chip.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Clean Reviews List */}
+              <div className="divide-y divide-slate-100">
+                {filteredReviewsList.map((review, idx) => {
+                  const originalIdx = tourReviewsList.findIndex(r => r.name === review.name);
+                  const likes = helpfulCounts[originalIdx] !== undefined ? helpfulCounts[originalIdx] : review.helpful;
+                  const hasLiked = helpfulCounts[originalIdx] !== undefined && helpfulCounts[originalIdx] > review.helpful;
+
+                  return (
+                    <div key={idx} className="py-5 first:pt-2 last:pb-2 space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative flex-shrink-0">
+                            <img
+                              src={review.avatar}
+                              alt={review.name}
+                              className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm"
+                            />
+                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border border-white rounded-full flex items-center justify-center" title="Khách thật đã xác thực">
+                              <Check className="w-1.5 h-1.5 text-white" />
+                            </span>
+                          </div>
+                          <div>
+                            <div className="flex items-center space-x-2 flex-wrap gap-y-0.5">
+                              <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{review.name}</span>
+                              <span className={`text-[8px] px-2 py-0.5 rounded-full font-black border tracking-wide uppercase ${review.tier === 'Thành viên Bạch kim'
+                                ? 'bg-purple-50 text-purple-700 border-purple-100'
+                                : review.tier === 'Thành viên Vàng'
+                                  ? 'bg-amber-50 text-amber-800 border-amber-100'
+                                  : 'bg-slate-50 text-slate-500 border-slate-100'
+                                }`}>
+                                {review.tier}
+                              </span>
+                            </div>
+                            <span className="block text-[10px] text-slate-400 font-bold mt-0.5">
+                              {review.tag} • <span className="text-emerald-600 font-extrabold">✓ Khách đi tour thực tế</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-end space-y-0.5">
+                          <div className="flex space-x-0.5">
+                            {Array(5).fill(0).map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-3 h-3 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-slate-200'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="block text-[9px] text-slate-400 font-bold">{review.date}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs font-semibold text-slate-600 leading-relaxed sm:pl-13 pr-2">
+                        "{review.comment}"
+                      </p>
+
+                      {/* Streamlined Real Image Gallery */}
+                      {review.images && review.images.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1 sm:pl-13">
+                          {review.images.map((imgUrl, imgIdx) => (
+                            <div key={imgIdx} className="relative group overflow-hidden rounded-xl border border-slate-100 shadow-sm w-16 h-16 sm:w-20 sm:h-20">
+                              <img
+                                src={imgUrl}
+                                alt={`Ảnh chụp thực tế`}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Streamlined Footer Actions */}
+                      <div className="flex items-center justify-between gap-3 pt-1.5 sm:pl-13 text-[10px] font-bold text-slate-400">
+                        <span className="inline-flex items-center text-green-600 bg-green-50/50 px-2 py-0.5 rounded-md border border-green-100">
+                          <Leaf className="w-3 h-3 mr-1" />
+                          <span>{review.greenAction}</span>
+                        </span>
+
+                        <button
+                          onClick={() => handleHelpfulClick(originalIdx)}
+                          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border transition-all duration-200 ${hasLiked
+                            ? 'bg-blue-50 border-blue-150 text-blue-605'
+                            : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                            }`}
+                        >
+                          <ThumbsUp className={`w-2.5 h-2.5 ${hasLiked ? 'fill-current' : ''}`} />
+                          <span>Hữu ích ({likes})</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredReviewsList.length === 0 && (
+                  <div className="text-center py-10 bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed my-2">
+                    <Star className="w-6 h-6 text-slate-300 mx-auto mb-1.5" />
+                    <p className="text-[11px] font-bold text-slate-450">Không có đánh giá nào phù hợp với bộ lọc đã chọn</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column - Premium Sticky Pricing Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-gradient-to-b from-white to-slate-50/50 rounded-[2.5rem] shadow-xl p-6 sticky top-24 border border-slate-200 space-y-6">
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm text-center space-y-2">
+                {tour.originalPrice && (
+                  <div className="flex items-center justify-center space-x-2">
+                    <span className="text-slate-450 line-through text-sm font-bold">
+                      {formatPrice(tour.originalPrice)}
+                    </span>
+                    <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm">
+                      -{Math.round((1 - tour.price / tour.originalPrice) * 100)}% GIẢM
+                    </span>
+                  </div>
+                )}
+                <div className="space-y-0.5">
+                  <p className="text-3xl font-black text-blue-600 tracking-tight">
+                    {formatPrice(tour.price)}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Mức giá tốt nhất cho mỗi hành khách</p>
+                </div>
+              </div>
+
+              {/* Minimalist flat list info rows */}
+              <div className="space-y-4 pt-2">
+                {/* Ngày khởi hành */}
+                <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
+                  <span className="text-slate-400 font-semibold">Ngày khởi hành</span>
+                  <span className="text-slate-900 font-black">
+                    {new Date(tour.departureDate).toLocaleDateString('vi-VN')}
+                  </span>
+                </div>
+
+                {/* Thời gian */}
+                <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
+                  <span className="text-slate-400 font-semibold">Thời gian</span>
+                  <span className="text-slate-900 font-black">{tour.duration}</span>
+                </div>
+
+                {/* Số chỗ còn lại */}
+                <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
+                  <span className="text-slate-400 font-semibold">Số chỗ còn lại</span>
+                  <span className="text-orange-650 font-black">
+                    {tour.availableSeats} chỗ
+                  </span>
+                </div>
+              </div>
+
+              {/* Main Booking Button */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const isLoggedIn = !!localStorage.getItem('userProfile');
+                    if (!isLoggedIn) {
+                      setShowAuthModal(true);
+                    } else {
+                      setShowBookingModal(true);
+                    }
+                  }}
+                  className="w-full bg-[#1a56db] hover:bg-[#1140b3] text-white py-3.5 rounded-2xl transition-all font-black text-sm shadow-md active:scale-[0.98] text-center"
+                >
+                  Đặt tour ngay
+                </button>
+                <p className="text-center text-xs text-slate-400 font-semibold">
+                  Miễn phí hủy trong 24h đầu tiên
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          {showBookingModal && (
+            <BookingModal
+              tour={tour}
+              onClose={() => setShowBookingModal(false)}
+            />
+          )}
+
+          {showAuthModal && (
+            <AuthModal
+              onClose={() => setShowAuthModal(false)}
+              onLoginSuccess={() => {
+                setShowAuthModal(false);
+                setShowBookingModal(true);
+              }}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
