@@ -9,7 +9,6 @@ import {
   Megaphone,
   Ticket,
   Leaf,
-  CalendarDays,
   CircleDollarSign,
   Settings,
   LogOut,
@@ -90,12 +89,6 @@ const MENU_ITEMS: MenuItem[] = [
     ],
   },
   {
-    title: 'Lịch công tác của tôi',
-    key: 'guide-schedule',
-    icon: CalendarDays,
-    path: '/guide/schedule',
-  },
-  {
     title: 'Tài chính & Kế toán',
     key: 'finance',
     icon: CircleDollarSign,
@@ -148,14 +141,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1 scrollbar-hide">
         {MENU_ITEMS.map((item) => {
           const hasChildren = !!item.children;
-          const isVisible = hasChildren
-            ? item.children!.some(child => hasAccess(user?.maVaiTro, child.key))
-            : hasAccess(user?.maVaiTro, item.key);
-
-          if (!isVisible) return null;
+          if (!hasAccess(user?.maVaiTro, item.key) && !item.children?.some(child => hasAccess(user?.maVaiTro, child.key))) {
+            return null;
+          }
 
           const isExpanded = expandedMenus.includes(item.title);
-          const isActive = activeMenu === item.title;
+          const isActive = activeMenu === item.title || item.children?.some(child => activeMenu === child.title);
           const Icon = item.icon;
 
           return (
@@ -163,10 +154,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Parent Item */}
               {hasChildren ? (
                 <button
-                  type="button"
                   onClick={() => toggleMenu(item.title)}
-                  aria-expanded={isExpanded}
-                  className={`w-full min-h-[44px] flex items-center justify-between px-4 py-3 rounded-[8px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:ring-offset-1 ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-[8px] transition-colors ${
                     isActive
                       ? 'bg-[#E8F6FF] border-l-[4px] border-l-[#89D4FF] text-[#89D4FF] font-bold'
                       : 'text-gray-600 hover:bg-[#F9F9FF] font-medium'
@@ -185,8 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <Link
                   to={item.path as string}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-[8px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:ring-offset-1 ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-[8px] transition-colors ${
                     isActive
                       ? 'bg-[#E8F6FF] border-l-[4px] border-l-[#89D4FF] text-[#89D4FF] font-bold'
                       : 'text-gray-600 hover:bg-[#F9F9FF] font-medium'
@@ -207,8 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <Link
                         key={child.title}
                         to={child.path}
-                        aria-current={isChildActive ? 'page' : undefined}
-                        className={`min-h-[44px] flex items-center pl-[44px] pr-4 py-2.5 rounded-[8px] transition-colors text-[14px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:ring-offset-1 ${
+                        className={`flex items-center pl-[44px] pr-4 py-2.5 rounded-[8px] transition-colors text-[14px] ${
                           isChildActive
                             ? 'text-[#89D4FF] font-semibold bg-[#FAFAFA]'
                             : 'text-gray-500 hover:bg-[#F9F9FF] hover:text-gray-700 font-medium'
@@ -228,9 +215,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Logout Button */}
       <div className="p-4 border-t border-[#E1F1FF]">
         <button
-          type="button"
           onClick={() => { logout(); navigate('/login'); }}
-          className="min-h-[44px] flex items-center gap-3 w-full px-4 py-3 rounded-[8px] text-[#BA1A1A] font-medium transition-colors hover:bg-[#FFF4F4] focus:outline-none focus:ring-2 focus:ring-[#BA1A1A] focus:ring-offset-1"
+          className="flex items-center gap-3 w-full px-4 py-3 rounded-[8px] text-[#BA1A1A] font-medium transition-colors hover:bg-[#FFF4F4]"
         >
           <LogOut size={20} />
           <span className="text-[14px]">Đăng xuất</span>

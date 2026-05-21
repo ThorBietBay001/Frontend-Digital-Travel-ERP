@@ -7,15 +7,44 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
 import { Plus, MoreVertical } from 'lucide-react';
-import { mockToursNeedGuide, type TourNeedGuide } from './mockData';
+import type { TourNeedGuide } from './mockData';
 import AssignGuideModal from './AssignGuideModal';
 import { dispatchService } from '../../services/dispatch';
 import type { NhanVienResponse } from '../../services/dispatch';
+import { tourInstanceService } from '../../services/tour-instance';
+import type { TourThucTeResponse } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
+
+const PENDING_STATUSES = new Set(['CHO_KICH_HOAT', 'MO_BAN']);
+
+const calcDurationDays = (start?: string, end?: string): string => {
+  if (!start || !end) return '—';
+  const s = new Date(start);
+  const e = new Date(end);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return '—';
+  const days = Math.max(1, Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  return `${days} ngày`;
+};
+
+const mapTourToUI = (t: TourThucTeResponse): TourNeedGuide => ({
+  id: t.maTourThucTe || '',
+  code: t.maTourThucTe || '',
+  name: t.tieuDeTour || '',
+  startDate: t.ngayKhoiHanh || '',
+  endDate: t.ngayKetThuc || '',
+  duration: calcDurationDays(t.ngayKhoiHanh, t.ngayKetThuc),
+  passengers: t.soKhachToiDa || 0,
+  requiredSkills: [],
+  status: PENDING_STATUSES.has(t.trangThai || '') ? 'pending' : 'assigned',
+  location: '',
+});
 
 const AssignGuide: React.FC = () => {
-  const [data, setData] = useState<TourNeedGuide[]>(mockToursNeedGuide);
+  const [data, setData] = useState<TourNeedGuide[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -23,48 +52,63 @@ const AssignGuide: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<TourNeedGuide | null>(null);
   const [availableGuides, setAvailableGuides] = useState<NhanVienResponse[]>([]);
+  const [guidesLoading, setGuidesLoading] = useState(false);
 
   const { user } = useAuth();
 
-  React.useEffect(() => {
+  const fetchTours = async () => {
     if (!hasAccess(user?.maVaiTro, 'dispatch')) return;
-    // TODO: Waiting for backend API.
-    // Hiện tại backend chưa hỗ trợ API riêng (hoặc thông tin trong danhSach_5 chưa đủ dữ liệu cho requireSkills, etc.)
-    // nên tạm thời giữ mock data cho phần danh sách Tour cần phân bổ.
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await tourInstanceService.danhSach({ trangThai: 'CHO_KICH_HOAT', page: 0, size: 200 });
+      const pending = unwrapPageContent(res).filter((t) => PENDING_STATUSES.has(t.trangThai || ''));
+      setData(pending.map(mapTourToUI));
+    } catch (err: unknown) {
+      setError(formatApiError(err, 'Lỗi khi tải danh sách tour'));
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchTours();
   }, [user]);
 
-  const openAssignModal = async (tour: TourNeedGuide, _mode: 'assign' | 'replace' = 'assign') => {
+  const openAssignModal = async (tour: TourNeedGuide) => {
     if (!hasAccess(user?.maVaiTro, 'dispatch')) return;
     setSelectedTour(tour);
     setModalOpen(true);
+    setGuidesLoading(true);
+    setAvailableGuides([]);
     try {
-      const res = await dispatchService.hdvKhaDung();
-      setAvailableGuides(res || []);
-    } catch (err) {
-      console.error(err);
+      const res = await dispatchService.hdvKhaDung({ maTourThucTe: tour.id });
+      setAvailableGuides(res);
+    } catch (err: unknown) {
+      console.error(formatApiError(err));
+      setAvailableGuides([]);
+    } finally {
+      setGuidesLoading(false);
     }
   };
 
   const handleAssign = async (tourId: string, guideId: string) => {
     try {
       await dispatchService.phanCong({ maTourThucTe: tourId, maNhanVien: guideId });
-      const guide = availableGuides.find(g => g.maNhanVien === guideId);
-      if (!guide) return;
-      
-      setData(prev => prev.map(t => 
-        t.id === tourId ? { ...t, status: 'assigned', assignedGuide: { id: guide.maNhanVien!, name: guide.hoTen! } } : t
-      ));
       setModalOpen(false);
-    } catch (error) {
-      alert('Lỗi phân công. ' + (error instanceof Error ? error.message : ''));
+      await fetchTours();
+    } catch (err: unknown) {
+      alert('Lỗi phân công: ' + formatApiError(err));
     }
   };
 
-  const filteredData = data.filter(t => 
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    t.code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredData = data.filter(
+    (t) =>
+      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
 
   const columns: Column<TourNeedGuide>[] = [
@@ -75,7 +119,6 @@ const AssignGuide: React.FC = () => {
         <div className="flex flex-col">
           <span className="font-bold text-[#00668A]">{record.code}</span>
           <span className="font-semibold text-gray-800 line-clamp-1">{record.name}</span>
-          {record.location && <span className="text-xs text-gray-500">{record.location}</span>}
         </div>
       ),
     },
@@ -84,32 +127,23 @@ const AssignGuide: React.FC = () => {
       title: 'Thời gian & Lịch trình',
       render: (record) => (
         <div className="flex flex-col text-sm">
-          <span className="text-gray-800 font-medium">{record.startDate} - {record.endDate}</span>
-          <span className="text-gray-500">[{record.duration}] - {record.passengers} khách</span>
+          <span className="text-gray-800 font-medium">
+            {record.startDate} - {record.endDate}
+          </span>
+          <span className="text-gray-500">
+            [{record.duration}] - {record.passengers} khách
+          </span>
         </div>
       ),
-    },
-    {
-      key: 'skills',
-      title: 'Yêu cầu kỹ năng',
-      render: (record) => (
-        <div className="flex flex-wrap gap-1 max-w-[200px]">
-          {record.requiredSkills.map((s, idx) => (
-            <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[11px] border border-gray-200">
-              {s}
-            </span>
-          ))}
-        </div>
-      )
     },
     {
       key: 'status',
       title: 'Trạng thái',
       align: 'center',
       render: (record) => (
-        <Badge 
-          label={record.status === 'assigned' ? 'Đã phân bổ' : 'Chờ phân bổ'} 
-          variant={record.status === 'assigned' ? 'success' : 'error'} 
+        <Badge
+          label={record.status === 'assigned' ? 'Đã phân bổ' : 'Chờ phân bổ'}
+          variant={record.status === 'assigned' ? 'success' : 'error'}
         />
       ),
     },
@@ -120,33 +154,13 @@ const AssignGuide: React.FC = () => {
       render: (record) => {
         if (record.status === 'pending') {
           return (
-            <Button 
-              variant="primary" 
-              size="sm" 
-              icon={<Plus size={16} />} 
-              onClick={() => openAssignModal(record, 'assign')}
-            >
+            <Button variant="primary" size="sm" icon={<Plus size={16} />} onClick={() => openAssignModal(record)}>
               Phân bổ ngay
             </Button>
           );
         }
-        
-        // Assigned
-        const guide = record.assignedGuide;
         return (
-          <div className="flex items-center justify-end gap-3">
-            {guide && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#E8F6FF] text-[#00668A] flex items-center justify-center font-bold text-xs">
-                  {guide.name.charAt(0)}
-                </div>
-                <div className="text-left hidden lg:block">
-                  <p className="text-xs font-bold text-gray-800">{guide.name}</p>
-                </div>
-              </div>
-            )}
-            <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} onClick={() => openAssignModal(record, 'replace')} />
-          </div>
+          <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} onClick={() => openAssignModal(record)} />
         );
       },
     },
@@ -156,89 +170,36 @@ const AssignGuide: React.FC = () => {
     <MainLayout
       activeMenu="Phân công HDV"
       expandedMenus={['Điều phối Hướng dẫn viên']}
-      breadcrumb={[
-        { label: 'Điều phối Hướng dẫn viên' },
-        { label: 'Phân công HDV' },
-      ]}
+      breadcrumb={[{ label: 'Điều phối Hướng dẫn viên' }, { label: 'Phân công HDV' }]}
     >
       <div className="flex flex-col h-full gap-6">
-        {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-[32px] font-bold text-[#121C2C]">Danh sách chờ phân bổ</h1>
-          <p className="text-gray-500 text-sm">Quản lý lịch trình và phân bổ nhân sự dẫn đoàn.</p>
+          <p className="text-gray-500 text-sm">Tour trạng thái CHO_KICH_HOAT / MO_BAN — lọc theo OpenAPI.</p>
         </div>
 
-        {/* Dashboard KPIs
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-[#E1F1FF] flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#FFF4F4] text-[#BA1A1A] flex items-center justify-center">
-              <AlertTriangle size={24} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Cần phân bổ gấp</p>
-              <p className="text-2xl font-bold text-[#121C2C]">12</p>
-              <p className="text-[11px] text-gray-400">Trong 48h tới</p>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-[#E1F1FF] flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center">
-              <CheckCircle2 size={24} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">HDV Sẵn sàng</p>
-              <p className="text-2xl font-bold text-[#121C2C]">45</p>
-              <p className="text-[11px] text-gray-400">Trên tổng số 120</p>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-[#E1F1FF] flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#FFF8E6] text-[#D97706] flex items-center justify-center">
-              <Bus size={24} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Tour đang chạy</p>
-              <p className="text-2xl font-bold text-[#121C2C]">28</p>
-              <p className="text-[11px] text-gray-400">Hôm nay</p>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-[#E1F1FF] flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#F4F9FF] text-[#00668A] flex items-center justify-center">
-              <Star size={24} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Tỷ lệ hài lòng</p>
-              <p className="text-2xl font-bold text-[#121C2C]">4.8</p>
-              <p className="text-[11px] text-gray-400">Trung bình tháng</p>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Toolbar */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-[#E1F1FF] flex flex-wrap gap-4 items-center justify-between">
+        <div className="bg-white p-4 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-center justify-between">
           <div className="w-[300px]">
-            <SearchInput 
-              placeholder="Tìm mã hoặc tên tour cần phân bổ..." 
-              value={searchTerm}
-              onChange={setSearchTerm}
-            />
+            <SearchInput placeholder="Tìm mã hoặc tên tour..." value={searchTerm} onChange={setSearchTerm} />
           </div>
-          <Button variant="secondary">Lọc nâng cao</Button>
+          <Button variant="secondary" onClick={fetchTours}>
+            Làm mới
+          </Button>
         </div>
 
-        {/* Table Area */}
-        <div className="bg-white rounded-xl shadow-sm border border-[#E1F1FF] flex-1 overflow-hidden">
-          <Table<TourNeedGuide>
-            columns={columns}
-            dataSource={paginatedData}
-            rowKey="id"
-          />
+        <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex-1 relative min-h-[300px] overflow-hidden">
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
+          ) : (
+            <Table<TourNeedGuide> columns={columns} dataSource={paginatedData} rowKey="id" emptyText="Không có tour chờ phân bổ" />
+          )}
         </div>
 
-        <Pagination 
-          current={page}
-          pageSize={pageSize}
-          total={filteredData.length}
-          onChange={setPage}
-        />
+        <Pagination current={page} pageSize={pageSize} total={filteredData.length} onChange={setPage} />
       </div>
 
       <AssignGuideModal
@@ -247,6 +208,7 @@ const AssignGuide: React.FC = () => {
         tour={selectedTour}
         onAssign={handleAssign}
         availableGuides={availableGuides}
+        guidesLoading={guidesLoading}
       />
     </MainLayout>
   );

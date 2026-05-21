@@ -2,7 +2,6 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { normalizeRole } from '../config/rolePermissions';
 
 interface ProtectedRouteProps {
   allowedRoles: string[];
@@ -16,9 +15,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children 
     return <Navigate to="/login" replace />;
   }
 
-  const normalizedRole = normalizeRole(user.maVaiTro);
+  // ADMIN always has full system access – bypass all role checks
+  if (user.maVaiTro === 'ADMIN' || user.maVaiTro === 'ROLE_ADMIN') {
+    return <>{children}</>;
+  }
 
-  if (!allowedRoles.includes(normalizedRole)) {
+  const hasRequiredRole = allowedRoles.some(role => user.maVaiTro.includes(role));
+
+  if (!hasRequiredRole) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md text-center">

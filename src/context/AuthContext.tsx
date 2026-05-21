@@ -21,15 +21,6 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getRoleFromToken = (decoded: any): string => {
-  if (decoded.maVaiTro) return decoded.maVaiTro;
-  if (decoded.role) return decoded.role;
-  if (Array.isArray(decoded.roles) && decoded.roles.length > 0) {
-    return decoded.roles[0];
-  }
-  return '';
-};
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -42,11 +33,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (token) {
       try {
         const decoded = jwtDecode<any>(token);
+        // Assuming payload has these fields, adjust if necessary based on your actual JWT structure
+        const rawRole = decoded.maVaiTro || decoded.role || '';
         const user: User = {
           hoTen: decoded.hoTen || decoded.name || 'User',
-          maVaiTro: getRoleFromToken(decoded),
+          maVaiTro: rawRole.trim().toUpperCase().replace(/^ROLE_/, ''),
           tenHienThi: decoded.tenHienThi || decoded.sub || 'User',
         };
+        console.log('Current role:', user.maVaiTro);
         setAuthState({
           isAuthenticated: true,
           user,
@@ -61,9 +55,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = (token: string, user: User) => {
     localStorage.setItem('token', token);
+    const normalizedUser = {
+      ...user,
+      maVaiTro: user.maVaiTro.trim().toUpperCase().replace(/^ROLE_/, ''),
+    };
+    console.log('Current role:', normalizedUser.maVaiTro);
     setAuthState({
       isAuthenticated: true,
-      user,
+      user: normalizedUser,
       token,
     });
   };

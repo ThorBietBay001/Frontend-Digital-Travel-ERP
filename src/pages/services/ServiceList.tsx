@@ -20,6 +20,7 @@ import type {
 import { servicesService } from '../../services/services';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { formatApiError } from '../../utils/apiHelpers';
 
 const ServiceList: React.FC = () => {
   const [data, setData] = useState<Service[]>([]);
@@ -64,21 +65,20 @@ const ServiceList: React.FC = () => {
     setError(null);
     try {
       const [rooms, extras] = await Promise.all([
-        servicesService.danhSach_1(),
-        servicesService.danhSach_3(),
+        servicesService.danhSachLoaiPhong(),
+        servicesService.danhSachDichVuThem(),
       ]);
-      const roomList = rooms ? rooms.map(mapRoom) : [];
-      const extraList = extras ? extras.map(mapExtra) : [];
-      setData([...roomList, ...extraList]);
+      setData([...rooms.map(mapRoom), ...extras.map(mapExtra)]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
-      setError(msg);
+      setError(formatApiError(err, 'Lỗi khi tải dữ liệu dịch vụ'));
     } finally {
       setLoading(false);
     }
   };
 
-  React.useEffect(() => { getAll(); }, [user]);
+  React.useEffect(() => {
+    getAll();
+  }, [user]);
 
   const openModal = (mode: typeof modalState.mode, service?: Service) => {
     setModalState({ isOpen: true, mode, selectedService: service });
@@ -89,64 +89,88 @@ const ServiceList: React.FC = () => {
     try {
       if (modalState.mode === 'create') {
         if (serviceData.category === 'room') {
-          const payload: LoaiPhongRequest = { tenLoai: serviceData.name, mucPhuThu: serviceData.price, trangThai: serviceData.status.toUpperCase() };
-          await servicesService.taoMoi_1(payload);
+          const payload: LoaiPhongRequest = {
+            tenLoai: serviceData.name,
+            mucPhuThu: serviceData.price,
+            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+          };
+          await servicesService.taoLoaiPhong(payload);
         } else {
-          const payload: DichVuThemRequest = { ten: serviceData.name, donViTinh: serviceData.unit, donGia: serviceData.price, trangThai: serviceData.status.toUpperCase() };
-          await servicesService.taoMoi_3(payload);
+          const payload: DichVuThemRequest = {
+            ten: serviceData.name,
+            donViTinh: serviceData.unit,
+            donGia: serviceData.price,
+            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+          };
+          await servicesService.taoDichVuThem(payload);
         }
       } else if (modalState.mode === 'edit') {
         if (serviceData.category === 'room') {
-          const payload: LoaiPhongRequest = { tenLoai: serviceData.name, mucPhuThu: serviceData.price, trangThai: serviceData.status.toUpperCase() };
-          await servicesService.capNhat_1(serviceData.id, payload);
+          const payload: LoaiPhongRequest = {
+            tenLoai: serviceData.name,
+            mucPhuThu: serviceData.price,
+            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+          };
+          await servicesService.capNhatLoaiPhong(serviceData.id, payload);
         } else {
-          const payload: DichVuThemRequest = { ten: serviceData.name, donViTinh: serviceData.unit, donGia: serviceData.price, trangThai: serviceData.status.toUpperCase() };
-          await servicesService.capNhat_3(serviceData.id, payload);
+          const payload: DichVuThemRequest = {
+            ten: serviceData.name,
+            donViTinh: serviceData.unit,
+            donGia: serviceData.price,
+            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+          };
+          await servicesService.capNhatDichVuThem(serviceData.id, payload);
         }
       }
       closeModal();
-      getAll();
+      await getAll();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Xảy ra lỗi';
-      alert('Lỗi: ' + msg);
+      alert('Lỗi: ' + formatApiError(err));
     }
   };
 
   const handleDelete = async () => {
-    if (modalState.selectedService) {
+    if (!modalState.selectedService) return;
+    try {
+      if (modalState.selectedService.category === 'room') {
+        await servicesService.xoaLoaiPhong(modalState.selectedService.id);
+      } else {
+        await servicesService.xoaDichVuThem(modalState.selectedService.id);
+      }
+      closeModal();
+      await getAll();
+    } catch (err: unknown) {
+      const payload =
+        modalState.selectedService.category === 'room'
+          ? ({
+              tenLoai: modalState.selectedService.name,
+              mucPhuThu: modalState.selectedService.price,
+              trangThai: 'INACTIVE',
+            } as LoaiPhongRequest)
+          : ({
+              ten: modalState.selectedService.name,
+              donGia: modalState.selectedService.price,
+              trangThai: 'INACTIVE',
+            } as DichVuThemRequest);
+
       try {
         if (modalState.selectedService.category === 'room') {
-          await servicesService.xoa_1(modalState.selectedService.id);
+          await servicesService.capNhatLoaiPhong(modalState.selectedService.id, payload as LoaiPhongRequest);
         } else {
-          await servicesService.xoa_3(modalState.selectedService.id);
+          await servicesService.capNhatDichVuThem(modalState.selectedService.id, payload as DichVuThemRequest);
         }
         closeModal();
-        getAll();
-      } catch (err: unknown) {
-        // Nếu backend báo đã sử dụng → chuyển inactive
-        const payload = modalState.selectedService.category === 'room'
-          ? { tenLoai: modalState.selectedService.name, trangThai: 'INACTIVE' } as LoaiPhongRequest
-          : { ten: modalState.selectedService.name, donGia: modalState.selectedService.price, trangThai: 'INACTIVE' } as DichVuThemRequest;
-
-        try {
-          if (modalState.selectedService.category === 'room') {
-            await servicesService.capNhat_1(modalState.selectedService.id, payload as LoaiPhongRequest);
-          } else {
-            await servicesService.capNhat_3(modalState.selectedService.id, payload as DichVuThemRequest);
-          }
-          closeModal();
-          getAll();
-        } catch {
-          const msg = err instanceof Error ? err.message : 'Xảy ra lỗi khi xóa';
-          alert('Lỗi: ' + msg);
-        }
+        await getAll();
+      } catch {
+        alert('Lỗi: ' + formatApiError(err));
       }
     }
   };
 
   const filteredData = data.filter((service) => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          service.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.code.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === '' || categoryFilter === 'all' || service.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -162,7 +186,7 @@ const ServiceList: React.FC = () => {
     {
       key: 'name',
       title: 'Tên Dịch Vụ',
-      render: (record) => <span className="font-medium text-gray-800">{record.name}</span>
+      render: (record) => <span className="font-medium text-gray-800">{record.name}</span>,
     },
     {
       key: 'category',
@@ -172,13 +196,9 @@ const ServiceList: React.FC = () => {
           label={record.category === 'room' ? 'Loại phòng' : 'Dịch vụ thêm'}
           variant={record.category === 'room' ? 'info' : 'neutral'}
         />
-      )
+      ),
     },
-    {
-      key: 'unit',
-      title: 'Đơn vị tính',
-      dataIndex: 'unit',
-    },
+    { key: 'unit', title: 'Đơn vị tính', dataIndex: 'unit' },
     {
       key: 'price',
       title: 'Đơn Giá (VND)',
@@ -214,10 +234,7 @@ const ServiceList: React.FC = () => {
     <MainLayout
       activeMenu="Dịch vụ Bổ sung"
       expandedMenus={['Quản lý Sản phẩm Tour']}
-      breadcrumb={[
-        { label: 'Quản lý Sản phẩm Tour' },
-        { label: 'Dịch vụ Bổ sung' },
-      ]}
+      breadcrumb={[{ label: 'Quản lý Sản phẩm Tour' }, { label: 'Dịch vụ Bổ sung' }]}
       userName="Admin Hệ Thống"
       userRole="Quản trị viên"
     >
@@ -241,7 +258,7 @@ const ServiceList: React.FC = () => {
               options={[
                 { label: 'Tất cả', value: 'all' },
                 { label: 'Loại phòng', value: 'room' },
-                { label: 'Dịch vụ thêm', value: 'extra' }
+                { label: 'Dịch vụ thêm', value: 'extra' },
               ]}
               value={categoryFilter}
               onChange={setCategoryFilter}
@@ -258,12 +275,7 @@ const ServiceList: React.FC = () => {
           ) : error ? (
             <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
           ) : (
-            <Table<Service>
-              columns={columns}
-              dataSource={paginatedData}
-              rowKey="id"
-              emptyText="Chưa có dịch vụ nào"
-            />
+            <Table<Service> columns={columns} dataSource={paginatedData} rowKey="id" emptyText="Chưa có dịch vụ nào" />
           )}
         </div>
 
@@ -276,7 +288,7 @@ const ServiceList: React.FC = () => {
         title={modalState.mode === 'create' ? 'Tạo mới Dịch vụ' : 'Cập nhật Dịch vụ'}
         size="md"
       >
-        {(modalState.isOpen && (modalState.mode === 'create' || modalState.mode === 'edit')) && (
+        {modalState.isOpen && (modalState.mode === 'create' || modalState.mode === 'edit') && (
           <ServiceForm
             mode={modalState.mode as 'create' | 'edit'}
             initialData={modalState.selectedService}
@@ -299,9 +311,11 @@ const ServiceList: React.FC = () => {
         }
       >
         <div className="text-gray-700">
-          <p>Bạn có chắc chắn muốn xóa dịch vụ <strong>{modalState.selectedService?.name}</strong>?</p>
+          <p>
+            Bạn có chắc chắn muốn xóa dịch vụ <strong>{modalState.selectedService?.name}</strong>?
+          </p>
           <p className="mt-2 p-3 bg-orange-50 text-orange-700 rounded-lg text-sm border border-orange-100">
-            Nếu dịch vụ đã được sử dụng trong đơn hàng, hệ thống sẽ chuyển sang trạng thái 'Ngừng cung cấp'.
+            Nếu dịch vụ đã được sử dụng trong đơn hàng, hệ thống sẽ chuyển sang trạng thái Ngừng cung cấp.
           </p>
         </div>
       </Modal>

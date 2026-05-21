@@ -8,17 +8,45 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
 import { Search, RotateCcw, Eye, UserPlus, Star } from 'lucide-react';
-import { type Guide } from './mockData';
+import type { Guide } from './mockData';
 import { useNavigate } from 'react-router-dom';
 import GuideProfileModal from './GuideProfileModal';
 import { dispatchService } from '../../services/dispatch';
 import type { NhanVienResponse } from '../../services/dispatch';
+import { accountsService } from '../../services/system/accounts';
+import { tourInstanceService } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
+import type { NangLucResponse } from '../../services/system/hr';
+
+const parseCommaList = (value?: string): string[] => {
+  if (!value) return [];
+  return value.split(',').map((s) => s.trim()).filter(Boolean);
+};
+
+const mapNhanVienToGuide = (g: NhanVienResponse, nangLuc?: NangLucResponse): Guide => ({
+  id: g.maNhanVien || '',
+  code: g.maNhanVien || '',
+  name: g.hoTen || g.tenDangNhap || '',
+  languages: parseCommaList(nangLuc?.ngonNgu).length > 0 ? parseCommaList(nangLuc?.ngonNgu) : ['Tiếng Việt'],
+  skills: [...parseCommaList(nangLuc?.chuyenMon), ...parseCommaList(nangLuc?.chungChi)],
+  rating: nangLuc?.danhGia ?? 0,
+  status:
+    g.trangThaiLamViec === 'AVAILABLE' || g.trangThaiLamViec === 'SAN_SANG'
+      ? 'available'
+      : g.trangThaiLamViec === 'BUSY' || g.trangThaiLamViec === 'BAN'
+        ? 'busy'
+        : 'resting',
+  completedTours: nangLuc?.soDanhGia ?? 0,
+});
 
 const GuideList: React.FC = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<Guide[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refTourCode, setRefTourCode] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLang, setFilterLang] = useState('all');
   const [filterSkill, setFilterSkill] = useState('all');
@@ -29,28 +57,42 @@ const GuideList: React.FC = () => {
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
 
   const { user } = useAuth();
+  const isAdmin = user?.maVaiTro === 'ADMIN';
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'dispatch')) return;
+    setLoading(true);
+    setError(null);
     try {
-      const res = await dispatchService.hdvKhaDung();
-      const mapped = (res || []).map((g: NhanVienResponse): Guide => ({
-        id: g.maNhanVien || '',
-        code: g.maNhanVien || '',
-        name: g.hoTen || g.tenDangNhap || '',
-        languages: ['Tiếng Việt'], // Mock
-        skills: ['Trekking'], // Mock
-        rating: 5.0,
-        status: g.trangThaiLamViec === 'AVAILABLE' ? 'available' : g.trangThaiLamViec === 'BUSY' ? 'busy' : 'resting',
-        completedTours: 0,
-      }));
-      setData(mapped);
-    } catch(err) {
-      console.error(err);
+      let guides: NhanVienResponse[] = [];
+
+      if (isAdmin) {
+        const res = await accountsService.danhSachNhanVien({ maVaiTro: 'HDV', page: 0, size: 200 });
+        guides = unwrapPageContent(res).filter((nv) => nv.maVaiTro === 'HDV' || nv.maVaiTro === 'ROLE_HDV');
+      } else {
+        const tours = await tourInstanceService.danhSach({ trangThai: 'CHO_KICH_HOAT', page: 0, size: 1 });
+        const refTour = unwrapPageContent(tours)[0];
+        if (!refTour?.maTourThucTe) {
+          setError('Chưa có tour thực tế để tham chiếu. Vui lòng tạo tour trước.');
+          setData([]);
+          return;
+        }
+        setRefTourCode(refTour.maTourThucTe);
+        guides = await dispatchService.hdvKhaDung({ maTourThucTe: refTour.maTourThucTe });
+      }
+
+      setData(guides.map((g) => mapNhanVienToGuide(g)));
+    } catch (err: unknown) {
+      setError(formatApiError(err, 'Lỗi khi tải danh sách HDV'));
+      setData([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  React.useEffect(() => { getAll(); }, [user]);
+  React.useEffect(() => {
+    getAll();
+  }, [user]);
 
   const openProfileModal = (guide: Guide) => {
     setSelectedGuide(guide);
@@ -61,21 +103,27 @@ const GuideList: React.FC = () => {
     setSearchTerm('');
     setFilterLang('all');
     setFilterSkill('all');
+    setPage(1);
+    getAll();
   };
 
-  const filteredData = data.filter(g => {
-    const matchesSearch = g.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          g.code.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesLang = filterLang === 'all' || g.languages.some(l => l.includes(filterLang));
+  const filteredData = data.filter((g) => {
+    const matchesSearch =
+      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLang = filterLang === 'all' || g.languages.some((l) => l.includes(filterLang));
     const matchesSkill = filterSkill === 'all' || g.skills.includes(filterSkill);
-
     return matchesSearch && matchesLang && matchesSkill;
   });
-  
+
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
 
   const columns: Column<Guide>[] = [
+    {
+      key: 'code',
+      title: 'Mã HDV',
+      render: (record) => <span className="font-bold text-[#00668A]">{record.code}</span>,
+    },
     {
       key: 'guide',
       title: 'Hướng dẫn viên',
@@ -84,32 +132,31 @@ const GuideList: React.FC = () => {
           <div className="w-10 h-10 rounded-full bg-[#E8F6FF] text-[#00668A] flex items-center justify-center font-bold text-sm">
             {record.name.charAt(0)}
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-[#121C2C]">{record.name}</span>
-            <span className="text-xs text-gray-500">{record.code}</span>
-          </div>
+          <span className="font-bold text-[#121C2C]">{record.name}</span>
         </div>
       ),
     },
     {
       key: 'languages',
       title: 'Ngôn ngữ',
-      render: (record) => (
-        <span className="text-sm text-gray-700">{record.languages.join(', ')}</span>
-      ),
+      render: (record) => <span className="text-sm text-gray-700">{record.languages.join(', ') || '—'}</span>,
     },
     {
       key: 'skills',
       title: 'Thế mạnh',
       render: (record) => (
         <div className="flex flex-wrap gap-1 max-w-[200px]">
-          {record.skills.map((s, idx) => (
-            <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[11px] border border-gray-200">
-              {s}
-            </span>
-          ))}
+          {record.skills.length > 0 ? (
+            record.skills.slice(0, 3).map((s, idx) => (
+              <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[11px] border border-gray-200">
+                {s}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-400 text-xs">—</span>
+          )}
         </div>
-      )
+      ),
     },
     {
       key: 'rating',
@@ -117,10 +164,9 @@ const GuideList: React.FC = () => {
       render: (record) => (
         <div className="flex items-center gap-1.5 text-sm">
           <Star size={14} className="text-amber-400" fill="currentColor" />
-          <span className="font-bold text-gray-800">{record.rating}</span>
-          <span className="text-xs text-gray-500">({record.completedTours} tours)</span>
+          <span className="font-bold text-gray-800">{record.rating > 0 ? record.rating.toFixed(1) : '—'}</span>
         </div>
-      )
+      ),
     },
     {
       key: 'status',
@@ -138,16 +184,11 @@ const GuideList: React.FC = () => {
       align: 'right',
       render: (record) => (
         <div className="flex items-center justify-end gap-1">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            icon={<Eye size={18} />} 
-            onClick={() => openProfileModal(record)} 
-          />
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            icon={<UserPlus size={18} />} 
+          <Button variant="ghost" size="sm" icon={<Eye size={18} />} onClick={() => openProfileModal(record)} />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<UserPlus size={18} />}
             onClick={() => navigate('/dispatch/assign')}
             className="text-[#00668A]"
             title="Chuyển sang Phân công"
@@ -161,83 +202,57 @@ const GuideList: React.FC = () => {
     <MainLayout
       activeMenu="Danh Sách HDV"
       expandedMenus={['Điều phối Hướng dẫn viên']}
-      breadcrumb={[
-        { label: 'Điều phối Hướng dẫn viên' },
-        { label: 'Danh Sách HDV' },
-      ]}
+      breadcrumb={[{ label: 'Điều phối Hướng dẫn viên' }, { label: 'Danh Sách HDV' }]}
     >
       <div className="flex flex-col h-full gap-6">
-        {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-[32px] font-bold text-[#121C2C]">Danh sách Hướng dẫn viên</h1>
-          <p className="text-gray-500 text-sm">Quay lại danh sách tổng hợp tất cả Hướng dẫn viên của công ty.</p>
+          <p className="text-gray-500 text-sm">
+            {isAdmin
+              ? 'Nguồn: GET /api/quan-tri/nhan-vien?maVaiTro=HDV'
+              : `Nguồn: GET /api/dieu-hanh/hdv-kha-dung${refTourCode ? ` (tour ${refTourCode})` : ''}`}
+          </p>
         </div>
 
-        {/* Filter Toolbar */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-[#E1F1FF] flex flex-wrap gap-4 items-end">
+        <div className="bg-white p-5 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[200px]">
-            <SearchInput 
-              placeholder="Tìm tên, mã HDV..." 
-              value={searchTerm}
-              onChange={setSearchTerm}
-            />
+            <SearchInput placeholder="Tìm tên, mã HDV..." value={searchTerm} onChange={setSearchTerm} />
           </div>
-          
           <div className="w-[180px]">
-            <Select 
+            <Select
               options={[
                 { label: 'Tất cả ngôn ngữ', value: 'all' },
                 { label: 'Tiếng Việt', value: 'Tiếng Việt' },
                 { label: 'Tiếng Anh', value: 'Tiếng Anh' },
-                { label: 'Tiếng Trung', value: 'Tiếng Trung' },
               ]}
               value={filterLang}
               onChange={setFilterLang}
               placeholder="Ngôn ngữ"
             />
           </div>
-
-          <div className="w-[180px]">
-            <Select 
-              options={[
-                { label: 'Tất cả kỹ năng', value: 'all' },
-                { label: 'Trekking', value: 'Trekking' },
-                { label: 'Lặn biển', value: 'Lặn biển' },
-                { label: 'Sơ cứu', value: 'Sơ cứu' },
-                { label: 'Văn hóa', value: 'Văn hóa' },
-                { label: 'Chụp ảnh', value: 'Chụp ảnh' }
-              ]}
-              value={filterSkill}
-              onChange={setFilterSkill}
-              placeholder="Kỹ năng/Thế mạnh"
-            />
-          </div>
-
           <div className="flex gap-2">
             <Button variant="secondary" icon={<RotateCcw size={18} />} onClick={handleReset}>
               Làm mới
             </Button>
-            <Button variant="primary" icon={<Search size={18} />}>
+            <Button variant="primary" icon={<Search size={18} />} onClick={() => setPage(1)}>
               Tìm kiếm
             </Button>
           </div>
         </div>
 
-        {/* Table Area */}
-        <div className="bg-white rounded-xl shadow-sm border border-[#E1F1FF] flex-1 overflow-hidden">
-          <Table<Guide>
-            columns={columns}
-            dataSource={paginatedData}
-            rowKey="id"
-          />
+        <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex-1 relative min-h-[300px] overflow-hidden">
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
+          ) : (
+            <Table<Guide> columns={columns} dataSource={paginatedData} rowKey="id" emptyText="Không có HDV" />
+          )}
         </div>
 
-        <Pagination 
-          current={page}
-          pageSize={pageSize}
-          total={filteredData.length}
-          onChange={setPage}
-        />
+        <Pagination current={page} pageSize={pageSize} total={filteredData.length} onChange={setPage} />
       </div>
 
       <GuideProfileModal

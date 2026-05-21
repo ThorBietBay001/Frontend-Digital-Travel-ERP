@@ -1,60 +1,77 @@
-import api from '../services/api';
+import api from './api';
+import { unwrapApiData } from '../utils/apiHelpers';
 import type {
-    LoaiPhongRequest,
-    ApiResponseLoaiPhongResponse,
-    ApiResponseVoid,
-    DichVuThemRequest,
-    ApiResponseDichVuThemResponse,
-    ApiResponseListLoaiPhongResponse,
-    ApiResponseListDichVuThemResponse,
-    LoaiPhongResponse,
-    DichVuThemResponse
+  LoaiPhongRequest,
+  ApiResponseLoaiPhongResponse,
+  ApiResponseVoid,
+  DichVuThemRequest,
+  ApiResponseDichVuThemResponse,
+  ApiResponseListLoaiPhongResponse,
+  ApiResponseListDichVuThemResponse,
+  LoaiPhongResponse,
+  DichVuThemResponse,
 } from '../pages/services/mockData';
 
 export type {
-    LoaiPhongRequest,
-    LoaiPhongResponse,
-    DichVuThemRequest,
-    DichVuThemResponse,
-    ApiResponseLoaiPhongResponse,
-    ApiResponseVoid,
-    ApiResponseDichVuThemResponse,
-    ApiResponseListLoaiPhongResponse,
-    ApiResponseListDichVuThemResponse,
+  LoaiPhongRequest,
+  LoaiPhongResponse,
+  DichVuThemRequest,
+  DichVuThemResponse,
+  ApiResponseLoaiPhongResponse,
+  ApiResponseVoid,
+  ApiResponseDichVuThemResponse,
+  ApiResponseListLoaiPhongResponse,
+  ApiResponseListDichVuThemResponse,
 };
 
-
 export const servicesService = {
-    capNhat_1: async (id: string, data: LoaiPhongRequest) => {
-        const response = await api.put<ApiResponseLoaiPhongResponse>(`/api/san-pham/loai-phong/${id}`, data);
-        return response.data.data;
-    },
-    xoa_1: async (id: string) => {
-        const response = await api.delete<ApiResponseVoid>(`/api/san-pham/loai-phong/${id}`);
-        return response.data.data;
-    },
-    capNhat_3: async (id: string, data: DichVuThemRequest) => {
-        const response = await api.put<ApiResponseDichVuThemResponse>(`/api/san-pham/dich-vu-them/${id}`, data);
-        return response.data.data;
-    },
-    xoa_3: async (id: string) => {
-        const response = await api.delete<ApiResponseVoid>(`/api/san-pham/dich-vu-them/${id}`);
-        return response.data.data;
-    },
-    danhSach_1: async () => {
-        const response = await api.get<ApiResponseListLoaiPhongResponse>('/api/san-pham/loai-phong');
-        return response.data.data;
-    },
-    taoMoi_1: async (data: LoaiPhongRequest) => {
-        const response = await api.post<ApiResponseLoaiPhongResponse>('/api/san-pham/loai-phong', data);
-        return response.data.data;
-    },
-    danhSach_3: async () => {
-        const response = await api.get<ApiResponseListDichVuThemResponse>('/api/san-pham/dich-vu-them');
-        return response.data.data;
-    },
-    taoMoi_3: async (data: DichVuThemRequest) => {
-        const response = await api.post<ApiResponseDichVuThemResponse>('/api/san-pham/dich-vu-them', data);
-        return response.data.data;
-    }
+  danhSachLoaiPhong: async (): Promise<LoaiPhongResponse[]> => {
+    const response = await api.get<ApiResponseListLoaiPhongResponse>('/api/san-pham/loai-phong');
+    return unwrapApiData(response) ?? [];
+  },
+
+  taoLoaiPhong: async (data: LoaiPhongRequest): Promise<LoaiPhongResponse | undefined> => {
+    const response = await api.post<ApiResponseLoaiPhongResponse>('/api/san-pham/loai-phong', data);
+    return unwrapApiData(response);
+  },
+
+  capNhatLoaiPhong: async (id: string, data: LoaiPhongRequest): Promise<LoaiPhongResponse | undefined> => {
+    const response = await api.put<ApiResponseLoaiPhongResponse>(`/api/san-pham/loai-phong/${id}`, data);
+    return unwrapApiData(response);
+  },
+
+  xoaLoaiPhong: async (id: string): Promise<void> => {
+    const response = await api.delete<ApiResponseVoid>(`/api/san-pham/loai-phong/${id}`);
+    unwrapApiData(response);
+  },
+
+  danhSachDichVuThem: async (): Promise<DichVuThemResponse[]> => {
+    const response = await api.get<ApiResponseListDichVuThemResponse>('/api/san-pham/dich-vu-them');
+    return unwrapApiData(response) ?? [];
+  },
+
+  taoDichVuThem: async (data: DichVuThemRequest): Promise<DichVuThemResponse | undefined> => {
+    const response = await api.post<ApiResponseDichVuThemResponse>('/api/san-pham/dich-vu-them', data);
+    return unwrapApiData(response);
+  },
+
+  capNhatDichVuThem: async (id: string, data: DichVuThemRequest): Promise<DichVuThemResponse | undefined> => {
+    const response = await api.put<ApiResponseDichVuThemResponse>(`/api/san-pham/dich-vu-them/${id}`, data);
+    return unwrapApiData(response);
+  },
+
+  xoaDichVuThem: async (id: string): Promise<void> => {
+    const response = await api.delete<ApiResponseVoid>(`/api/san-pham/dich-vu-them/${id}`);
+    unwrapApiData(response);
+  },
+
+  /** @deprecated */
+  danhSach_1: () => servicesService.danhSachLoaiPhong(),
+  danhSach_3: () => servicesService.danhSachDichVuThem(),
+  taoMoi_1: (data: LoaiPhongRequest) => servicesService.taoLoaiPhong(data),
+  taoMoi_3: (data: DichVuThemRequest) => servicesService.taoDichVuThem(data),
+  capNhat_1: (id: string, data: LoaiPhongRequest) => servicesService.capNhatLoaiPhong(id, data),
+  capNhat_3: (id: string, data: DichVuThemRequest) => servicesService.capNhatDichVuThem(id, data),
+  xoa_1: (id: string) => servicesService.xoaLoaiPhong(id),
+  xoa_3: (id: string) => servicesService.xoaDichVuThem(id),
 };

@@ -14,6 +14,58 @@ import type { DonDatTourResponse } from '../../services/orders';
 import { ordersService } from '../../services/orders';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
+
+const mapStatus = (s?: string): Order['status'] => {
+  switch (s?.toUpperCase()) {
+    case 'DA_XAC_NHAN':
+    case 'CONFIRMED':
+      return 'confirmed';
+    case 'HOAN_THANH':
+    case 'COMPLETED':
+      return 'completed';
+    case 'CHO_HUY':
+    case 'HUY':
+    case 'CANCELLED':
+      return 'cancelled';
+    default:
+      return 'pending';
+  }
+};
+
+const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
+  switch (s?.toUpperCase()) {
+    case 'DA_XAC_NHAN':
+    case 'HOAN_THANH':
+      return 'paid';
+    case 'CHO_HUY':
+    case 'HUY':
+      return 'refunded';
+    default:
+      return 'unpaid';
+  }
+};
+
+const formatDate = (value?: string): string => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString('vi-VN');
+};
+
+const mapToUI = (api: DonDatTourResponse): Order => ({
+  id: api.maDatTour || '',
+  orderCode: api.maDatTour || '',
+  customerName: api.tenKhachHang || '',
+  customerPhone: '',
+  tourName: api.tieuDeTour || '',
+  departureDate: formatDate(api.ngayKhoiHanh),
+  bookingDate: formatDate(api.ngayDat),
+  totalAmount: api.tongTien || 0,
+  status: mapStatus(api.trangThai),
+  paymentStatus: mapPaymentStatus(api.trangThai),
+  passengerCount: api.chiTietKhach?.length || 0,
+});
 
 const OrderList: React.FC = () => {
   const [data, setData] = useState<Order[]>([]);
@@ -22,35 +74,11 @@ const OrderList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-  const mapStatus = (s?: string): Order['status'] => {
-    switch (s?.toUpperCase()) {
-      case 'CONFIRMED': return 'confirmed';
-      case 'COMPLETED': return 'completed';
-      case 'CANCELLED': return 'cancelled';
-      default: return 'pending';
-    }
-  };
-
-  const mapToUI = (api: DonDatTourResponse): Order => ({
-    id: api.maDatTour || '',
-    orderCode: api.maDatTour || '',
-    customerName: api.tenKhachHang || '',
-    customerPhone: '',
-    tourName: api.tieuDeTour || '',
-    departureDate: api.ngayKhoiHanh || '',
-    bookingDate: api.ngayDat || '',
-    totalAmount: api.tongTien || 0,
-    status: mapStatus(api.trangThai),
-    paymentStatus: 'unpaid',
-    passengerCount: api.chiTietKhach?.length || 0,
-  });
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const { user } = useAuth();
 
@@ -60,37 +88,30 @@ const OrderList: React.FC = () => {
     setError(null);
     try {
       const res = await ordersService.danhSachTatCa();
-      setData(res && res.content ? res.content.map(mapToUI) : []);
+      setData(unwrapPageContent(res).map(mapToUI));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
-      setError(msg);
+      setError(formatApiError(err, 'Lỗi khi tải dữ liệu đơn hàng'));
     } finally {
       setLoading(false);
     }
   };
 
-  React.useEffect(() => { getAll(); }, [user]);
+  React.useEffect(() => {
+    getAll();
+  }, [user]);
 
   const handleOpenDetail = (order: Order) => {
-    setSelectedOrder(order);
+    setSelectedOrderId(order.id);
     setModalOpen(true);
   };
 
   const filteredData = data.filter((order) => {
-    const matchesSearch = order.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      order.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === '' || statusFilter === 'all' || order.status === statusFilter;
     const matchesPayment = paymentFilter === '' || paymentFilter === 'all' || order.paymentStatus === paymentFilter;
-    let matchesMonth = true;
-    if (monthFilter && monthFilter !== 'all') {
-      const parts = order.departureDate.split('/');
-      if (parts.length === 3) matchesMonth = `${parts[1]}/${parts[2]}` === monthFilter;
-      else {
-        const dashParts = order.departureDate.split('-');
-        if (dashParts.length === 3) matchesMonth = dashParts[1] === monthFilter.split('/')[0];
-      }
-    }
-    return matchesSearch && matchesStatus && matchesPayment && matchesMonth;
+    return matchesSearch && matchesStatus && matchesPayment;
   });
 
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
@@ -107,40 +128,30 @@ const OrderList: React.FC = () => {
       render: (record) => (
         <div className="flex flex-col">
           <span className="font-semibold text-gray-800">{record.customerName}</span>
-          <span className="text-xs text-gray-500">{record.customerPhone}</span>
         </div>
-      )
+      ),
     },
     {
       key: 'tourName',
       title: 'Tour',
-      render: (record) => <span className="text-sm font-medium">{record.tourName}</span>
+      render: (record) => <span className="text-sm font-medium">{record.tourName}</span>,
     },
-    { key: 'departureDate', title: 'Ngày khởi hành', dataIndex: 'departureDate' },
-    {
-      key: 'passengerCount',
-      title: 'SL khách',
-      align: 'center',
-      render: (record) => <span>{record.passengerCount}</span>
-    },
-    {
-      key: 'totalAmount',
-      title: 'Tổng tiền (VND)',
-      align: 'right',
-      render: (record) => (
-        <span className="font-bold text-gray-800">{record.totalAmount.toLocaleString('vi-VN')}</span>
-      ),
-    },
+    { key: 'bookingDate', title: 'Ngày đặt', dataIndex: 'bookingDate' },
     {
       key: 'status',
       title: 'Trạng thái',
       render: (record) => {
         switch (record.status) {
-          case 'pending': return <Badge label="Chờ xác nhận" variant="warning" />;
-          case 'confirmed': return <Badge label="Đã xác nhận" variant="info" />;
-          case 'completed': return <Badge label="Hoàn thành" variant="success" />;
-          case 'cancelled': return <Badge label="Đã hủy" variant="error" />;
-          default: return null;
+          case 'pending':
+            return <Badge label="Chờ xác nhận" variant="warning" />;
+          case 'confirmed':
+            return <Badge label="Đã xác nhận" variant="info" />;
+          case 'completed':
+            return <Badge label="Hoàn thành" variant="success" />;
+          case 'cancelled':
+            return <Badge label="Đã hủy" variant="error" />;
+          default:
+            return null;
         }
       },
     },
@@ -149,11 +160,16 @@ const OrderList: React.FC = () => {
       title: 'Thanh toán',
       render: (record) => {
         switch (record.paymentStatus) {
-          case 'paid': return <Badge label="Đã Thanh Toán" variant="success" />;
-          case 'unpaid': return <Badge label="Chưa Thanh Toán" variant="warning" />;
-          case 'partial': return <Badge label="Thanh Toán 1 phần" variant="info" />;
-          case 'refunded': return <Badge label="Đã Hoàn Tiền" variant="neutral" />;
-          default: return null;
+          case 'paid':
+            return <Badge label="Đã Thanh Toán" variant="success" />;
+          case 'unpaid':
+            return <Badge label="Chưa Thanh Toán" variant="warning" />;
+          case 'partial':
+            return <Badge label="Thanh Toán 1 phần" variant="info" />;
+          case 'refunded':
+            return <Badge label="Đã Hoàn Tiền" variant="neutral" />;
+          default:
+            return null;
         }
       },
     },
@@ -162,7 +178,14 @@ const OrderList: React.FC = () => {
       title: 'Hành động',
       align: 'center',
       render: (record) => (
-        <Button variant="ghost" size="sm" icon={<Eye size={18} />} onClick={() => handleOpenDetail(record)} className="p-2" aria-label="Xem chi tiết" />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Eye size={18} />}
+          onClick={() => handleOpenDetail(record)}
+          className="p-2"
+          aria-label="Xem chi tiết"
+        />
       ),
     },
   ];
@@ -194,7 +217,7 @@ const OrderList: React.FC = () => {
                 { label: 'Chờ xác nhận', value: 'pending' },
                 { label: 'Đã xác nhận', value: 'confirmed' },
                 { label: 'Hoàn thành', value: 'completed' },
-                { label: 'Đã hủy', value: 'cancelled' }
+                { label: 'Đã hủy', value: 'cancelled' },
               ]}
               value={statusFilter}
               onChange={setStatusFilter}
@@ -207,23 +230,11 @@ const OrderList: React.FC = () => {
                 { label: 'Tất cả TT', value: 'all' },
                 { label: 'Đã thanh toán', value: 'paid' },
                 { label: 'Chưa thanh toán', value: 'unpaid' },
-                { label: 'Hoàn tiền', value: 'refunded' }
+                { label: 'Hoàn tiền', value: 'refunded' },
               ]}
               value={paymentFilter}
               onChange={setPaymentFilter}
               placeholder="Thanh toán"
-            />
-          </div>
-          <div className="w-[160px]">
-            <Select
-              options={[
-                { label: 'Tất cả tháng', value: 'all' },
-                { label: 'Tháng 05/2025', value: '05/2025' },
-                { label: 'Tháng 06/2025', value: '06/2025' }
-              ]}
-              value={monthFilter}
-              onChange={setMonthFilter}
-              placeholder="Tháng khởi hành"
             />
           </div>
         </div>
@@ -236,23 +247,14 @@ const OrderList: React.FC = () => {
           ) : error ? (
             <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
           ) : (
-            <Table<Order>
-              columns={columns}
-              dataSource={paginatedData}
-              rowKey="id"
-              emptyText="Không tìm thấy đơn hàng nào"
-            />
+            <Table<Order> columns={columns} dataSource={paginatedData} rowKey="id" emptyText="Không tìm thấy đơn hàng nào" />
           )}
         </div>
 
         <Pagination current={page} pageSize={pageSize} total={filteredData.length} onChange={setPage} />
       </div>
 
-      <OrderDetailModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        order={selectedOrder}
-      />
+      <OrderDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} maDatTour={selectedOrderId} />
     </MainLayout>
   );
 };

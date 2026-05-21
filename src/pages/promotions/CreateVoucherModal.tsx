@@ -44,6 +44,9 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = 'Tên chương trình không được để trống';
     if (!discountValue || discountValue <= 0) newErrors.discountValue = 'Giá trị giảm phải > 0';
+    if (!quantity || quantity <= 0) newErrors.quantity = 'Số lượng phát hành phải > 0';
+    if (!startDate) newErrors.startDate = 'Ngày hiệu lực không được để trống';
+    if (!endDate) newErrors.endDate = 'Ngày hết hạn không được để trống';
     if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
       newErrors.endDate = 'Ngày kết thúc phải lớn hơn ngày bắt đầu';
     }
@@ -64,9 +67,10 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
       minOrderValue: Number(minOrderValue),
       quantity: Number(quantity),
       distributed: 0,
+      startDate: startDate || new Date().toISOString().split('T')[0],
       expiryDate: endDate,
       status: isActive ? 'ready' : 'disabled',
-    };
+    } as Voucher;
 
     onSubmit(newVoucher);
     setCode('');
@@ -127,10 +131,11 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-20"
+                className={`w-full px-4 py-2 border ${errors.quantity ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-20`}
               />
               <span className="absolute right-3 top-2 text-gray-500">Voucher</span>
             </div>
+            {errors.quantity && <p className="text-[#BA1A1A] text-xs mt-1">{errors.quantity}</p>}
           </div>
 
           <div>
@@ -140,7 +145,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-1/2 px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent"
+                className={`w-1/2 px-4 py-2 border ${errors.startDate ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
               />
               <input
                 type="date"
@@ -149,6 +154,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
                 className={`w-1/2 px-4 py-2 border ${errors.endDate ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
               />
             </div>
+            {errors.startDate && <p className="text-[#BA1A1A] text-xs mt-1">{errors.startDate}</p>}
             {errors.endDate && <p className="text-[#BA1A1A] text-xs mt-1">{errors.endDate}</p>}
           </div>
 

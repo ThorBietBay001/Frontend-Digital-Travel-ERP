@@ -14,6 +14,7 @@ import AccountFormModal from './AccountFormModal';
 import PermissionModal from './PermissionModal';
 import { accountsService } from '../../../services/system/accounts';
 import type { NhanVienResponse } from '../../../services/system/accounts';
+import { customersService, type HoChieuSoResponse } from '../../../services/customers';
 import { useAuth } from '../../../context/AuthContext';
 import { hasAccess } from '../../../config/rolePermissions';
 
@@ -102,19 +103,33 @@ const AccountList: React.FC = () => {
     if (!hasAccess(user?.maVaiTro, 'accounts')) return;
     try {
       setLoading(true);
-      const res = await accountsService.danhSachNhanVien();
-      const mapped = (res?.content || []).map((nv: NhanVienResponse): Account => ({
+      const [resNhanVien, resKhachHang] = await Promise.all([
+        accountsService.danhSachNhanVien({ page: 0, size: 200 }),
+        customersService.timKiemKhachHang({ page: 0, size: 200 }).catch(() => null)
+      ]);
+      const mappedNV = (resNhanVien?.content || []).map((nv: NhanVienResponse): Account => ({
         id: nv.maNhanVien || '',
         code: nv.maNhanVien || '',
         name: nv.hoTen || '',
         email: nv.email || '',
         phone: nv.soDienThoai || '',
         username: nv.tenDangNhap || '',
-        role: ROLE_MAP[nv.maVaiTro?.replace('ROLE_', '') || ''] || 'Khách hàng',
+        role: ROLE_MAP[nv.maVaiTro?.replace('ROLE_', '') || ''] || 'Nhân viên',
         status: nv.trangThaiTaiKhoan === 'HOAT_DONG' ? 'active' : 'locked',
         avatar: undefined
       }));
-      setAccounts(mapped);
+      const mappedKH = (resKhachHang?.content || []).map((kh: HoChieuSoResponse): Account => ({
+        id: kh.maKhachHang || '',
+        code: kh.maKhachHang || '',
+        name: kh.hoTen || '',
+        email: kh.email || '',
+        phone: kh.soDienThoai || '',
+        username: kh.tenDangNhap || kh.email || '',
+        role: 'Khách hàng',
+        status: 'active',
+        avatar: undefined
+      }));
+      setAccounts([...mappedNV, ...mappedKH]);
       setError(null);
     } catch (err) {
       console.error(err);

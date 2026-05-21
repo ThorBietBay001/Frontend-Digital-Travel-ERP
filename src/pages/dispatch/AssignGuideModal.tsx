@@ -13,9 +13,18 @@ interface AssignGuideModalProps {
   mode?: 'assign' | 'replace';
   onAssign: (tourId: string, guideId: string) => void;
   availableGuides: NhanVienResponse[];
+  guidesLoading?: boolean;
 }
 
-const AssignGuideModal: React.FC<AssignGuideModalProps> = ({ isOpen, onClose, tour, mode = 'assign', onAssign, availableGuides }) => {
+const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
+  isOpen,
+  onClose,
+  tour,
+  mode = 'assign',
+  onAssign,
+  availableGuides,
+  guidesLoading = false,
+}) => {
   const [conflictGuideId, setConflictGuideId] = useState<string | null>(null);
 
   if (!tour) return null;
@@ -167,7 +176,15 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({ isOpen, onClose, to
           </div>
 
           <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2">
-            {suggestedGuides.map(guide => {
+            {guidesLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
+              </div>
+            ) : suggestedGuides.length === 0 ? (
+              <p className="text-center text-gray-500 py-8 text-sm">Không có HDV khả dụng cho tour này.</p>
+            ) : null}
+            {!guidesLoading &&
+            suggestedGuides.map(guide => {
               const isConflict = conflictGuideId === guide.maNhanVien;
               
               return (
