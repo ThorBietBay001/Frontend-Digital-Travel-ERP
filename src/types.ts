@@ -6,7 +6,7 @@ export interface Tour {
   departureDate: string;
   destination: string;
   guestsCount: number;
-  status: 'Đang diễn ra' | 'Sắp khởi hành';
+  status: 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
   image: string;
 }
 
@@ -44,7 +44,7 @@ export interface Expense {
   photoUrl?: string;
 }
 
-export interface IncidentReport {
+export interface BaoCaoSuCo {
   id: string;
   type: string;
   severity: 'Thấp' | 'Cao';

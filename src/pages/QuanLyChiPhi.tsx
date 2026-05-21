@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { CheckCircle, Plus, Camera, Trash2 } from 'lucide-react';
 import type { Expense } from '../types';
 
+import { hdvService } from '../services/hdvService';
+
 interface ExpenseTrackerProps {
+  maTour?: string;
   expenses: Expense[];
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
 }
 
-export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTrackerProps) {
+export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseTrackerProps) {
   // Expense State
   const [expenseForm, setExpenseForm] = useState({
     category: 'Ăn uống',
@@ -38,9 +41,14 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
   };
 
   // Expense Submit
-  const handleExpenseSubmit = (e: React.FormEvent) => {
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    if (!maTour) {
+      setFormError("Không tìm thấy thông tin Tour!");
+      return;
+    }
 
     if (!expenseForm.amount.trim() || !expenseForm.notes.trim()) {
       setFormError("Vui lòng điền đầy đủ số tiền và ghi chú chi phí!");
@@ -58,33 +66,49 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
       return;
     }
 
-    const newExpense: Expense = {
-      id: `EXP00${expenses.length + 1}`,
-      category: expenseForm.category,
-      amount: amountVal,
-      status: 'CHO_DUYET',
-      notes: expenseForm.notes,
-      date: expenseForm.date,
-      photoUrl: receiptPhoto || undefined
-    };
+    try {
+      const data = {
+        danhMuc: expenseForm.category,
+        thanhTien: amountVal,
+        hoaDonAnh: receiptPhoto,
+        ghiChu: expenseForm.notes
+      };
 
-    setExpenses(prev => [newExpense, ...prev]);
-    // System automatically generates metadata: Guide ID, Tour ID, Timestamp, Location, and Photo
-    setExpenseToast(`Đã lưu chi phí! HDV: PQ-HDV-2601, Tour: PQ001-L1. Ảnh đính kèm hợp lệ.`);
-    setExpenseModalOpen(false);
+      const res = await hdvService.taoChiPhi(maTour, data);
+      
+      if (res.data) {
+        const eRes = res.data;
+        const newExpense: Expense = {
+          id: eRes.maChiPhi,
+          category: eRes.danhMuc || expenseForm.category,
+          amount: eRes.thanhTien || amountVal,
+          status: eRes.trangThaiDuyet || 'CHO_DUYET',
+          notes: eRes.ghiChu || expenseForm.notes,
+          date: eRes.ngayKhai || expenseForm.date,
+          photoUrl: eRes.hoaDonAnh || receiptPhoto
+        };
 
-    // Reset form
-    setExpenseForm({
-      category: 'Ăn uống',
-      amount: '',
-      notes: '',
-      date: '19/05/2026'
-    });
-    setReceiptPhoto(null);
+        setExpenses(prev => [newExpense, ...prev]);
+        setExpenseToast(`Đã lưu chi phí thành công!`);
+        setExpenseModalOpen(false);
 
-    setTimeout(() => {
-      setExpenseToast(null);
-    }, 4000);
+        // Reset form
+        setExpenseForm({
+          category: 'Ăn uống',
+          amount: '',
+          notes: '',
+          date: new Date().toLocaleDateString('vi-VN')
+        });
+        setReceiptPhoto(null);
+
+        setTimeout(() => {
+          setExpenseToast(null);
+        }, 4000);
+      }
+    } catch (error) {
+      console.error(error);
+      setFormError("Không thể lưu chi phí. Vui lòng thử lại!");
+    }
   };
 
   // Delete Expense
@@ -106,7 +130,7 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
       <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-200 shadow-sm space-y-2 relative overflow-hidden">
         <div className="flex justify-between items-center">
           <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider">Hạn mức tạm ứng thực địa</span>
-          <span className="text-[11px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300">PQ001-L1</span>
+          <span className="text-[11px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300">{maTour || 'N/A'}</span>
         </div>
 
         <div className="space-y-1.5">
@@ -191,9 +215,9 @@ export default function ExpenseTracker({ expenses, setExpenses }: ExpenseTracker
                   </div>
                   {/* Separator + metadata */}
                   <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100/80 text-[10px] text-slate-600 font-bold">
-                    <span>HDV001</span>
+                    <span>HDV</span>
                     <span className="text-slate-200 font-normal">|</span>
-                    <span>PQ001</span>
+                    <span>{maTour || 'N/A'}</span>
                     <span className="text-slate-200 font-normal">|</span>
                     <span>{e.date}</span>
                   </div>

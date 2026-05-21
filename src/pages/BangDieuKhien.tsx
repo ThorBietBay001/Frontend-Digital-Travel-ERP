@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { MapPin, Users, DollarSign, ChevronRight } from 'lucide-react';
-import type { Tour, Expense } from '../types';
-import { activeTour, upcomingTours, upcomingItineraries, initialPassengers } from '../mockData';
+import type { Tour, Expense, Passenger } from '../types';
 
 interface DashboardProps {
+  currentTour: Tour | null;
+  upcomingTours: Tour[];
+  pastTours: Tour[];
+  passengers: Passenger[];
   expenses: Expense[];
   attendanceStats: {
     total: number;
@@ -14,35 +17,8 @@ interface DashboardProps {
   setActiveTab: (tab: 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile') => void;
 }
 
-// High-fidelity mock passengers with medical notes for each tour code
-const upcomingTourPassengers: Record<string, { code: string; name: string; rank: string; phone: string; healthNotes: string }[]> = {
-  'DN002': [
-    { code: 'KH101', name: 'Nguyễn Bích Ngọc', rank: 'KIM_CUONG', phone: '0901234101', healthNotes: 'Không ăn được ngò rí (rau mùi).' },
-    { code: 'KH102', name: 'Trần Minh Quân', rank: 'VANG', phone: '0901234102', healthNotes: 'Tiền sử hạ đường huyết, cần sẵn kẹo ngọt bên người.' },
-    { code: 'KH103', name: 'Phan Thanh Hải', rank: 'BAC', phone: '0901234103', healthNotes: '' },
-    { code: 'KH104', name: 'Lê Thu Trang', rank: 'THANH_VIEN', phone: '0901234104', healthNotes: 'Yêu cầu phòng không hút thuốc, bố trí tầng thấp.' },
-    { code: 'KH105', name: 'Hoàng Anh Tuấn', rank: 'DONG', phone: '0901234105', healthNotes: '' },
-    { code: 'KH106', name: 'Đặng Thùy Chi', rank: 'THANH_VIEN', phone: '0901234106', healthNotes: 'Say tàu xe cực kỳ nặng, xin ngồi đầu xe.' }
-  ],
-  'HL003': [
-    { code: 'KH201', name: 'Lâm Hoài Nam', rank: 'KIM_CUONG', phone: '0912345201', healthNotes: 'Bị đau khớp nhẹ, tránh các hoạt động leo núi dốc đứng.' },
-    { code: 'KH202', name: 'Ngô Khánh Linh', rank: 'VANG', phone: '0912345202', healthNotes: 'Dị ứng hạt điều và đậu phộng mức độ trung bình.' },
-    { code: 'KH203', name: 'Dương Quốc Bảo', rank: 'BAC', phone: '0912345203', healthNotes: '' },
-    { code: 'KH204', name: 'Bùi Gia Khánh', rank: 'THANH_VIEN', phone: '0912345204', healthNotes: 'Cần lưu ý hỗ trợ áo phao cỡ đại khi xuống thuyền kayak.' }
-  ],
-  'NT001': [
-    { code: 'KH301', name: 'Phạm Hải Đăng', rank: 'KIM_CUONG', phone: '0988776301', healthNotes: 'Cần ăn nhạt, kiêng ăn mặn do huyết áp nhẹ.' },
-    { code: 'KH302', name: 'Trịnh Thúy An', rank: 'VANG', phone: '0988776302', healthNotes: 'Đau khớp gối nhẹ, vui lòng bố trí xe đẩy hỗ trợ nếu cần.' },
-    { code: 'KH303', name: 'Đoàn Văn Hậu', rank: 'BAC', phone: '0988776303', healthNotes: '' }
-  ],
-  'PQ000': [
-    { code: 'KH401', name: 'Trần Thế Vinh', rank: 'KIM_CUONG', phone: '0933445401', healthNotes: 'Tiền sử bệnh tim nhẹ, mang theo thuốc cá nhân.' },
-    { code: 'KH402', name: 'Nguyễn Mỹ Duyên', rank: 'THANH_VIEN', phone: '0933445402', healthNotes: 'Khách đang mang thai tháng thứ 4, tránh đi bộ đường dốc.' }
-  ]
-};
-
-// Helper: Get passenger member rank labels (unified with Attendance.tsx)
-const getRankBadge = (rank: string) => {
+// Helper: Get passenger member rank labels (unified with DiemDanh.tsx)
+const layHuyHieuHangThanhVien = (rank: string) => {
   switch (rank) {
     case 'KIM_CUONG':
       return <span className="text-[9px] font-bold text-slate-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded leading-none shrink-0">💎Kim Cương</span>;
@@ -57,26 +33,9 @@ const getRankBadge = (rank: string) => {
   }
 };
 
-// Helper function to split activity description into list items by '.' or ','
-const splitActivity = (activity: string): string[] => {
-  if (!activity) return [];
-  return activity
-    .split(/[.,]\s+/)
-    .map(item => item.trim())
-    .filter(item => item.length > 1)
-    .map(item => {
-      let cleaned = item;
-      if (cleaned.endsWith('.')) {
-        cleaned = cleaned.slice(0, -1);
-      }
-      if (cleaned.length > 0) {
-        cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      }
-      return cleaned;
-    });
-};
+// Helper function removed because it is unused
 
-export default function Dashboard({ expenses, attendanceStats, setActiveTab }: DashboardProps) {
+export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, passengers, expenses, attendanceStats, setActiveTab }: DashboardProps) {
   const [selectedUpcomingTour, setSelectedUpcomingTour] = useState<Tour | null>(null);
   const [modalTab, setModalTab] = useState<'ITINERARY' | 'PASSENGERS'>('ITINERARY');
 
@@ -88,38 +47,44 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
   return (
     <div className="space-y-4 animate-slide-up">
       {/* Current Active Tour Banner */}
-      <div className="relative rounded-3xl overflow-hidden h-40 bg-slate-900 text-white shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-cover bg-center opacity-70 bg-[url('https://images.unsplash.com/photo-1540206395-68808572332f?q=80&w=640')]"></div>
+      {currentTour ? (
+        <div className="relative rounded-3xl overflow-hidden h-40 bg-slate-900 text-white shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent z-10"></div>
+          <div className="absolute inset-0 bg-cover bg-center opacity-70 bg-[url('https://images.unsplash.com/photo-1540206395-68808572332f?q=80&w=640')]"></div>
 
-        <div className="absolute inset-0 p-4 z-20 flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] bg-gradient-to-r from-sky-400/90 to-blue-500/90 backdrop-blur-md border border-sky-300/50 font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-[0_0_15px_rgba(56,189,248,0.4)]">
-              Đang diễn ra
-            </span>
-            <span className="text-xs bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full font-mono">
-              {activeTour.code}
-            </span>
-          </div>
-
-          <div className="z-10 mt-auto">
-            <p className="text-xs text-sky-100 font-medium uppercase tracking-wider mb-1 flex items-center">
-              <MapPin size={12} className="mr-1" /> Phú Quốc - Kiên Giang
-            </p>
-            <h1 className="text-lg font-bold leading-tight mb-2">
-              {activeTour.name}
-            </h1>
-            <div className="flex items-center justify-between text-xs text-sky-100/90 border-t border-white/20 pt-2">
-              <span>Khởi hành: {activeTour.departureDate}</span>
-              <span className="font-semibold flex items-center">
-                <Users size={12} className="mr-1" /> {activeTour.guestsCount} Khách hàng
+          <div className="absolute inset-0 p-4 z-20 flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] bg-gradient-to-r from-sky-400/90 to-blue-500/90 backdrop-blur-md border border-sky-300/50 font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-[0_0_15px_rgba(56,189,248,0.4)]">
+                Đang diễn ra
               </span>
+              <span className="text-xs bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full font-mono">
+                {currentTour.code}
+              </span>
+            </div>
+
+            <div className="z-10 mt-auto">
+              <p className="text-xs text-sky-100 font-medium uppercase tracking-wider mb-1 flex items-center">
+                <MapPin size={12} className="mr-1" /> {currentTour.destination}
+              </p>
+              <h1 className="text-lg font-bold leading-tight mb-2">
+                {currentTour.name}
+              </h1>
+              <div className="flex items-center justify-between text-xs text-sky-100/90 border-t border-white/20 pt-2">
+                <span>Khởi hành: {currentTour.departureDate}</span>
+                <span className="font-semibold flex items-center">
+                  <Users size={12} className="mr-1" /> {currentTour.guestsCount || passengers.length} Khách hàng
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="relative rounded-3xl overflow-hidden h-40 bg-slate-100 flex items-center justify-center">
+          <p className="text-slate-400 font-medium">Chưa có chuyến đi nào đang diễn ra</p>
+        </div>
+      )}
 
-      {/* Attendance quick metrics */}
+      {/* DiemDanh quick metrics */}
       <div className="grid grid-cols-2 gap-3">
         <div
           onClick={() => setActiveTab('attendance')}
@@ -168,7 +133,7 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
         </div>
       </div>
 
-      {/* Upcoming Schedule (Lịch trình sắp khởi hành) */}
+      {/* Upcoming LichTrinh (Lịch trình sắp khởi hành) */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
           <span>Lịch trình sắp khởi hành</span>
@@ -208,71 +173,35 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
       <div className="space-y-2 mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
           <span>Lịch sử chuyến đi đã dẫn</span>
-          <span className="text-[11px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">2 chuyến</span>
+          <span className="text-[11px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">{pastTours.length} chuyến</span>
         </h3>
 
         <div className="space-y-2">
-          <div
-            onClick={() => {
-              setSelectedUpcomingTour({
-                code: 'NT001',
-                name: 'Nha Trang Biển Xanh Vẫy Gọi 4N3Đ',
-                departureDate: '02/05/2026',
-                destination: 'Nha Trang',
-                guestsCount: 12,
-                status: 'Sắp khởi hành',
-                image: ''
-              });
-              setModalTab('ITINERARY');
-            }}
-            className="glass-card p-3 rounded-2xl flex items-center justify-between border-l-4 border-l-slate-400 cursor-pointer hover:bg-slate-50/50 transition-all duration-200"
-          >
-            <div>
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
-                  NT001
-                </span>
-                <h4 className="text-xs font-bold text-slate-700">
-                  Nha Trang Biển Xanh Vẫy Gọi 4N3Đ
-                </h4>
+          {pastTours.map((tour) => (
+            <div
+              key={tour.code}
+              onClick={() => {
+                setSelectedUpcomingTour(tour);
+                setModalTab('ITINERARY');
+              }}
+              className="glass-card p-3 rounded-2xl flex items-center justify-between border-l-4 border-l-slate-400 cursor-pointer hover:bg-slate-50/50 transition-all duration-200"
+            >
+              <div>
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
+                    {tour.code}
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-700">
+                    {tour.name}
+                  </h4>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Hoàn thành: {tour.departureDate} • Quy mô: {tour.guestsCount} khách • <span className={tour.status === 'Đã quyết toán' || tour.status === 'Kết thúc' ? "text-emerald-600 font-bold" : "text-sky-600 font-bold"}>{tour.status}</span>
+                </p>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Hoàn thành: 05/05/2026 • 12 khách • ⭐ 5.0 • <span className="text-emerald-600 font-bold">Đã quyết toán</span>
-              </p>
+              <ChevronRight size={14} className="text-slate-400 shrink-0" />
             </div>
-            <ChevronRight size={14} className="text-slate-400 shrink-0" />
-          </div>
-
-          <div
-            onClick={() => {
-              setSelectedUpcomingTour({
-                code: 'PQ000',
-                name: 'Khám phá Nam Đảo Phú Quốc 2N1Đ',
-                departureDate: '12/05/2026',
-                destination: 'Phú Quốc',
-                guestsCount: 10,
-                status: 'Sắp khởi hành',
-                image: ''
-              });
-              setModalTab('ITINERARY');
-            }}
-            className="glass-card p-3 rounded-2xl flex items-center justify-between border-l-4 border-l-slate-400 cursor-pointer hover:bg-slate-50/50 transition-all duration-200"
-          >
-            <div>
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
-                  PQ000
-                </span>
-                <h4 className="text-xs font-bold text-slate-700">
-                  Khám phá Nam Đảo Phú Quốc 2N1Đ
-                </h4>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Hoàn thành: 14/05/2026 • 10 khách • ⭐ 4.9 • <span className="text-emerald-600 font-bold">Đã quyết toán</span>
-              </p>
-            </div>
-            <ChevronRight size={14} className="text-slate-400 shrink-0" />
-          </div>
+          ))}
         </div>
       </div>
 
@@ -338,7 +267,7 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
             {modalTab === 'PASSENGERS' ? (
               <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {(upcomingTourPassengers[selectedUpcomingTour.code] || initialPassengers).map((guest) => (
+                  {passengers.map((guest) => (
                     <div
                       key={guest.code}
                       className="bg-white p-3.5 rounded-2xl flex flex-col justify-between border border-slate-100 shadow-sm transition-all duration-200"
@@ -347,7 +276,7 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
                         <div className="space-y-0.5 text-left">
                           <div className="flex items-center space-x-1.5">
                             <h4 className="font-black text-slate-800 text-sm">{guest.name}</h4>
-                            {getRankBadge(guest.rank)}
+                            {layHuyHieuHangThanhVien(guest.rank)}
                           </div>
                           <p className="text-[11px] text-slate-500 font-mono">SĐT: {guest.phone}</p>
                         </div>
@@ -366,22 +295,7 @@ export default function Dashboard({ expenses, attendanceStats, setActiveTab }: D
             ) : (
               <div className="space-y-3">
                 <div className="space-y-3.5 pl-3 relative border-l border-sky-100 max-h-[42vh] overflow-y-auto pr-1">
-                  {upcomingItineraries[selectedUpcomingTour.code]?.map((day) => (
-                    <div key={day.day} className="relative space-y-0.5">
-                      <div className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full bg-sky-400 border-2 border-white ring-4 ring-sky-50 shadow-sm"></div>
-                      <span className="text-[11px] font-bold text-sky-500 uppercase">Ngày {day.day}</span>
-                      <ul className="list-none space-y-1 text-xs text-slate-700 font-semibold leading-relaxed mt-1">
-                        {splitActivity(day.activity).map((act, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-sky-500 mr-1.5 mt-1 text-[9px]">•</span>
-                            <span className="flex-1">{act}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )) || (
-                      <p className="text-xs text-slate-400 italic">Chưa cập nhật chi tiết lịch trình.</p>
-                    )}
+                  <p className="text-xs text-slate-400 italic">Chưa cập nhật chi tiết lịch trình.</p>
                 </div>
               </div>
             )}

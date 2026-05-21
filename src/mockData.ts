@@ -1,4 +1,4 @@
-import type { Tour, Passenger, ItineraryDay, Expense, IncidentReport } from './types';
+import type { Tour, Passenger, ItineraryDay, Expense, BaoCaoSuCo } from './types';
 
 export const initialPassengers: Passenger[] = [
   {
@@ -84,7 +84,7 @@ export const initialExpenses: Expense[] = [
   }
 ];
 
-export const initialIncidents: IncidentReport[] = [
+export const initialIncidents: BaoCaoSuCo[] = [
   {
     id: 'INC001',
     type: 'Khác',

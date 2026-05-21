@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Search, AlertTriangle, RotateCcw, ChevronDown } from 'lucide-react';
-import type { Passenger } from '../types';
+import type { Passenger, Tour } from '../types';
+import { hdvService } from '../services/hdvService';
 
 interface AttendanceProps {
+  currentTour: Tour | null;
   passengers: Passenger[];
   setPassengers: React.Dispatch<React.SetStateAction<Passenger[]>>;
 }
 
-export default function Attendance({ passengers, setPassengers }: AttendanceProps) {
+export default function DiemDanh({ currentTour, passengers, setPassengers }: AttendanceProps) {
   // --- SEARCH AND FILTER FOR ATTENDANCE ---
   const [attendanceSearch, setAttendanceSearch] = useState('');
   const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'CHUA_DIEM_DANH' | 'DA_DIEM_DANH' | 'VANG'>('ALL');
@@ -15,7 +17,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
   // --- MODALS STATE ---
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null);
 
-  // Attendance Warnings
+  // DiemDanh Warnings
   const [healthAcknowledgeModal, setHealthAcknowledgeModal] = useState<{ show: boolean; passenger: Passenger | null; targetStatus: 'DA_DIEM_DANH' | 'VANG' }>({
     show: false,
     passenger: null,
@@ -51,26 +53,37 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
     return [...list].sort((a, b) => order[a.status] - order[b.status]);
   }, [passengers, attendanceSearch, attendanceFilter]);
 
-  // Acknowledge health warning and apply attendance status
-  const confirmHealthWarning = () => {
-    if (healthAcknowledgeModal.passenger) {
+  const xacNhanCanhBaoSucKhoe = async () => {
+    if (healthAcknowledgeModal.passenger && currentTour) {
       const targetP = healthAcknowledgeModal.passenger;
       const targetStatus = healthAcknowledgeModal.targetStatus;
 
-      setPassengers(prev => prev.map(p => {
-        if (p.code === targetP.code) {
-          return { ...p, status: targetStatus, absentReason: targetStatus === 'VANG' ? absentReasonText : undefined };
-        }
-        return p;
-      }));
+      try {
+        await hdvService.diemDanhKhach(currentTour.code, {
+          maKhachHang: targetP.code,
+          diaDiem: 'Tập trung',
+          trangThai: targetStatus,
+          ghiChu: targetStatus === 'VANG' ? absentReasonText : ''
+        });
+
+        setPassengers(prev => prev.map(p => {
+          if (p.code === targetP.code) {
+            return { ...p, status: targetStatus, absentReason: targetStatus === 'VANG' ? absentReasonText : undefined };
+          }
+          return p;
+        }));
+      } catch (e) {
+        console.error('Lỗi khi điểm danh', e);
+        alert('Có lỗi xảy ra khi điểm danh trên hệ thống!');
+      }
     }
     setHealthAcknowledgeModal({ show: false, passenger: null, targetStatus: 'DA_DIEM_DANH' });
   };
 
   // Change attendance status
-  const handleAttendanceChange = (code: string, newStatus: 'DA_DIEM_DANH' | 'VANG' | 'CHUA_DIEM_DANH') => {
+  const thayDoiTrangThaiDiemDanh = async (code: string, newStatus: 'DA_DIEM_DANH' | 'VANG' | 'CHUA_DIEM_DANH') => {
     const guest = passengers.find(p => p.code === code);
-    if (!guest) return;
+    if (!guest || !currentTour) return;
 
     if (newStatus === 'DA_DIEM_DANH') {
       if (guest.healthNotes) {
@@ -80,10 +93,20 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
           targetStatus: 'DA_DIEM_DANH'
         });
       } else {
-        setPassengers(prev => prev.map(p => {
-          if (p.code === code) return { ...p, status: 'DA_DIEM_DANH', absentReason: undefined };
-          return p;
-        }));
+        try {
+          await hdvService.diemDanhKhach(currentTour.code, {
+            maKhachHang: code,
+            diaDiem: 'Tập trung',
+            trangThai: 'DA_DIEM_DANH'
+          });
+          setPassengers(prev => prev.map(p => {
+            if (p.code === code) return { ...p, status: 'DA_DIEM_DANH', absentReason: undefined };
+            return p;
+          }));
+        } catch (e) {
+          console.error(e);
+          alert('Lỗi cập nhật điểm danh');
+        }
       }
     } else if (newStatus === 'VANG') {
       setAbsentReasonModal({
@@ -91,25 +114,47 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
         passenger: guest
       });
     } else {
-      setPassengers(prev => prev.map(p => {
-        if (p.code === code) return { ...p, status: 'CHUA_DIEM_DANH', absentReason: undefined };
-        return p;
-      }));
+      try {
+        await hdvService.diemDanhKhach(currentTour.code, {
+          maKhachHang: code,
+          diaDiem: 'Tập trung',
+          trangThai: 'CHUA_DIEM_DANH'
+        });
+        setPassengers(prev => prev.map(p => {
+          if (p.code === code) return { ...p, status: 'CHUA_DIEM_DANH', absentReason: undefined };
+          return p;
+        }));
+      } catch (e) {
+        console.error(e);
+        alert('Lỗi cập nhật điểm danh');
+      }
     }
   };
 
   // Save absent reason
-  const submitAbsentReason = () => {
+  const guiLyDoVangMat = async () => {
     if (absentReasonText === 'Lý do khác' && !customAbsentReason.trim()) {
       return; // Enforce strict validation
     }
-    if (absentReasonModal.passenger) {
+    if (absentReasonModal.passenger && currentTour) {
       const code = absentReasonModal.passenger.code;
       const finalReason = absentReasonText === 'Lý do khác' ? customAbsentReason.trim() : absentReasonText;
-      setPassengers(prev => prev.map(p => {
-        if (p.code === code) return { ...p, status: 'VANG', absentReason: finalReason };
-        return p;
-      }));
+      
+      try {
+        await hdvService.diemDanhKhach(currentTour.code, {
+          maKhachHang: code,
+          diaDiem: 'Tập trung',
+          trangThai: 'VANG',
+          ghiChu: finalReason
+        });
+        setPassengers(prev => prev.map(p => {
+          if (p.code === code) return { ...p, status: 'VANG', absentReason: finalReason };
+          return p;
+        }));
+      } catch (e) {
+        console.error(e);
+        alert('Lỗi cập nhật vắng mặt');
+      }
     }
     setAbsentReasonModal({ show: false, passenger: null });
     setAbsentReasonText('Trễ giờ tập trung (Không thể liên lạc)');
@@ -117,7 +162,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
   };
 
   // Helper: Get passenger member rank labels
-  const getRankBadge = (rank: Passenger['rank']) => {
+  const layHuyHieuHangThanhVien = (rank: Passenger['rank']) => {
     switch (rank) {
       case 'KIM_CUONG':
         return <span className="text-[9px] font-bold text-slate-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded leading-none">💎Kim Cương</span>;
@@ -186,7 +231,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
                 >
                   <div className="flex items-center space-x-1.5">
                     <h4 className="font-black text-slate-800 text-sm hover:text-sky-500 transition">{p.name}</h4>
-                    {getRankBadge(p.rank)}
+                    {layHuyHieuHangThanhVien(p.rank)}
                   </div>
                   <p className="text-[11px] text-slate-500 font-mono">SĐT: {p.phone}</p>
                 </div>
@@ -204,13 +249,13 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
                 ) : isUnmarked ? (
                   <div className="flex space-x-1">
                     <button
-                      onClick={() => handleAttendanceChange(p.code, 'DA_DIEM_DANH')}
+                      onClick={() => thayDoiTrangThaiDiemDanh(p.code, 'DA_DIEM_DANH')}
                       className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition active:scale-95 flex items-center shadow-sm"
                     >
                       Có mặt
                     </button>
                     <button
-                      onClick={() => handleAttendanceChange(p.code, 'VANG')}
+                      onClick={() => thayDoiTrangThaiDiemDanh(p.code, 'VANG')}
                       className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 transition active:scale-95 shadow-sm"
                     >
                       Vắng
@@ -224,7 +269,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
                       {isChecked ? 'Có mặt' : 'Vắng mặt'}
                     </span>
                     <button
-                      onClick={() => handleAttendanceChange(p.code, 'CHUA_DIEM_DANH')}
+                      onClick={() => thayDoiTrangThaiDiemDanh(p.code, 'CHUA_DIEM_DANH')}
                       className="p-1 text-slate-400 hover:text-sky-500 rounded hover:bg-slate-100 transition"
                       title="Thu hồi / Đánh lại"
                     >
@@ -274,7 +319,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
               <div>
                 <div className="flex items-center space-x-1.5">
                   <h4 className="font-bold text-slate-800 text-sm">{selectedPassenger.name}</h4>
-                  {getRankBadge(selectedPassenger.rank)}
+                  {layHuyHieuHangThanhVien(selectedPassenger.rank)}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">Mã hành khách: {selectedPassenger.code}</p>
               </div>
@@ -342,7 +387,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
                 Bỏ qua
               </button>
               <button
-                onClick={confirmHealthWarning}
+                onClick={xacNhanCanhBaoSucKhoe}
                 className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition"
               >
                 Tôi đã xác nhận
@@ -415,7 +460,7 @@ export default function Attendance({ passengers, setPassengers }: AttendanceProp
                 Quay lại
               </button>
               <button
-                onClick={submitAbsentReason}
+                onClick={guiLyDoVangMat}
                 disabled={absentReasonText === 'Lý do khác' && !customAbsentReason.trim()}
                 className={`flex-1 py-2 text-white text-xs font-bold rounded-xl shadow-md transition ${absentReasonText === 'Lý do khác' && !customAbsentReason.trim()
                     ? 'bg-rose-300 cursor-not-allowed opacity-60 shadow-none'

@@ -1,11 +1,50 @@
-import { Shield, Award, Star, Compass, Leaf, ArrowLeft } from 'lucide-react';
+import { Shield, Award, Star, Compass, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { hdvService } from '../services/hdvService';
 
 interface ProfileProps {
   onBack: () => void;
   onLogout: () => void;
 }
 
-export default function Profile({ onBack, onLogout }: ProfileProps) {
+export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
+  const [profile, setProfile] = useState<any>(null);
+  const [nangLuc, setNangLuc] = useState<any>(null);
+  const [pastToursCount, setPastToursCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const [resHoSo, resNangLuc, resTours] = await Promise.all([
+          hdvService.layHoSo(),
+          hdvService.layNangLuc(),
+          hdvService.layDanhSachTour()
+        ]);
+        if (resHoSo.data) setProfile(resHoSo.data);
+        if (resNangLuc.data) setNangLuc(resNangLuc.data);
+        if (resTours.data) {
+          const pastTours = resTours.data.filter((t: any) => {
+            const isFinished = t.trangThaiTour === 'KET_THUC';
+            const isPast = t.ngayKhoiHanh && new Date(t.ngayKhoiHanh) < new Date();
+            return isFinished || isPast;
+          });
+          setPastToursCount(pastTours.length);
+        }
+      } catch (e) {
+        console.error("Lỗi lấy hồ sơ", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  if (loading) return <div className="text-center p-4 mt-10 font-medium text-slate-500">Đang tải hồ sơ...</div>;
+  if (!profile) return <div className="text-center p-4 mt-10 text-red-500">Lỗi không thể tải hồ sơ!</div>;
+
+  const initials = profile.hoTen ? profile.hoTen.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase() : 'HD';
+
   return (
     <div className="space-y-4 animate-fade-in pb-6">
       
@@ -24,18 +63,20 @@ export default function Profile({ onBack, onLogout }: ProfileProps) {
         </div>
       </div>
 
-      {/* Profile Card Header (Flat Premium Design) */}
+      {/* HoSoCaNhan Card Header (Flat Premium Design) */}
       <div className="flex flex-col items-center text-center space-y-3 pt-2">
         {/* Large Avatar initials with active status indicator */}
         <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-sky-400 to-sky-500 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-sky-100 ring-4 ring-white relative animate-pulse-subtle">
-          AN
+          {initials}
           <span className="absolute bottom-1 right-1 w-4.5 h-4.5 bg-emerald-500 border-3 border-white rounded-full"></span>
         </div>
         
         <div className="flex flex-col items-center justify-center space-y-1.5">
-          <h4 className="font-black text-slate-800 text-lg leading-none">Trần Văn An</h4>
-          <span className="text-[10px] bg-sky-50 text-sky-600 font-bold px-2.5 py-0.5 rounded-full border border-sky-100 uppercase tracking-wider">HDV Chuyên nghiệp</span>
-          <p className="text-[11px] text-slate-500 pt-0.5">Mã số HDV: <strong className="text-sky-500 font-mono">PQ-HDV-2601</strong></p>
+          <h4 className="font-black text-slate-800 text-lg leading-none">{profile.hoTen}</h4>
+          <span className="text-[10px] bg-sky-50 text-sky-600 font-bold px-2.5 py-0.5 rounded-full border border-sky-100 uppercase tracking-wider">
+            {profile.loaiNhanVien === 'HDV' ? 'HDV Chuyên nghiệp' : profile.loaiNhanVien}
+          </span>
+          <p className="text-[11px] text-slate-500 pt-0.5">Mã số: <strong className="text-sky-500 font-mono">{profile.maNhanVien}</strong></p>
         </div>
       </div>
 
@@ -44,21 +85,21 @@ export default function Profile({ onBack, onLogout }: ProfileProps) {
         <div className="glass-card p-3 rounded-2xl border border-slate-100 shadow-sm bg-white">
           <div className="flex justify-center text-amber-500 mb-1"><Star size={16} className="fill-amber-400" /></div>
           <span className="text-[11px] text-slate-400 font-bold uppercase block">Đánh giá</span>
-          <span className="text-xs font-black text-slate-800">4.95 / 5.0</span>
+          <span className="text-xs font-black text-slate-800">{nangLuc?.danhGia?.toFixed(1) || '0.0'} / 5.0</span>
+        </div>
+        <div className="glass-card p-3 rounded-2xl border border-slate-100 shadow-sm bg-white">
+          <div className="flex justify-center text-emerald-500 mb-1"><CheckCircle size={16} /></div>
+          <span className="text-[11px] text-slate-400 font-bold uppercase block">Số đánh giá</span>
+          <span className="text-xs font-black text-slate-800">{nangLuc?.soDanhGia || 0} lượt</span>
         </div>
         <div className="glass-card p-3 rounded-2xl border border-slate-100 shadow-sm bg-white">
           <div className="flex justify-center text-sky-400 mb-1"><Compass size={16} /></div>
           <span className="text-[11px] text-slate-400 font-bold uppercase block">Số chuyến</span>
-          <span className="text-xs font-black text-slate-800">42 tour dẫn</span>
-        </div>
-        <div className="glass-card p-3 rounded-2xl border border-slate-100 shadow-sm bg-white">
-          <div className="flex justify-center text-emerald-500 mb-1"><Leaf size={16} /></div>
-          <span className="text-[11px] text-slate-400 font-bold uppercase block">Điểm Eco</span>
-          <span className="text-xs font-black text-slate-800">1.200đ</span>
+          <span className="text-xs font-black text-slate-800">{pastToursCount} tour dẫn</span>
         </div>
       </div>
 
-      {/* Main Profile Info Cards */}
+      {/* Main HoSoCaNhan Info Cards */}
       <div className="space-y-3.5">
         
         {/* Personal Details: Completely Left-Aligned with Normal Colors & Muted Values */}
@@ -69,24 +110,22 @@ export default function Profile({ onBack, onLogout }: ProfileProps) {
           </h4>
           <div className="text-xs space-y-2.5">
             <div className="border-b border-slate-50 pb-1.5 text-left">
-              <span className="text-slate-700 font-bold">Ngày sinh:</span>
-              <span className="text-slate-500 font-medium ml-1.5">15/09/1994 (32 tuổi)</span>
+              <span className="text-slate-700 font-bold">Ngày vào làm:</span>
+              <span className="text-slate-500 font-medium ml-1.5">
+                {profile.ngayVaoLam ? new Date(profile.ngayVaoLam).toLocaleDateString('vi-VN') : 'Đang cập nhật'}
+              </span>
             </div>
             <div className="border-b border-slate-50 pb-1.5 text-left">
               <span className="text-slate-700 font-bold">Điện thoại:</span>
-              <span className="text-slate-500 font-medium ml-1.5">0988.222.888</span>
+              <span className="text-slate-500 font-medium ml-1.5">{profile.soDienThoai || 'Đang cập nhật'}</span>
             </div>
             <div className="border-b border-slate-50 pb-1.5 text-left">
               <span className="text-slate-700 font-bold">Email:</span>
-              <span className="text-slate-500 font-medium ml-1.5 font-mono">an.tran@digitaltravel.vn</span>
-            </div>
-            <div className="border-b border-slate-50 pb-1.5 text-left">
-              <span className="text-slate-700 font-bold">Địa chỉ:</span>
-              <span className="text-slate-500 font-medium ml-1.5">128 Nguyễn Huệ, Quận 1, TP. HCM</span>
+              <span className="text-slate-500 font-medium ml-1.5 font-mono">{profile.email || 'Đang cập nhật'}</span>
             </div>
             <div className="text-left">
-              <span className="text-slate-700 font-bold">Phòng ban:</span>
-              <span className="bg-sky-50 text-sky-700 font-bold px-2.5 py-0.5 rounded text-[9px] uppercase tracking-wider ml-1.5">Phòng Vận hành Thực địa</span>
+              <span className="text-slate-700 font-bold">Tài khoản:</span>
+              <span className="bg-sky-50 text-sky-700 font-bold px-2.5 py-0.5 rounded text-[9px] uppercase tracking-wider ml-1.5">{profile.tenDangNhap}</span>
             </div>
           </div>
         </div>
@@ -102,27 +141,20 @@ export default function Profile({ onBack, onLogout }: ProfileProps) {
               <span className="text-slate-700 font-bold">Loại thẻ HDV:</span>
               <span className="text-slate-500 font-medium ml-1.5">Thẻ HDV Quốc tế</span>
             </div>
-            <div className="border-b border-slate-50 pb-1.5 text-left">
-              <span className="text-slate-700 font-bold">Số thẻ:</span>
-              <span className="text-slate-500 font-medium ml-1.5 font-mono">GP-2024-8899</span>
-            </div>
-            <div className="border-b border-slate-50 pb-1.5 text-left">
-              <span className="text-slate-700 font-bold">Hạn thẻ:</span>
-              <span className="text-slate-500 font-medium ml-1.5">31/12/2028</span>
-            </div>
             <div className="flex flex-col border-b border-slate-50 pb-1.5 space-y-1 text-left">
               <span className="text-slate-700 font-bold">Ngoại ngữ:</span>
               <div className="flex flex-col pl-4 space-y-0.5 text-slate-500 font-medium text-[11px]">
-                <span>• Tiếng Việt (Mẹ đẻ)</span>
-                <span>• Tiếng Anh (IELTS 7.5)</span>
-                <span>• Tiếng Trung (HSK 5)</span>
+                {nangLuc?.ngonNgu ? nangLuc.ngonNgu.split(',').map((item: string, idx: number) => (
+                  <span key={idx}>• {item.trim()}</span>
+                )) : <span>Chưa cập nhật</span>}
               </div>
             </div>
             <div className="flex flex-col space-y-1 text-left">
-              <span className="text-slate-700 font-bold">Chứng chỉ khác:</span>
+              <span className="text-slate-700 font-bold">Chứng chỉ:</span>
               <div className="flex flex-col pl-4 space-y-0.5 text-slate-500 font-medium text-[11px]">
-                <span>• Sơ cứu y tế Hội Chữ Thập Đỏ (2025)</span>
-                <span>• Quản lý An toàn thực địa (Safety Leader)</span>
+                {nangLuc?.chungChi ? nangLuc.chungChi.split(',').map((item: string, idx: number) => (
+                  <span key={idx}>• {item.trim()}</span>
+                )) : <span>Chưa cập nhật</span>}
               </div>
             </div>
           </div>
@@ -135,16 +167,12 @@ export default function Profile({ onBack, onLogout }: ProfileProps) {
             Khu vực & Chuyên môn chính
           </h4>
           <div className="text-xs space-y-2.5">
-            <div className="border-b border-slate-50 pb-1.5 text-left">
-              <span className="text-slate-700 font-bold">Địa bàn quản lý chính:</span>
-              <span className="text-slate-500 font-medium ml-1.5">Phú Quốc (Kiên Giang), Vịnh Nha Trang (Khánh Hòa), Đà Nẵng - Hội An.</span>
-            </div>
             <div className="flex flex-col space-y-1 text-left">
               <span className="text-slate-700 font-bold">Chuyên môn cốt lõi:</span>
               <div className="flex flex-col pl-4 space-y-0.5 text-slate-500 font-medium text-[11px]">
-                <span>• Tổ chức tour trekking mạo hiểm</span>
-                <span>• Khám phá sinh thái biển đảo & lặn ngắm san hô cao cấp</span>
-                <span>• Thiết kế trải nghiệm ẩm thực địa phương cho khách VIP quốc tế</span>
+                {nangLuc?.chuyenMon ? nangLuc.chuyenMon.split(',').map((item: string, idx: number) => (
+                  <span key={idx}>• {item.trim()}</span>
+                )) : <span>Chưa cập nhật</span>}
               </div>
             </div>
           </div>

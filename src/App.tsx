@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Compass, 
   Calendar, 
@@ -12,23 +12,19 @@ import {
   Battery, 
   Wifi 
 } from 'lucide-react';
-import type { Passenger, Expense, IncidentReport as IncidentType } from './types';
-import { 
-  initialPassengers, 
-  initialExpenses, 
-  initialIncidents, 
-  initialNotifications 
-} from './mockData';
+import type { Passenger, Expense, BaoCaoSuCo as IncidentType } from './types';
+// Removed mockData imports
 
 // Component imports
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Schedule from './pages/Schedule';
-import Attendance from './pages/Attendance';
-import GreenPoints from './pages/GreenPoints';
-import ExpenseTracker from './pages/ExpenseTracker';
-import IncidentReport from './pages/IncidentReport';
-import Profile from './pages/Profile';
+import DangNhap from './pages/DangNhap';
+import BangDieuKhien from './pages/BangDieuKhien';
+import LichTrinh from './pages/LichTrinh';
+import DiemDanh from './pages/DiemDanh';
+import DiemXanh from './pages/DiemXanh';
+import QuanLyChiPhi from './pages/QuanLyChiPhi';
+import BaoCaoSuCo from './pages/BaoCaoSuCo';
+import HoSoCaNhan from './pages/HoSoCaNhan';
+import { hdvService } from './services/hdvService';
 
 type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile';
 
@@ -40,14 +36,115 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Application Data States
-  const [passengers, setPassengers] = useState<Passenger[]>(initialPassengers);
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-  const [incidents, setIncidents] = useState<IncidentType[]>(initialIncidents);
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incidents, setIncidents] = useState<IncidentType[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // UI States
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [notificationOpen, setNotificationOpen] = useState<boolean>(false);
+  const [currentTour, setCurrentTour] = useState<any>(null);
+  const [upcomingTours, setUpcomingTours] = useState<any[]>([]);
+  const [pastTours, setPastTours] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      const fetchData = async () => {
+        try {
+          const tours = await hdvService.layDanhSachTour();
+          if (tours?.data?.length > 0) {
+            const ongoingTour = tours.data.find((t: any) => t.trangThaiTour === 'DANG_DIEN_RA');
+            const upcoming = tours.data.filter((t: any) => t.trangThaiTour === 'SAP_DIEN_RA');
+            const past = tours.data.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
+            
+            setUpcomingTours(upcoming.map((t: any) => ({
+              code: t.maTourThucTe,
+              name: t.tenTour || t.maTourThucTe,
+              departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
+              destination: 'Chưa cập nhật',
+              guestsCount: 0,
+              status: 'Sắp khởi hành'
+            })));
+
+            setPastTours(past.map((t: any) => ({
+              code: t.maTourThucTe,
+              name: t.tenTour || t.maTourThucTe, 
+              departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
+              destination: 'Chưa cập nhật',
+              guestsCount: 0,
+              status: t.trangThaiTour === 'DA_QUYET_TOAN' ? 'Đã quyết toán' : 'Kết thúc'
+            })));
+
+            if (ongoingTour) {
+              // Map it to match BangDieuKhien.tsx props
+              const mappedTour = {
+                code: ongoingTour.maTourThucTe,
+                name: ongoingTour.tenTour || ongoingTour.maTourThucTe,
+                departureDate: new Date(ongoingTour.ngayKhoiHanh).toLocaleDateString('vi-VN'),
+                destination: 'Đang đi', // Fallback
+                guestsCount: 0,
+                status: 'Đang diễn ra',
+                maTourThucTe: ongoingTour.maTourThucTe
+              };
+              setCurrentTour(mappedTour);
+              
+              // Fetch đoàn
+              const passRes = await hdvService.layDanhSachDoan(ongoingTour.maTourThucTe);
+              if (passRes?.data) {
+                const mapped = passRes.data.map((p: any) => ({
+                  code: p.maKhachHang,
+                  name: p.hoTenKhachHang || p.hoTen,
+                  phone: p.soDienThoai || 'N/A',
+                  rank: p.hangThanhVien || 'THANH_VIEN',
+                  healthNotes: p.ghiChu || '',
+                  status: p.trangThai || 'CHUA_DIEM_DANH',
+                  greenPoints: p.diemXanh || 0
+                }));
+                setPassengers(mapped);
+                mappedTour.guestsCount = mapped.length;
+              }
+
+              // Fetch sự cố
+              const incRes = await hdvService.laySuCo(ongoingTour.maTourThucTe);
+              if (incRes?.data) {
+                const mappedInc = incRes.data.map((i: any) => ({
+                  id: i.maNhatKySuCo,
+                  type: i.loaiSuCo || 'Khác',
+                  severity: i.mucDo || 'Thấp',
+                  description: i.moTa,
+                  treatment: i.giaiPhap || '',
+                  result: i.giaiPhap || '',
+                  time: i.thoiGianBaoCao
+                }));
+                setIncidents(mappedInc);
+              }
+
+              // Fetch chi phí
+              const expRes = await hdvService.layChiPhi(ongoingTour.maTourThucTe);
+              if (expRes?.data) {
+                const mappedExp = expRes.data.map((e: any) => ({
+                  id: e.maChiPhi,
+                  category: e.danhMuc,
+                  amount: e.thanhTien,
+                  status: e.trangThaiDuyet,
+                  notes: e.danhMuc,
+                  date: e.ngayKhai,
+                  photoUrl: e.hoaDonAnh
+                }));
+                setExpenses(mappedExp);
+              }
+            } else {
+              setCurrentTour(null);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch tour data", e);
+        }
+      };
+      fetchData();
+    }
+  }, [isLoggedIn]);
 
   // Compute attendance stats to pass down
   const attendanceStats = useMemo(() => {
@@ -58,7 +155,7 @@ export default function App() {
     return { total, checked, absent, pending };
   }, [passengers]);
 
-  const handleLogout = () => {
+  const xuLyDangXuat = () => {
     setIsLoggedIn(false);
     setActiveTab('dashboard');
     setLoginError(null);
@@ -76,7 +173,7 @@ export default function App() {
     return notifications.filter(n => !n.read).length;
   }, [notifications]);
 
-  // If not logged in, show the styled Login component wrapped in a mobile layout
+  // If not logged in, show the styled DangNhap component wrapped in a mobile layout
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 sm:p-4">
@@ -93,8 +190,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Login view */}
-          <Login 
+          {/* DangNhap view */}
+          <DangNhap 
             loginCode={loginCode}
             setLoginCode={setLoginCode}
             loginPassword={loginPassword}
@@ -127,7 +224,7 @@ export default function App() {
         {activeTab !== 'profile' && (
           <header className="bg-white px-4 py-3 flex justify-between items-center border-b border-slate-100 shadow-sm sticky top-0 z-40">
             <div className="flex items-center space-x-2.5">
-              {/* Profile avatar button on the far left */}
+              {/* HoSoCaNhan avatar button on the far left */}
               <button 
                 onClick={() => setActiveTab('profile')}
                 className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-600 font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shrink-0"
@@ -157,7 +254,7 @@ export default function App() {
 
               {/* Logout Icon button */}
               <button 
-                onClick={handleLogout}
+                onClick={xuLyDangXuat}
                 className="p-1.5 hover:bg-rose-50 hover:text-rose-500 rounded-full text-slate-500 transition active:scale-90"
                 title="Đăng xuất"
               >
@@ -240,7 +337,11 @@ export default function App() {
         {/* Main Content Area (Scrollable PWA Viewport) */}
         <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
           {activeTab === 'dashboard' && (
-            <Dashboard 
+            <BangDieuKhien 
+              currentTour={currentTour}
+              upcomingTours={upcomingTours}
+              pastTours={pastTours}
+              passengers={passengers}
               expenses={expenses}
               attendanceStats={attendanceStats}
               setActiveTab={setActiveTab}
@@ -248,32 +349,36 @@ export default function App() {
           )}
 
           {activeTab === 'schedule' && (
-            <Schedule />
+            <LichTrinh maTourThucTe={currentTour?.maTourThucTe} />
           )}
 
           {activeTab === 'attendance' && (
-            <Attendance 
+            <DiemDanh 
+              currentTour={currentTour}
               passengers={passengers}
               setPassengers={setPassengers}
             />
           )}
 
           {activeTab === 'green' && (
-            <GreenPoints 
+            <DiemXanh 
+              maTour={currentTour?.maTourThucTe}
               passengers={passengers}
               setPassengers={setPassengers}
             />
           )}
 
           {activeTab === 'expense' && (
-            <ExpenseTracker 
+            <QuanLyChiPhi 
+              maTour={currentTour?.maTourThucTe}
               expenses={expenses}
               setExpenses={setExpenses}
             />
           )}
 
           {activeTab === 'incident' && (
-            <IncidentReport 
+            <BaoCaoSuCo 
+              maTour={currentTour?.maTourThucTe}
               passengers={passengers}
               incidents={incidents}
               setIncidents={setIncidents}
@@ -281,9 +386,9 @@ export default function App() {
           )}
 
           {activeTab === 'profile' && (
-            <Profile 
+            <HoSoCaNhan 
               onBack={() => setActiveTab('dashboard')}
-              onLogout={handleLogout}
+              onLogout={xuLyDangXuat}
             />
           )}
         </main>

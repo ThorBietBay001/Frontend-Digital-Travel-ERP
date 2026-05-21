@@ -1,20 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Leaf, ThumbsUp, Check, RotateCcw, Camera } from 'lucide-react';
 import type { Passenger } from '../types';
-import { greenActionsList } from '../mockData';
+import { hdvService } from '../services/hdvService';
+
+interface GreenAction {
+  id: string;
+  name: string;
+  points: number;
+  icon: string;
+}
 
 interface GreenPointsProps {
+  maTour?: string;
   passengers: Passenger[];
   setPassengers: React.Dispatch<React.SetStateAction<Passenger[]>>;
 }
 
-export default function GreenPoints({ passengers, setPassengers }: GreenPointsProps) {
+export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPointsProps) {
   // Green Action State
+  const [greenActionsList, setGreenActionsList] = useState<GreenAction[]>([]);
   const [selectedGreenGuests, setSelectedGreenGuests] = useState<string[]>([]);
   const [selectedGreenAction, setSelectedGreenAction] = useState<string>('');
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
+
+  // Fetch danh sách hành động xanh từ API
+  useEffect(() => {
+    hdvService.layDanhSachHanhDongXanh()
+      .then((res) => {
+        const data = res?.data ?? res ?? [];
+        const list = Array.isArray(data) ? data : [];
+        const mapped: GreenAction[] = list.map((a: any) => ({
+          id: a.maHanhDongXanh,
+          name: a.tenHanhDong,
+          points: Number(a.diemCong) || 0,
+          icon: '🌿'
+        }));
+        setGreenActionsList(mapped);
+      })
+      .catch(() => {
+        // fallback: giữ list rỗng nếu API lỗi
+        setGreenActionsList([]);
+      });
+  }, []);
 
   // Multi-select passengers for green actions
   const toggleSelectGreenGuest = (code: string) => {
@@ -41,52 +70,72 @@ export default function GreenPoints({ passengers, setPassengers }: GreenPointsPr
   };
 
   // Submit green points
-  const submitGreenAction = () => {
-    if (selectedGreenGuests.length === 0 || !selectedGreenAction) return;
+  const submitGreenAction = async () => {
+    if (selectedGreenGuests.length === 0 || !selectedGreenAction || !maTour) return;
 
     const action = greenActionsList.find(a => a.id === selectedGreenAction);
     if (!action) return;
 
     const awardedPoints = action.points;
 
-    setPassengers(prev => prev.map(p => {
-      if (selectedGreenGuests.includes(p.code)) {
-        return { ...p, greenPoints: p.greenPoints + awardedPoints };
-      }
-      return p;
-    }));
+    try {
+      const data = {
+        maKhachHangList: selectedGreenGuests,
+        hanhDong: action.name,
+        diemCong: awardedPoints,
+        minhChungHinhAnh: greenPhotoFile || "URL_MOCK"
+      };
 
-    const guestNames = passengers
-      .filter(p => selectedGreenGuests.includes(p.code))
-      .map(p => p.name)
-      .join(', ');
+      await hdvService.luuHanhDongXanh(maTour, data);
 
-    setGreenConfirmToast({
-      show: true,
-      text: `Đã cộng +${awardedPoints} điểm xanh vào Hộ chiếu số cho: ${guestNames}!`
-    });
+      setPassengers(prev => prev.map(p => {
+        if (selectedGreenGuests.includes(p.code)) {
+          return { ...p, greenPoints: p.greenPoints + awardedPoints };
+        }
+        return p;
+      }));
 
-    setSelectedGreenGuests([]);
-    setSelectedGreenAction('');
-    setGreenPhotoFile(null);
+      const guestNames = passengers
+        .filter(p => selectedGreenGuests.includes(p.code))
+        .map(p => p.name)
+        .join(', ');
 
-    setTimeout(() => {
-      setGreenConfirmToast(null);
-    }, 4000);
+      setGreenConfirmToast({
+        show: true,
+        text: `Đã cộng +${awardedPoints} điểm xanh vào Hộ chiếu số cho: ${guestNames}!`
+      });
+
+      setSelectedGreenGuests([]);
+      setSelectedGreenAction('');
+      setGreenPhotoFile(null);
+
+      setTimeout(() => {
+        setGreenConfirmToast(null);
+      }, 4000);
+    } catch (error) {
+      console.error(error);
+      setGreenConfirmToast({
+        show: true,
+        text: 'Lỗi: Không thể lưu hành động xanh!'
+      });
+      setTimeout(() => setGreenConfirmToast(null), 4000);
+    }
   };
 
   return (
     <div className="space-y-4 animate-slide-up">
       {/* Page header (Clean borderless, text only) */}
       <div className="px-1 py-1">
-        <div className="flex items-center justify-between">
-          <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5">
-            <Leaf size={14} className="text-emerald-500" />
-            <span>GHI NHẬN HÀNH ĐỘNG XANH</span>
-          </h3>
-          <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-emerald-300">PQ001</span>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center">
+              <Leaf size={14} className="mr-1.5 text-emerald-500" />
+              Ghi nhận hành động xanh
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-1">Cộng điểm tích lũy vào Hộ chiếu số của hành khách</p>
+          </div>
+          <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-emerald-300">{maTour || 'N/A'}</span>
         </div>
-        <p className="text-[11px] text-slate-500 mt-0.5">Cộng điểm tích lũy vào Hộ chiếu số của hành khách</p>
       </div>
 
       {/* Confirmed green toast */}

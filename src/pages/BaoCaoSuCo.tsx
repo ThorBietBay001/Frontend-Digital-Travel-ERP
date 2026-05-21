@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
-import type { Passenger, IncidentReport as IncidentType } from '../types';
+import type { Passenger, BaoCaoSuCo as IncidentType } from '../types';
+
+import { hdvService } from '../services/hdvService';
 
 interface IncidentReportProps {
+  maTour?: string;
   passengers: Passenger[];
   incidents: IncidentType[];
   setIncidents: React.Dispatch<React.SetStateAction<IncidentType[]>>;
 }
 
-export default function IncidentReport({ passengers, incidents, setIncidents }: IncidentReportProps) {
+export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents }: IncidentReportProps) {
   // Incident State
   const [incidentForm, setIncidentForm] = useState({
     type: 'Y tế',
@@ -25,39 +28,63 @@ export default function IncidentReport({ passengers, incidents, setIncidents }: 
   const [expandedIncidents, setExpandedIncidents] = useState<Record<string, boolean>>({});
 
   // Incident Submit
-  const handleIncidentSubmit = (e: React.FormEvent) => {
+  const handleIncidentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!maTour) {
+      setIncidentToast('Lỗi: Không tìm thấy thông tin Tour!');
+      return;
+    }
+
     const targetPassenger = passengers.find(p => p.code === incidentForm.passengerCode);
 
-    const newReport: IncidentType = {
-      id: `INC00${incidents.length + 1}`,
-      type: incidentForm.type,
-      severity: incidentForm.severity,
-      passengerName: targetPassenger ? targetPassenger.name : undefined,
-      passengerCode: incidentForm.passengerCode || undefined,
-      description: incidentForm.description,
-      treatment: incidentForm.treatment,
-      result: incidentForm.result || 'Đang theo dõi sát sao tại chỗ.',
-      time: new Date().toLocaleString('vi-VN').slice(0, 16)
-    };
+    try {
+      const data = {
+        loaiSuCo: incidentForm.type,
+        mucDo: incidentForm.severity,
+        moTa: incidentForm.description,
+        giaiPhap: incidentForm.treatment,
+        maKhachHang: incidentForm.passengerCode || undefined
+      };
 
-    setIncidents(prev => [newReport, ...prev]);
-    setIncidentToast(`Đã gửi báo cáo sự cố ${newReport.id} thành công!`);
+      const res = await hdvService.taoSuCo(maTour, data);
 
-    // Reset form
-    setIncidentForm({
-      type: 'Y tế',
-      severity: 'Thấp',
-      passengerCode: '',
-      description: '',
-      treatment: '',
-      result: ''
-    });
-    setSosActive(false);
+      if (res.data) {
+        const i = res.data;
+        const newReport: IncidentType = {
+          id: i.maNhatKySuCo,
+          type: i.loaiSuCo || incidentForm.type,
+          severity: i.mucDo || incidentForm.severity,
+          passengerName: targetPassenger ? targetPassenger.name : undefined,
+          passengerCode: incidentForm.passengerCode || undefined,
+          description: i.moTa || incidentForm.description,
+          treatment: i.giaiPhap || incidentForm.treatment,
+          result: i.giaiPhap || incidentForm.treatment,
+          time: i.thoiGianBaoCao || new Date().toLocaleString('vi-VN').slice(0, 16)
+        };
 
-    setTimeout(() => {
-      setIncidentToast(null);
-    }, 4000);
+        setIncidents(prev => [newReport, ...prev]);
+        setIncidentToast(`Đã gửi báo cáo sự cố ${newReport.id} thành công!`);
+
+        // Reset form
+        setIncidentForm({
+          type: 'Y tế',
+          severity: 'Thấp',
+          passengerCode: '',
+          description: '',
+          treatment: '',
+          result: ''
+        });
+        setSosActive(false);
+
+        setTimeout(() => {
+          setIncidentToast(null);
+        }, 4000);
+      }
+    } catch (error) {
+      console.error(error);
+      setIncidentToast('Lỗi: Không thể gửi báo cáo sự cố!');
+      setTimeout(() => setIncidentToast(null), 4000);
+    }
   };
 
   return (
@@ -72,14 +99,16 @@ export default function IncidentReport({ passengers, incidents, setIncidents }: 
 
       {/* Incident Form Card Title Outside */}
       <div className="px-1 py-1">
-        <div className="flex items-center justify-between">
-          <h3 className="font-black text-slate-800 text-xs uppercase tracking-wider flex items-center space-x-1.5">
-            <AlertTriangle size={14} className="text-rose-500" />
-            <span>BÁO CÁO SỰ CỐ MỚI</span>
-          </h3>
-          <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300">PQ001</span>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center">
+              <AlertTriangle size={14} className="mr-1.5 text-rose-500" />
+              Sổ tay sự cố y tế
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-1">Ghi nhận nhanh các trường hợp y tế</p>
+          </div>
+          <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300">{maTour || 'N/A'}</span>
         </div>
-        <p className="text-[11px] text-slate-500 mt-0.5">Ghi nhận nhanh sự cố tại hiện trường và gửi hỗ trợ SOS</p>
       </div>
 
       {/* Incident Form Card */}
@@ -109,7 +138,6 @@ export default function IncidentReport({ passengers, incidents, setIncidents }: 
                       { id: 'Y tế', label: 'Y tế' },
                       { id: 'Thời tiết', label: 'Thời tiết' },
                       { id: 'Phương tiện', label: 'Phương tiện' },
-                      { id: 'Khách hàng', label: 'Khách hàng' },
                       { id: 'Ăn uống', label: 'Ăn uống' },
                       { id: 'Khác', label: 'Khác' }
                     ].map(t => (
@@ -251,7 +279,7 @@ export default function IncidentReport({ passengers, incidents, setIncidents }: 
             {sosActive ? (
               <>
                 <AlertTriangle size={14} />
-                <span>🔥 GỬI BÁO CÁO KHẨN SOS</span>
+                <span>GỬI BÁO CÁO KHẨN SOS</span>
               </>
             ) : (
               <span>Gửi Báo Cáo Sự Cố</span>

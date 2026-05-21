@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Compass, AlertTriangle, User, Lock } from 'lucide-react';
+import { hdvService } from '../services/hdvService';
 
 interface LoginProps {
   loginCode: string;
@@ -11,7 +12,7 @@ interface LoginProps {
   setIsLoggedIn: (val: boolean) => void;
 }
 
-export default function Login({
+export default function DangNhap({
   loginCode,
   setLoginCode,
   loginPassword,
@@ -101,14 +102,18 @@ export default function Login({
             )}
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (loginCode.trim().toUpperCase() === 'PQ001') {
-                  setIsLoggedIn(true);
-                  setLoginError(null);
-                  setErrorMsg(null);
-                } else {
-                  setLoginError('Mã HDV không đúng hoặc chưa được phân công nhiệm vụ!');
+                try {
+                  const res = await hdvService.dangNhap(loginCode, loginPassword);
+                  if (res.data?.accessToken) {
+                    localStorage.setItem('token', res.data.accessToken);
+                    setIsLoggedIn(true);
+                    setLoginError(null);
+                    setErrorMsg(null);
+                  }
+                } catch (err: any) {
+                  setLoginError(err.response?.data?.message || 'Đăng nhập thất bại!');
                 }
               }}
               className="space-y-3.5"
