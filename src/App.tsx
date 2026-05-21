@@ -25,9 +25,11 @@ const ROLES_DASHBOARD = ['ADMIN', 'SANPHAM', 'KINHDOANH', 'DIEUHANH', 'KETOAN', 
 const ROLES_SANPHAM = ['SANPHAM'];
 const ROLES_KINHDOANH = ['KINHDOANH'];
 const ROLES_DIEUHANH = ['DIEUHANH'];
+const ROLES_TOUR_INSTANCE = ['DIEUHANH', 'SANPHAM'];
 const ROLES_KETOAN = ['KETOAN'];
 const ROLES_HDV = ['HDV'];
 const ROLES_ADMIN = ['ADMIN'];
+const ROLES_HR = ['ADMIN', 'DIEUHANH'];
 
 function App() {
   return (
@@ -47,7 +49,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/tour-instance" element={
-        <ProtectedRoute allowedRoles={ROLES_DIEUHANH}>
+        <ProtectedRoute allowedRoles={ROLES_TOUR_INSTANCE}>
           <TourInstanceList />
         </ProtectedRoute>
       } />
@@ -128,7 +130,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/system/hr" element={
-        <ProtectedRoute allowedRoles={ROLES_ADMIN}>
+        <ProtectedRoute allowedRoles={ROLES_HR}>
           <StaffList />
         </ProtectedRoute>
       } />

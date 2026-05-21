@@ -21,6 +21,14 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeRole = (role?: string): string => {
+  if (!role) return '';
+  const normalized = role.trim().toUpperCase().replace(/^ROLE_/, '');
+  if (normalized === 'SALES') return 'KINHDOANH';
+  if (normalized === 'MANAGER') return 'DIEUHANH';
+  return normalized;
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -37,10 +45,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const rawRole = decoded.maVaiTro || decoded.role || '';
         const user: User = {
           hoTen: decoded.hoTen || decoded.name || 'User',
-          maVaiTro: rawRole.trim().toUpperCase().replace(/^ROLE_/, ''),
+          maVaiTro: normalizeRole(rawRole),
           tenHienThi: decoded.tenHienThi || decoded.sub || 'User',
         };
-        console.log('Current role:', user.maVaiTro);
         setAuthState({
           isAuthenticated: true,
           user,
@@ -57,9 +64,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('token', token);
     const normalizedUser = {
       ...user,
-      maVaiTro: user.maVaiTro.trim().toUpperCase().replace(/^ROLE_/, ''),
+      maVaiTro: normalizeRole(user.maVaiTro),
     };
-    console.log('Current role:', normalizedUser.maVaiTro);
     setAuthState({
       isAuthenticated: true,
       user: normalizedUser,
