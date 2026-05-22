@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Compass, AlertTriangle, User, Lock } from 'lucide-react';
+import { AlertTriangle, Compass, Lock, User } from 'lucide-react';
 import { hdvService } from '../services/hdvService';
 
 interface LoginProps {
@@ -22,13 +22,15 @@ export default function DangNhap({
   setIsLoggedIn
 }: LoginProps) {
   const [mode, setMode] = useState<'LOGIN' | 'FORGOT' | 'OTP_FORGOT'>('LOGIN');
-
-  // Forgot Password Form States
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotNewPassword, setForgotNewPassword] = useState('');
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
-  const [isOtpVerified, setIsOtpVerified] = useState<boolean>(false);
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpArray, setOtpArray] = useState<string[]>(['', '', '', '', '', '']);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const displayError = errorMsg || loginError;
 
   const handleOtpChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;
@@ -36,7 +38,6 @@ export default function DangNhap({
     newOtp[index] = value.substring(value.length - 1);
     setOtpArray(newOtp);
 
-    // auto focus next input
     if (value && index < 5) {
       const nextInput = document.getElementById(`otp-input-${index + 1}`);
       if (nextInput) (nextInput as HTMLInputElement).focus();
@@ -55,21 +56,19 @@ export default function DangNhap({
     }
   };
 
-  // Notification States
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const displayError = errorMsg || loginError;
+  const switchMode = (nextMode: 'LOGIN' | 'FORGOT' | 'OTP_FORGOT') => {
+    setMode(nextMode);
+    setErrorMsg(null);
+    setLoginError(null);
+    setSuccessMsg(null);
+  };
 
   return (
     <div className="flex-1 flex flex-col justify-between p-6 relative overflow-y-auto overflow-x-hidden bg-gradient-to-tr from-sky-100/50 via-white to-sky-50 animate-fade-in">
-      {/* Background elements */}
       <div className="absolute -right-20 -top-20 w-60 h-60 rounded-full bg-sky-300/10 blur-2xl animate-float"></div>
       <div className="absolute -left-20 bottom-10 w-60 h-60 rounded-full bg-indigo-300/10 blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
 
-      {/* Group Logo + Form to be close to each other */}
       <div className="flex flex-col space-y-6 z-10 my-auto -translate-y-6 w-full max-w-sm mx-auto">
-        {/* Logo and Intro */}
         <div className="text-center space-y-3 animate-slide-up">
           <div className="w-16 h-16 mx-auto bg-gradient-to-tr from-sky-400 to-sky-500 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-sky-200 animate-pulse-subtle">
             <Compass size={32} className="stroke-[1.8px]" />
@@ -80,7 +79,6 @@ export default function DangNhap({
           </div>
         </div>
 
-        {/* Dynamic Auth Views based on mode */}
         {mode === 'LOGIN' && (
           <div className="glass-panel p-5 rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-100/50 space-y-4 animate-slide-up">
             <div className="text-center">
@@ -124,7 +122,7 @@ export default function DangNhap({
                   <span className="absolute left-3 top-3 text-slate-400"><User size={15} /></span>
                   <input
                     type="text"
-                    placeholder="Ví dụ: PQ001"
+                    placeholder="Ví dụ: hdv01"
                     value={loginCode}
                     onChange={(e) => setLoginCode(e.target.value)}
                     className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
@@ -154,7 +152,7 @@ export default function DangNhap({
                   <span>Ghi nhớ thiết bị</span>
                 </label>
                 <span
-                  onClick={() => { setMode('FORGOT'); setErrorMsg(null); setSuccessMsg(null); }}
+                  onClick={() => switchMode('FORGOT')}
                   className="hover:text-sky-500 cursor-pointer font-bold"
                 >
                   Quên mật khẩu?
@@ -187,8 +185,8 @@ export default function DangNhap({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (forgotEmail.toLowerCase() === 'notfound@gmail.com') {
-                  setErrorMsg('Email không tồn tại! Không tìm thấy tài khoản HDV.');
+                if (!forgotEmail.trim()) {
+                  setErrorMsg('Vui lòng nhập email đã đăng ký.');
                   return;
                 }
                 setErrorMsg(null);
@@ -201,7 +199,7 @@ export default function DangNhap({
                 <label className="text-[9px] font-bold text-slate-400 block mb-1 uppercase">Địa chỉ email đăng ký</label>
                 <input
                   type="email"
-                  placeholder="example@digitaltravel.vn"
+                  placeholder="email@digitaltravel.vn"
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
                   className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70 select-text"
@@ -219,7 +217,10 @@ export default function DangNhap({
 
             <div className="text-center">
               <span
-                onClick={() => { setMode('LOGIN'); setErrorMsg(null); setSuccessMsg(null); setIsOtpVerified(false); }}
+                onClick={() => {
+                  switchMode('LOGIN');
+                  setIsOtpVerified(false);
+                }}
                 className="text-[10px] text-sky-500 font-bold hover:underline cursor-pointer"
               >
                 Quay lại đăng nhập
@@ -255,7 +256,6 @@ export default function DangNhap({
             )}
 
             {!isOtpVerified ? (
-              /* Step 1: Verify OTP Form */
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -267,14 +267,10 @@ export default function DangNhap({
                   setErrorMsg(null);
                   setSuccessMsg('OTP được xác thực chính xác!');
                   setIsOtpVerified(true);
-                  // Auto-hide success toast after 2.5 seconds
-                  setTimeout(() => {
-                    setSuccessMsg(null);
-                  }, 2500);
+                  setTimeout(() => setSuccessMsg(null), 2500);
                 }}
                 className="space-y-5 animate-slide-up"
               >
-                {/* 6 Individual Digit Inputs */}
                 <div className="flex justify-between items-center gap-1 px-1">
                   {otpArray.map((digit, index) => (
                     <input
@@ -308,7 +304,7 @@ export default function DangNhap({
 
                 <div className="text-center pt-1">
                   <span
-                    onClick={() => { setMode('FORGOT'); setErrorMsg(null); setSuccessMsg(null); }}
+                    onClick={() => switchMode('FORGOT')}
                     className="text-[10px] text-sky-500 font-bold hover:underline cursor-pointer"
                   >
                     Quay lại gửi yêu cầu
@@ -316,7 +312,6 @@ export default function DangNhap({
                 </div>
               </form>
             ) : (
-              /* Step 2: New Password Reset Form */
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -371,18 +366,16 @@ export default function DangNhap({
         )}
       </div>
 
-      {/* Support / Credentials Helper + Clean Simplified Footer */}
       <div className="z-10 text-center space-y-4 w-full animate-slide-up mt-auto" style={{ animationDelay: '200ms' }}>
         {mode === 'LOGIN' && (
           <div className="bg-sky-50/50 p-2.5 rounded-2xl border border-sky-100/50 inline-block max-w-[280px] mx-auto">
             <p className="text-[10px] text-sky-700 leading-snug text-center">
-              🔑 <strong>Tài khoản Demo</strong>:<br />
-              Mã HDV: <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">PQ001</code> | Mật khẩu bất kỳ
+              <strong>Tài khoản seed</strong>:<br />
+              Ví dụ: <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">hdv01</code> | Mật khẩu <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">password</code>
             </p>
           </div>
         )}
 
-        {/* Modern Premium Footer */}
         <footer className="mt-6 text-center space-y-2 w-full pb-2">
           <div className="flex items-center justify-center space-x-3 text-[10px] text-slate-400 font-medium">
             <a href="#" className="hover:text-sky-500 transition">Hỗ trợ</a>
@@ -391,7 +384,7 @@ export default function DangNhap({
             <span className="text-slate-300">•</span>
             <a href="#" className="hover:text-sky-500 transition">Điều khoản</a>
           </div>
-          
+
           <div className="flex items-center justify-center space-x-2 text-[9px] text-slate-400">
             <span>© 2026 Digital Travel ERP</span>
             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
@@ -400,7 +393,7 @@ export default function DangNhap({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
-              <span>v2.4.0</span>=
+              <span>v2.4.0</span>
             </div>
           </div>
         </footer>

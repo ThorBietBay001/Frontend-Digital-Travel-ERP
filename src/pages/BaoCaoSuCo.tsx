@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Passenger, BaoCaoSuCo as IncidentType } from '../types';
-
 import { hdvService } from '../services/hdvService';
 
 interface IncidentReportProps {
@@ -11,8 +10,15 @@ interface IncidentReportProps {
   setIncidents: React.Dispatch<React.SetStateAction<IncidentType[]>>;
 }
 
+const incidentTypes = [
+  { id: 'Y tế', label: 'Y tế', apiValue: 'Y_TE' },
+  { id: 'Thời tiết', label: 'Thời tiết', apiValue: 'THOI_TIET' },
+  { id: 'Phương tiện', label: 'Phương tiện', apiValue: 'PHUONG_TIEN' },
+  { id: 'Ăn uống', label: 'Ăn uống', apiValue: 'AN_UONG' },
+  { id: 'Khác', label: 'Khác', apiValue: 'KHAC' }
+];
+
 export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents }: IncidentReportProps) {
-  // Incident State
   const [incidentForm, setIncidentForm] = useState({
     type: 'Y tế',
     severity: 'Thấp' as 'Thấp' | 'Cao',
@@ -27,11 +33,17 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
   const [incidentToast, setIncidentToast] = useState<string | null>(null);
   const [expandedIncidents, setExpandedIncidents] = useState<Record<string, boolean>>({});
 
-  // Incident Submit
+  const mapLoaiSuCo = (type: string) => {
+    return incidentTypes.find(item => item.id === type)?.apiValue || 'KHAC';
+  };
+
+  const mapMucDo = (severity: string) => severity === 'Cao' ? 'SOS' : 'THAP';
+
   const handleIncidentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!maTour) {
-      setIncidentToast('Lỗi: Không tìm thấy thông tin Tour!');
+      setIncidentToast('Lỗi: Không tìm thấy thông tin tour!');
+      setTimeout(() => setIncidentToast(null), 4000);
       return;
     }
 
@@ -39,11 +51,10 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
 
     try {
       const data = {
-        loaiSuCo: incidentForm.type,
-        mucDo: incidentForm.severity,
+        loaiSuCo: mapLoaiSuCo(incidentForm.type),
+        mucDo: mapMucDo(incidentForm.severity),
         moTa: incidentForm.description,
-        giaiPhap: incidentForm.treatment,
-        maKhachHang: incidentForm.passengerCode || undefined
+        giaiPhap: incidentForm.treatment
       };
 
       const res = await hdvService.taoSuCo(maTour, data);
@@ -52,8 +63,8 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         const i = res.data;
         const newReport: IncidentType = {
           id: i.maNhatKySuCo,
-          type: i.loaiSuCo || incidentForm.type,
-          severity: i.mucDo || incidentForm.severity,
+          type: incidentForm.type,
+          severity: i.mucDo === 'SOS' ? 'Cao' : 'Thấp',
           passengerName: targetPassenger ? targetPassenger.name : undefined,
           passengerCode: incidentForm.passengerCode || undefined,
           description: i.moTa || incidentForm.description,
@@ -65,7 +76,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         setIncidents(prev => [newReport, ...prev]);
         setIncidentToast(`Đã gửi báo cáo sự cố ${newReport.id} thành công!`);
 
-        // Reset form
         setIncidentForm({
           type: 'Y tế',
           severity: 'Thấp',
@@ -75,10 +85,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
           result: ''
         });
         setSosActive(false);
-
-        setTimeout(() => {
-          setIncidentToast(null);
-        }, 4000);
+        setTimeout(() => setIncidentToast(null), 4000);
       }
     } catch (error) {
       console.error(error);
@@ -89,7 +96,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
 
   return (
     <div className="space-y-4 animate-slide-up">
-      {/* Sent Toast notification */}
       {incidentToast && (
         <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-2xl shadow-sm border border-emerald-200 flex items-center space-x-2 animate-slide-up">
           <CheckCircle size={16} className="text-emerald-500" />
@@ -97,7 +103,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         </div>
       )}
 
-      {/* Incident Form Card Title Outside */}
       <div className="px-1 py-1">
         <div className="flex justify-between items-start">
           <div>
@@ -111,10 +116,8 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         </div>
       </div>
 
-      {/* Incident Form Card */}
       <div className="glass-card p-4 rounded-3xl space-y-3">
         <form onSubmit={handleIncidentSubmit} className="space-y-3.5 text-xs">
-          {/* Row 1: Type + Severity inline */}
           <div className="flex items-start space-x-4">
             <div className="w-[55%] relative">
               <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1 tracking-wider">Loại sự cố</label>
@@ -129,18 +132,9 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
 
               {isIncidentTypeOpen && (
                 <>
-                  {/* Click-away backdrop */}
                   <div className="fixed inset-0 z-40" onClick={() => setIsIncidentTypeOpen(false)}></div>
-
-                  {/* Dropdown Menu */}
                   <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white/95 backdrop-blur-md border border-sky-100 rounded-2xl shadow-xl py-1 animate-slide-up text-[11px] font-bold text-slate-700 overflow-hidden">
-                    {[
-                      { id: 'Y tế', label: 'Y tế' },
-                      { id: 'Thời tiết', label: 'Thời tiết' },
-                      { id: 'Phương tiện', label: 'Phương tiện' },
-                      { id: 'Ăn uống', label: 'Ăn uống' },
-                      { id: 'Khác', label: 'Khác' }
-                    ].map(t => (
+                    {incidentTypes.map(t => (
                       <button
                         key={t.id}
                         type="button"
@@ -190,7 +184,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
             </div>
           </div>
 
-          {/* Passenger selector */}
           <div className="relative">
             <label className="text-[10px] font-bold text-slate-400 block mb-1 tracking-wider">Hành khách liên quan</label>
             <button
@@ -208,10 +201,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
 
             {isIncidentPassengerOpen && (
               <>
-                {/* Click-away backdrop */}
                 <div className="fixed inset-0 z-40" onClick={() => setIsIncidentPassengerOpen(false)}></div>
-
-                {/* Dropdown Menu */}
                 <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white/95 backdrop-blur-md border border-sky-100 rounded-2xl shadow-xl py-1 max-h-48 overflow-y-auto animate-slide-up text-[11px] font-bold text-slate-700">
                   <button
                     type="button"
@@ -243,7 +233,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
             )}
           </div>
 
-          {/* Description & treatment */}
           <div>
             <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Mô tả sự việc</label>
             <textarea
@@ -268,7 +257,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
             />
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-md transition active:scale-95 flex items-center justify-center space-x-1.5 ${sosActive
@@ -288,7 +276,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         </form>
       </div>
 
-      {/* Sent logs */}
       <div className="space-y-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
           Lịch sử báo cáo sự cố đã gửi
@@ -304,7 +291,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                 className={`glass-card rounded-2xl border transition-all duration-200 shadow-sm ${isHigh ? 'border-rose-100 bg-rose-50/20' : 'border-slate-100 bg-white'
                   }`}
               >
-                {/* Accordion header */}
                 <div
                   onClick={() => {
                     setExpandedIncidents(prev => ({
@@ -338,7 +324,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                   />
                 </div>
 
-                {/* Accordion Collapsible Inner detail parameters */}
                 {isExpanded && (
                   <div className="px-3 pb-3 pt-1.5 border-t border-slate-100 text-[11px] text-slate-600 space-y-2 animate-slide-up">
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/50">

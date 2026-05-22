@@ -31,8 +31,8 @@ type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | '
 export default function App() {
   // Authentication States
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [loginCode, setLoginCode] = useState<string>('PQ001');
-  const [loginPassword, setLoginPassword] = useState<string>('••••••••');
+  const [loginCode, setLoginCode] = useState<string>('');
+  const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Application Data States
@@ -93,7 +93,10 @@ export default function App() {
               const passRes = await hdvService.layDanhSachDoan(ongoingTour.maTourThucTe);
               if (passRes?.data) {
                 const mapped = passRes.data.map((p: any) => ({
-                  code: p.maKhachHang,
+                  code: p.maKhachHang || p.maNguoiDongHanh,
+                  maKhachHang: p.maKhachHang || undefined,
+                  maNguoiDongHanh: p.maNguoiDongHanh || undefined,
+                  loaiKhach: p.loaiKhach,
                   name: p.hoTenKhachHang || p.hoTen,
                   phone: p.soDienThoai || 'N/A',
                   rank: p.hangThanhVien || 'THANH_VIEN',

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Leaf, ThumbsUp, Check, RotateCcw, Camera } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Camera, Check, Leaf, RotateCcw, ThumbsUp } from 'lucide-react';
 import type { Passenger } from '../types';
 import { hdvService } from '../services/hdvService';
 
@@ -17,15 +17,13 @@ interface GreenPointsProps {
 }
 
 export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPointsProps) {
-  // Green Action State
   const [greenActionsList, setGreenActionsList] = useState<GreenAction[]>([]);
   const [selectedGreenGuests, setSelectedGreenGuests] = useState<string[]>([]);
-  const [selectedGreenAction, setSelectedGreenAction] = useState<string>('');
+  const [selectedGreenAction, setSelectedGreenAction] = useState('');
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
 
-  // Fetch danh sách hành động xanh từ API
   useEffect(() => {
     hdvService.layDanhSachHanhDongXanh()
       .then((res) => {
@@ -35,17 +33,15 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
           id: a.maHanhDongXanh,
           name: a.tenHanhDong,
           points: Number(a.diemCong) || 0,
-          icon: '🌿'
+          icon: '+'
         }));
         setGreenActionsList(mapped);
       })
       .catch(() => {
-        // fallback: giữ list rỗng nếu API lỗi
         setGreenActionsList([]);
       });
   }, []);
 
-  // Multi-select passengers for green actions
   const toggleSelectGreenGuest = (code: string) => {
     setSelectedGreenGuests(prev =>
       prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
@@ -60,58 +56,58 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
     }
   };
 
-  // Simulate green action camera capture
   const handleCaptureGreenPhoto = () => {
     setIsCapturingGreenPhoto(true);
     setTimeout(() => {
-      setGreenPhotoFile('GREEN_PROOF_MOCK_DATA_URL');
+      setGreenPhotoFile('GREEN_PROOF_LOCAL_UI');
       setIsCapturingGreenPhoto(false);
     }, 1500);
   };
 
-  // Submit green points
   const submitGreenAction = async () => {
     if (selectedGreenGuests.length === 0 || !selectedGreenAction || !maTour) return;
 
     const action = greenActionsList.find(a => a.id === selectedGreenAction);
     if (!action) return;
 
-    const awardedPoints = action.points;
-
     try {
-      const data = {
-        maKhachHangList: selectedGreenGuests,
-        hanhDong: action.name,
-        diemCong: awardedPoints,
-        minhChungHinhAnh: greenPhotoFile || "URL_MOCK"
-      };
+      const selectedPassengers = passengers.filter(p => selectedGreenGuests.includes(p.code));
+      const khachHangIds = selectedPassengers
+        .map(p => p.maKhachHang || (!p.maNguoiDongHanh ? p.code : undefined))
+        .filter((id): id is string => Boolean(id));
 
-      await hdvService.luuHanhDongXanh(maTour, data);
+      if (khachHangIds.length === 0) {
+        setGreenConfirmToast({
+          show: true,
+          text: 'Chỉ khách hàng có hộ chiếu số mới có thể cộng điểm xanh.'
+        });
+        return;
+      }
+
+      await Promise.all(khachHangIds.map(maKhachHang => hdvService.luuHanhDongXanh(maTour, {
+        maKhachHang,
+        maHanhDongXanh: action.id,
+        minhChung: greenPhotoFile || undefined
+      })));
 
       setPassengers(prev => prev.map(p => {
         if (selectedGreenGuests.includes(p.code)) {
-          return { ...p, greenPoints: p.greenPoints + awardedPoints };
+          return { ...p, greenPoints: p.greenPoints + action.points };
         }
         return p;
       }));
 
-      const guestNames = passengers
-        .filter(p => selectedGreenGuests.includes(p.code))
-        .map(p => p.name)
-        .join(', ');
-
+      const guestNames = selectedPassengers.map(p => p.name).join(', ');
       setGreenConfirmToast({
         show: true,
-        text: `Đã cộng +${awardedPoints} điểm xanh vào Hộ chiếu số cho: ${guestNames}!`
+        text: `Đã cộng +${action.points} điểm xanh vào Hộ chiếu số cho: ${guestNames}!`
       });
 
       setSelectedGreenGuests([]);
       setSelectedGreenAction('');
       setGreenPhotoFile(null);
 
-      setTimeout(() => {
-        setGreenConfirmToast(null);
-      }, 4000);
+      setTimeout(() => setGreenConfirmToast(null), 4000);
     } catch (error) {
       console.error(error);
       setGreenConfirmToast({
@@ -124,7 +120,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
 
   return (
     <div className="space-y-4 animate-slide-up">
-      {/* Page header (Clean borderless, text only) */}
       <div className="px-1 py-1">
         <div className="flex justify-between items-start">
           <div>
@@ -138,7 +133,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         </div>
       </div>
 
-      {/* Confirmed green toast */}
       {greenConfirmToast && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-2xl shadow-sm flex items-center space-x-2 animate-slide-up">
           <ThumbsUp size={16} className="text-emerald-500" />
@@ -146,7 +140,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         </div>
       )}
 
-      {/* Step 1: Select Guests */}
       <div className="glass-card p-4 rounded-3xl space-y-3">
         <div className="flex justify-between items-center">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -160,7 +153,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
           </button>
         </div>
 
-        {/* Multiple Guests selector tags */}
         <div className="grid grid-cols-2 gap-2">
           {passengers.map(p => {
             const isChosen = selectedGreenGuests.includes(p.code);
@@ -179,7 +171,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         </div>
       </div>
 
-      {/* Step 2: Select Action */}
       <div className="glass-card p-4 rounded-3xl space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
           Chọn hành động bảo vệ môi trường
@@ -203,7 +194,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         </div>
       </div>
 
-      {/* Step 3: Capture Proof Photo */}
       <div className="glass-card p-4 rounded-3xl space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
           Chụp ảnh minh chứng thực địa
@@ -213,7 +203,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
           <div className="relative rounded-2xl overflow-hidden h-28 bg-slate-900 border border-slate-200">
             <img
               src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=320"
-              alt="Green Proof"
+              alt="Minh chứng hành động xanh"
               className="w-full h-full object-cover"
             />
             <button
@@ -232,7 +222,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
             {isCapturingGreenPhoto ? (
               <>
                 <div className="w-6 h-6 border-3 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-[11px] font-bold text-sky-500 mt-2">Đang kích hoạt Camera di động...</span>
+                <span className="text-[11px] font-bold text-sky-500 mt-2">Đang kích hoạt camera di động...</span>
               </>
             ) : (
               <>
@@ -244,7 +234,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         )}
       </div>
 
-      {/* Submit Button */}
       <button
         onClick={submitGreenAction}
         disabled={selectedGreenGuests.length === 0 || !selectedGreenAction}

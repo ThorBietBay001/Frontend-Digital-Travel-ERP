@@ -1,7 +1,7 @@
 import api from './api';
 
 export const hdvService = {
-  // 1. Auth & HoSoCaNhan
+  // 1. Auth & hồ sơ cá nhân
   dangNhap: async (tenDangNhap: string, matKhau: string) => {
     const res = await api.post('/auth/dang-nhap', { tenDangNhap, matKhau });
     return res.data;
@@ -17,36 +17,46 @@ export const hdvService = {
     return res.data;
   },
 
-  // 2. Tours
+  // 2. Tour
   layDanhSachTour: async () => {
     const res = await api.get('/huong-dan-vien/tour-cua-toi');
     return res.data;
   },
 
   layChiTietTour: async (_maTour: string) => {
-    // Falls back to tour list since there is no dedicated HDV tour detail endpoint
-    const res = await api.get(`/huong-dan-vien/tour-cua-toi`);
+    // Hiện chưa có endpoint chi tiết tour riêng cho HDV, tạm dùng danh sách tour.
+    const res = await api.get('/huong-dan-vien/tour-cua-toi');
     return res.data;
   },
 
-  // Lấy chi tiết tour thực tế (có chứa maTourMau để dùng với lịch trình)
+  // Lấy chi tiết tour thực tế, có maTourMau để dùng với lịch trình.
   layChiTietTourThucTe: async (maTourThucTe: string) => {
     const res = await api.get(`/dieu-hanh/tour-thuc-te/${maTourThucTe}`);
     return res.data;
   },
 
-  // 3. DiemDanh
+  // 3. Điểm danh
   layDanhSachDoan: async (maTour: string) => {
     const res = await api.get(`/huong-dan-vien/tour/${maTour}/doan`);
     return res.data;
   },
 
-  diemDanhKhach: async (maTour: string, data: { maKhachHang: string; diaDiem: string; trangThai: string }) => {
-    const res = await api.post(`/huong-dan-vien/tour/${maTour}/diem-danh`, data);
+  diemDanhKhach: async (
+    maTour: string,
+    data: { maKhachHang?: string; maNguoiDongHanh?: string; diaDiem: string; trangThai: string; ghiChu?: string }
+  ) => {
+    const payload = {
+      ...(data.maNguoiDongHanh || data.maKhachHang?.startsWith('NDH')
+        ? { maNguoiDongHanh: data.maNguoiDongHanh || data.maKhachHang }
+        : { maKhachHang: data.maKhachHang }),
+      diaDiem: data.diaDiem,
+      trangThai: data.trangThai
+    };
+    const res = await api.post(`/huong-dan-vien/tour/${maTour}/diem-danh`, payload);
     return res.data;
   },
 
-  // 4. Incidents
+  // 4. Sự cố
   laySuCo: async (maTour: string) => {
     const res = await api.get(`/huong-dan-vien/tour/${maTour}/su-co`);
     return res.data;
@@ -57,7 +67,7 @@ export const hdvService = {
     return res.data;
   },
 
-  // 5. Expenses
+  // 5. Chi phí
   layChiPhi: async (maTour: string) => {
     const res = await api.get(`/huong-dan-vien/tour/${maTour}/chi-phi`);
     return res.data;
@@ -68,19 +78,19 @@ export const hdvService = {
     return res.data;
   },
 
-  // 6. Green Actions
+  // 6. Hành động xanh
   luuHanhDongXanh: async (maTour: string, data: any) => {
     const res = await api.post(`/huong-dan-vien/tour/${maTour}/hanh-dong-xanh`, data);
     return res.data;
   },
 
-  // 7. Danh sách hành động xanh (danh mục)
+  // 7. Danh mục hành động xanh
   layDanhSachHanhDongXanh: async () => {
     const res = await api.get('/huong-dan-vien/hanh-dong-xanh');
     return res.data;
   },
 
-  // 8. Lịch trình tour (dùng maTourThucTe, qua endpoint public không cần quyền đặc biệt)
+  // 8. Lịch trình tour thực tế
   layLichTrinhTourThucTe: async (maTourThucTe: string) => {
     const res = await api.get(`/public/tour/${maTourThucTe}`);
     return res.data;

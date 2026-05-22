@@ -12,6 +12,9 @@ export interface Tour {
 
 export interface Passenger {
   code: string;
+  maKhachHang?: string;
+  maNguoiDongHanh?: string;
+  loaiKhach?: 'NGUOI_DAT' | 'NGUOI_DONG_HANH';
   name: string;
   phone: string;
   rank: 'KIM_CUONG' | 'VANG' | 'BAC' | 'DONG' | 'THANH_VIEN';
