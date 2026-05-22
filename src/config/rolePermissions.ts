@@ -43,15 +43,20 @@ export const hasAccess = (role: string | undefined, menuKey: string): boolean =>
   return permissions.includes(menuKey);
 };
 
-export const getRoleLabel = (role: string): string => {
+export const getRoleLabel = (role: string | undefined): string => {
+  if (!role) return 'Không xác định';
+  
+  const standardizedRole = role.trim().toUpperCase().replace(/^ROLE_/, '');
+  
   const labels: Record<string, string> = {
     ADMIN: 'Quản trị viên',
-    SANPHAM: 'Nhân viên sản phẩm',
-    KINHDOANH: 'Nhân viên kinh doanh',
-    DIEUHANH: 'Nhân viên điều hành',
-    KETOAN: 'Nhân viên kế toán',
-    HDV: 'Hướng dẫn viên',
-    KHACHHANG: 'Khách hàng',
+    SANPHAM: 'Sản phẩm',
+    KINHDOANH: 'Kinh doanh',
+    SALES: 'Sales',
+    DIEUHANH: 'Điều hành',
+    MANAGER: 'Quản lý',
+    KETOAN: 'Kế toán',
   };
-  return labels[role] || role;
+  
+  return labels[standardizedRole] || standardizedRole;
 };

@@ -8,6 +8,14 @@ interface ProtectedRouteProps {
   children: ReactNode;
 }
 
+const normalizeRole = (role?: string): string => {
+  if (!role) return '';
+  const normalized = role.trim().toUpperCase().replace(/^ROLE_/, '');
+  if (normalized === 'SALES') return 'KINHDOANH';
+  if (normalized === 'MANAGER') return 'DIEUHANH';
+  return normalized;
+};
+
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
   const { user, isAuthenticated } = useAuth();
 
@@ -15,12 +23,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children 
     return <Navigate to="/login" replace />;
   }
 
+  const normalizedRole = normalizeRole(user.maVaiTro);
+
   // ADMIN always has full system access – bypass all role checks
-  if (user.maVaiTro === 'ADMIN' || user.maVaiTro === 'ROLE_ADMIN') {
+  if (normalizedRole === 'ADMIN') {
     return <>{children}</>;
   }
 
-  const hasRequiredRole = allowedRoles.some(role => user.maVaiTro.includes(role));
+  const allowedSet = new Set(allowedRoles.map(normalizeRole));
+  const hasRequiredRole = allowedSet.has(normalizedRole);
 
   if (!hasRequiredRole) {
     return (
