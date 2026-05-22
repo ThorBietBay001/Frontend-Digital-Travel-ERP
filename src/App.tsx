@@ -30,7 +30,7 @@ type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | '
 
 export default function App() {
   // Authentication States
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !!localStorage.getItem('token'));
   const [loginCode, setLoginCode] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -159,9 +159,11 @@ export default function App() {
   }, [passengers]);
 
   const xuLyDangXuat = () => {
+    localStorage.removeItem('token');
     setIsLoggedIn(false);
     setActiveTab('dashboard');
     setLoginError(null);
+    setNotificationOpen(false);
   };
 
   const handleMarkNotificationRead = (id: number) => {
@@ -318,7 +320,14 @@ export default function App() {
                         <span className="text-[9px] text-slate-400 block font-mono">{n.time}</span>
                       </div>
                       {!n.read && (
-                        <button className="text-[10px] text-sky-500 font-extrabold hover:underline shrink-0">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleMarkNotificationRead(n.id);
+                          }}
+                          className="text-[10px] text-sky-500 font-extrabold hover:underline shrink-0"
+                        >
                           Đọc
                         </button>
                       )}

@@ -378,11 +378,11 @@ export default function DangNhap({
 
         <footer className="mt-6 text-center space-y-2 w-full pb-2">
           <div className="flex items-center justify-center space-x-3 text-[10px] text-slate-400 font-medium">
-            <a href="#" className="hover:text-sky-500 transition">Hỗ trợ</a>
+            <a href="mailto:support@digitaltravel.vn" className="hover:text-sky-500 transition">Hỗ trợ</a>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-sky-500 transition">Bảo mật</a>
+            <button type="button" onClick={() => setSuccessMsg('Thông tin bảo mật đang được cập nhật.')} className="hover:text-sky-500 transition">Bảo mật</button>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-sky-500 transition">Điều khoản</a>
+            <button type="button" onClick={() => setSuccessMsg('Điều khoản sử dụng đang được cập nhật.')} className="hover:text-sky-500 transition">Điều khoản</button>
           </div>
 
           <div className="flex items-center justify-center space-x-2 text-[9px] text-slate-400">
