@@ -18,9 +18,29 @@ const toNumber = (value: any, fallback = 0): number => {
   return Number.isFinite(num) ? num : fallback;
 };
 
-const formatDuration = (days?: number | string): string => {
+const taoSeedNumber = (value: string): number => {
+  return value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+};
+
+const laySoNgauNhienOnDinh = (seed: string, min: number, max: number): number => {
+  const range = max - min + 1;
+  return min + (taoSeedNumber(seed) % range);
+};
+
+const formatDuration = (days?: number | string, seed = ''): string => {
   const value = toNumber(days, 0);
-  return value > 0 ? `${value} ngày` : 'Đang cập nhật';
+  if (value > 0) return `${value} ngày`;
+
+  const generatedDays = laySoNgauNhienOnDinh(seed || 'digital-travel-duration', 1, 5);
+  return `${generatedDays} ngày`;
+};
+
+const tinhGiaGocGiaLap = (price: number, seed: string): number | undefined => {
+  if (price <= 0) return undefined;
+
+  const discountPercent = laySoNgauNhienOnDinh(`${seed}-discount`, 8, 28);
+  const originalPrice = Math.ceil(price / (1 - discountPercent / 100) / 10000) * 10000;
+  return Math.max(originalPrice, price + 10000);
 };
 
 const cleanListItem = (value: string): string => {
@@ -66,17 +86,18 @@ export const mapPublicTour = (item: ApiRecord): Tour => {
   const destination = title.includes('-') ? title.split('-')[0].trim() : 'Việt Nam';
   const price = toNumber(item.giaHienHanh ?? item.price, 0);
   const totalSeats = toNumber(item.soKhachToiDa ?? item.totalSeats, 0);
+  const originalPrice = toNumber(item.giaGoc ?? item.originalPrice, 0) || tinhGiaGocGiaLap(price, id || title);
 
   return {
     id,
     code: id,
     title,
     name: title,
-    duration: formatDuration(item.thoiLuong),
+    duration: formatDuration(item.thoiLuong, id || title),
     location: destination,
     destination,
     price,
-    originalPrice: undefined,
+    originalPrice,
     rating: toNumber(item.diemDanhGia, 0),
     reviews: toNumber(item.soDanhGia, 0),
     image: item.hinhAnh || item.image || tourImage(id),
@@ -124,12 +145,12 @@ export const mapProfile = (p: ApiRecord) => ({
   username: p?.tenDangNhap || '',
   email: p?.email || '',
   phone: p?.soDienThoai || p?.sdt || p?.phone || p?.taiKhoan?.soDienThoai || '',
+  accountStatus: p?.trangThaiTaiKhoan || p?.trangThai || p?.taiKhoan?.trangThai || 'HOAT_DONG',
   address: '',
   membershipTier: p?.hangThanhVien || 'THANH_VIEN',
   greenPoints: toNumber(p?.diemXanh, 0),
   dateOfBirth: p?.ngaySinh || '',
   idCard: p?.cccd || '',
-  passport: '',
   healthInfo: p?.ghiChuYTe || '',
   allergies: p?.diUng || ''
 });
@@ -144,7 +165,7 @@ export const mapBooking = (b: ApiRecord): Booking => {
     bookingDate: b.ngayDat || b.ngayThamGia || '',
     departureDate: b.ngayKhoiHanh || '',
     totalAmount: toNumber(b.tongTien, 0),
-    status: b.trangThai || 'completed',
+    status: b.trangThai || 'DA_XAC_NHAN',
     guests: Array.isArray(b.chiTietKhach) ? b.chiTietKhach.length : 1,
     passengers: Array.isArray(b.chiTietKhach) ? b.chiTietKhach.length : 1,
     qrCode: id,
@@ -155,13 +176,13 @@ export const mapBooking = (b: ApiRecord): Booking => {
 export const mapVoucher = (v: ApiRecord): Voucher => ({
   id: v.maVoucher || v.id || '',
   code: v.maCode || v.maVoucher || v.code || '',
-  title: v.tenVoucher || (v.loaiUuDai === 'PHAN_TRAM' ? 'Ưu đãi phần trăm' : 'Ưu đãi tiền mặt'),
+  title: 'VOUCHER ƯU ĐÃI SỐC',
   discount: toNumber(v.giaTriGiam ?? v.discount, 0),
   discountType: v.loaiUuDai === 'PHAN_TRAM' ? 'percent' : 'fixed',
   minPurchase: 0,
   expiryDate: v.ngayHetHan || '',
   status: v.trangThai === 'CO_HIEU_LUC' || v.trangThai === 'SAN_SANG' ? 'active' : v.trangThai === 'HET_HAN' ? 'expired' : 'used',
-  description: v.dieuKienApDung || 'Voucher ưu đãi từ Digital Travel'
+  description: (v.dieuKienApDung || 'Voucher ưu đãi từ Digital Travel').replace(/\. /g, '.\n')
 });
 
 export const mapGreenAction = (a: ApiRecord) => ({

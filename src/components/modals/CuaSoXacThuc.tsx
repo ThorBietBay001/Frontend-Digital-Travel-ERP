@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, Lock, Mail, Phone, User, X } from 'lucide-react';
 import { khService } from '../../services/khService';
 import { mapProfile, unwrapData } from '../../services/apiHelpers';
@@ -8,7 +8,7 @@ interface AuthModalProps {
   onLoginSuccess: () => void;
 }
 
-type AuthMode = 'dangNhap' | 'register' | 'forgot';
+type AuthMode = 'dangNhap' | 'register' | 'register-otp' | 'forgot' | 'forgot-otp' | 'reset';
 
 export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>('dangNhap');
@@ -18,9 +18,23 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [otp, setOtp] = useState('');
+  const [expectedOtp, setExpectedOtp] = useState('');
   const [systemMessage, setSystemMessage] = useState('');
   const [messageType, setMessageType] = useState<'error' | 'success'>('error');
   const [isLoading, setIsLoading] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(60);
+
+  useEffect(() => {
+    let timer: any;
+    if ((mode === 'forgot-otp' || mode === 'register-otp') && otpCountdown > 0) {
+      timer = setInterval(() => {
+        setOtpCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [mode, otpCountdown]);
 
   const showMessage = (message: string, type: 'error' | 'success' = 'error') => {
     setSystemMessage(message);
@@ -57,9 +71,26 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
   const validateForm = () => {
     if (mode === 'forgot') {
       if (!identifier.trim()) {
-        showMessage('Vui lòng nhập tên đăng nhập đã đăng ký.');
+        showMessage('Vui lòng nhập Email đã đăng ký.');
         return false;
       }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(identifier.trim())) {
+        showMessage('Email không đúng định dạng.');
+        return false;
+      }
+      return true;
+    }
+
+    if (mode === 'forgot-otp') {
+      if (!otp) { showMessage('Vui lòng nhập mã OTP.'); return false; }
+      return true;
+    }
+
+    if (mode === 'reset') {
+      if (!password) { showMessage('Vui lòng nhập mật khẩu mới.'); return false; }
+      if (password.length < 6) { showMessage('Mật khẩu phải có ít nhất 6 ký tự.'); return false; }
+      if (password !== confirmPassword) { showMessage('Mật khẩu xác nhận không trùng khớp.'); return false; }
       return true;
     }
 
@@ -79,7 +110,12 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
       showMessage('Tên đăng nhập phải có ít nhất 4 ký tự.');
       return false;
     }
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!email.trim()) {
+      showMessage('Vui lòng nhập Email.');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
       showMessage('Email không đúng định dạng.');
       return false;
     }
@@ -95,6 +131,11 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
       showMessage('Mật khẩu xác nhận không trùng khớp.');
       return false;
     }
+
+    if (mode === 'register-otp') {
+      if (!otp) { showMessage('Vui lòng nhập mã OTP.'); return false; }
+    }
+
     return true;
   };
 
@@ -107,8 +148,35 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
     setIsLoading(true);
     try {
       if (mode === 'forgot') {
-        await khService.quenMatKhau(identifier.trim());
-        showMessage('Yêu cầu khôi phục mật khẩu đã được gửi lên hệ thống.', 'success');
+        const response = await khService.quenMatKhau(identifier.trim());
+        setResetToken(response.data);
+        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setExpectedOtp(generatedOtp);
+        setOtpCountdown(60);
+        setOtp('');
+        showMessage(`Mã OTP khôi phục của bạn là: ${generatedOtp}. Vui lòng nhập để tiếp tục.`, 'success');
+        setMode('forgot-otp');
+        return;
+      }
+
+      if (mode === 'forgot-otp') {
+        if (otp !== expectedOtp) {
+          showMessage('Mã OTP không chính xác. Vui lòng kiểm tra lại.', 'error');
+          setIsLoading(false);
+          return;
+        }
+        showMessage('Xác minh OTP thành công! Vui lòng nhập mật khẩu mới.', 'success');
+        setMode('reset');
+        return;
+      }
+
+      if (mode === 'reset') {
+        await khService.datLaiMatKhau({ resetToken, matKhauMoi: password, xacNhanMatKhau: confirmPassword });
+        showMessage('Khôi phục mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+        setMode('dangNhap');
+        setPassword('');
+        setConfirmPassword('');
+        setOtp('');
         return;
       }
 
@@ -119,21 +187,58 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
         return;
       }
 
-      await khService.register({
-        tenDangNhap: username.trim(),
-        matKhau: password,
-        xacNhanMatKhau: confirmPassword,
-        hoTen: username.trim(),
-        email: email.trim(),
-        soDienThoai: phone.trim(),
-        cccd: ''
-      });
+      if (mode === 'register') {
+        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setExpectedOtp(generatedOtp);
+        setOtpCountdown(60);
+        setOtp('');
+        setMode('register-otp');
+        showMessage(`Mã OTP xác thực đăng ký là: ${generatedOtp}. Vui lòng nhập để hoàn tất.`, 'success');
+        return;
+      }
 
-      const response = await khService.dangNhap(username.trim(), password);
-      await saveAuthSession(response, username.trim());
-      onLoginSuccess();
+      if (mode === 'register-otp') {
+        if (otp !== expectedOtp) {
+          showMessage('Mã OTP không chính xác. Vui lòng kiểm tra lại.', 'error');
+          setIsLoading(false);
+          return;
+        }
+        await khService.register({
+          tenDangNhap: username.trim(),
+          matKhau: password,
+          xacNhanMatKhau: confirmPassword,
+          hoTen: username.trim(),
+          email: email.trim(),
+          soDienThoai: phone.trim(),
+          cccd: ''
+        });
+
+        const response = await khService.dangNhap(username.trim(), password);
+        await saveAuthSession(response, username.trim());
+        onLoginSuccess();
+        return;
+      }
     } catch (err: any) {
       showMessage(err?.response?.data?.message || 'Hệ thống chưa xử lý được yêu cầu. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    try {
+      if (mode === 'forgot-otp') {
+        const response = await khService.quenMatKhau(identifier.trim());
+        setResetToken(response.data);
+      }
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setExpectedOtp(generatedOtp);
+      setOtpCountdown(60);
+      setOtp('');
+      showMessage(`Mã OTP mới của bạn là: ${generatedOtp}.`, 'success');
+    } catch (err: any) {
+      showMessage(err?.response?.data?.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -143,13 +248,21 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
     ? 'Đăng nhập khách hàng'
     : mode === 'register'
       ? 'Đăng ký tài khoản'
-      : 'Khôi phục mật khẩu';
+      : mode === 'register-otp'
+        ? 'Xác thực tài khoản'
+        : mode === 'forgot-otp'
+          ? 'Xác nhận mã bảo mật'
+          : mode === 'reset' ? 'Tạo mật khẩu mới' : 'Khôi phục mật khẩu';
 
   const description = mode === 'dangNhap'
     ? 'Nhập tài khoản từ hệ thống ERP để tiếp tục đặt tour.'
     : mode === 'register'
       ? 'Tài khoản mới sẽ được tạo trực tiếp qua Auth API.'
-      : 'Nhập tên đăng nhập đã đăng ký để gửi yêu cầu khôi phục lên hệ thống.';
+      : mode === 'register-otp'
+        ? 'Nhập mã OTP được gửi về điện thoại / email của bạn.'
+        : mode === 'forgot-otp'
+          ? 'Nhập mã OTP đã được gửi đến email để xác minh.'
+          : mode === 'reset' ? 'Thiết lập mật khẩu mới cho tài khoản của bạn.' : 'Nhập Email để khôi phục mật khẩu.';
 
   return (
     <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -162,8 +275,8 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
           <X className="w-5 h-5" />
         </button>
 
-        <div className="mb-6">
-          <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 text-blue-600 mb-4">
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-blue-50 text-blue-600 mb-4 mx-auto">
             <Lock className="w-5 h-5" />
           </div>
           <h2 className="text-2xl font-black text-slate-900">{title}</h2>
@@ -182,89 +295,208 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
         )}
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          {(mode === 'dangNhap' || mode === 'forgot') ? (
-            <label className="block">
-              <span className="text-xs font-black text-slate-500 uppercase">
-                {mode === 'forgot' ? 'Tên đăng nhập đã đăng ký' : 'Tên đăng nhập'}
-              </span>
-              <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
-                {mode === 'forgot' ? <Mail className="w-4 h-4 text-slate-400" /> : <User className="w-4 h-4 text-slate-400" />}
-                <input
-                  value={identifier}
-                  onChange={e => setIdentifier(e.target.value)}
-                  className="w-full outline-none text-sm"
-                  placeholder={mode === 'forgot' ? 'Ví dụ: kh01' : 'Ví dụ: kh01'}
-                />
+          {mode === 'reset' ? (
+            <>
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase">Mật khẩu mới</span>
+                <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full outline-none text-sm"
+                    placeholder="Ít nhất 6 ký tự"
+                  />
+                </div>
+              </label>
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase">Xác nhận mật khẩu</span>
+                <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full outline-none text-sm"
+                    placeholder="Nhập lại mật khẩu mới"
+                  />
+                </div>
+              </label>
+            </>
+          ) : mode === 'forgot-otp' ? (
+            <div className="space-y-4">
+              <div className="text-center mb-6">
+                <p className="text-sm text-slate-600 font-medium">Mã xác thực (OTP) đã được gửi đến</p>
+                <p className="text-slate-900 font-bold mt-1">{identifier}</p>
               </div>
-            </label>
+              <div className="flex justify-center space-x-2">
+                {[0, 1, 2, 3, 4, 5].map((idx) => (
+                  <input
+                    key={idx}
+                    id={`forgot-otp-${idx}`}
+                    type="text"
+                    maxLength={1}
+                    value={otp[idx] || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      let nextOtp = otp.split('');
+                      nextOtp[idx] = val;
+                      setOtp(nextOtp.join(''));
+                      if (val && idx < 5) document.getElementById(`forgot-otp-${idx + 1}`)?.focus();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !otp[idx] && idx > 0) document.getElementById(`forgot-otp-${idx - 1}`)?.focus();
+                    }}
+                    className="w-12 h-12 text-center text-xl font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
+                  />
+                ))}
+              </div>
+              <div className="text-center mt-4">
+                {otpCountdown > 0 ? (
+                  <p className="text-sm text-slate-500 font-medium">Gửi lại mã sau <span className="text-blue-600 font-bold">{otpCountdown}s</span></p>
+                ) : (
+                  <button type="button" onClick={handleResendOtp} className="text-sm font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2">
+                    Gửi lại mã OTP
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : mode === 'register-otp' ? (
+            <div className="space-y-4">
+              <div className="text-center mb-6">
+                <p className="text-sm text-slate-600 font-medium">Mã xác thực (OTP) đã được gửi đến</p>
+                <p className="text-slate-900 font-bold mt-1">{email}</p>
+              </div>
+              <div className="flex justify-center space-x-2">
+                {[0, 1, 2, 3, 4, 5].map((idx) => (
+                  <input
+                    key={idx}
+                    id={`reg-otp-${idx}`}
+                    type="text"
+                    maxLength={1}
+                    value={otp[idx] || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      let nextOtp = otp.split('');
+                      nextOtp[idx] = val;
+                      setOtp(nextOtp.join(''));
+                      if (val && idx < 5) document.getElementById(`reg-otp-${idx + 1}`)?.focus();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !otp[idx] && idx > 0) document.getElementById(`reg-otp-${idx - 1}`)?.focus();
+                    }}
+                    className="w-12 h-12 text-center text-xl font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
+                  />
+                ))}
+              </div>
+              <div className="text-center mt-4">
+                {otpCountdown > 0 ? (
+                  <p className="text-sm text-slate-500 font-medium">Gửi lại mã sau <span className="text-blue-600 font-bold">{otpCountdown}s</span></p>
+                ) : (
+                  <button type="button" onClick={handleResendOtp} className="text-sm font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2">
+                    Gửi lại mã OTP
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (mode === 'dangNhap' || mode === 'forgot') ? (
+            <>
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase">
+                  {mode === 'forgot' ? 'Email đã đăng ký' : 'Tên đăng nhập'}
+                </span>
+                <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
+                  {mode === 'forgot' ? <Mail className="w-4 h-4 text-slate-400" /> : <User className="w-4 h-4 text-slate-400" />}
+                  <input
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
+                    className="w-full outline-none text-sm"
+                    placeholder={mode === 'forgot' ? 'Ví dụ: name@domain.com' : 'Ví dụ: kh01'}
+                  />
+                </div>
+              </label>
+              {mode === 'dangNhap' && (
+                <label className="block">
+                  <span className="text-xs font-black text-slate-500 uppercase">Mật khẩu</span>
+                  <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="w-full outline-none text-sm"
+                      placeholder="Nhập mật khẩu"
+                    />
+                  </div>
+                </label>
+              )}
+            </>
           ) : (
             <>
               <label className="block">
                 <span className="text-xs font-black text-slate-500 uppercase">Tên đăng nhập</span>
                 <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
                   <User className="w-4 h-4 text-slate-400" />
-                  <input value={username} onChange={e => setUsername(e.target.value)} className="w-full outline-none text-sm" />
+                  <input value={username} onChange={e => setUsername(e.target.value)} className="w-full outline-none text-sm" placeholder="Ví dụ: khachhang01" />
                 </div>
               </label>
               <label className="block">
                 <span className="text-xs font-black text-slate-500 uppercase">Email</span>
                 <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
                   <Mail className="w-4 h-4 text-slate-400" />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full outline-none text-sm" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full outline-none text-sm" placeholder="Ví dụ: name@domain.com" />
                 </div>
               </label>
               <label className="block">
                 <span className="text-xs font-black text-slate-500 uppercase">Số điện thoại</span>
                 <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
                   <Phone className="w-4 h-4 text-slate-400" />
-                  <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full outline-none text-sm" />
+                  <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full outline-none text-sm" placeholder="Ví dụ: 0987654321" />
+                </div>
+              </label>
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase">Mật khẩu</span>
+                <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full outline-none text-sm"
+                    placeholder="Ít nhất 6 ký tự"
+                  />
+                </div>
+              </label>
+              <label className="block">
+                <span className="text-xs font-black text-slate-500 uppercase">Xác nhận mật khẩu</span>
+                <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full outline-none text-sm"
+                    placeholder="Nhập lại mật khẩu"
+                  />
                 </div>
               </label>
             </>
           )}
 
-          {mode !== 'forgot' && (
-            <label className="block">
-              <span className="text-xs font-black text-slate-500 uppercase">Mật khẩu</span>
-              <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
-                <Lock className="w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full outline-none text-sm"
-                />
-              </div>
-            </label>
-          )}
-
-          {mode === 'register' && (
-            <label className="block">
-              <span className="text-xs font-black text-slate-500 uppercase">Xác nhận mật khẩu</span>
-              <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
-                <Lock className="w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full outline-none text-sm"
-                />
-              </div>
-            </label>
-          )}
-
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white hover:bg-blue-700 disabled:opacity-60"
+            className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-600/20 transition-all active:scale-[0.98] disabled:opacity-70 flex justify-center items-center"
           >
-            {isLoading
-              ? 'Đang xử lý...'
-              : mode === 'dangNhap'
-                ? 'Đăng nhập'
-                : mode === 'register'
-                  ? 'Đăng ký'
-                  : 'Gửi yêu cầu khôi phục'}
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : mode === 'dangNhap' ? 'Đăng nhập'
+              : mode === 'register' ? 'Tiếp tục'
+              : mode === 'register-otp' ? 'Xác thực & Đăng ký'
+              : mode === 'forgot' ? 'Gửi mã khôi phục'
+              : mode === 'forgot-otp' ? 'Xác minh OTP'
+                : 'Xác nhận đổi mật khẩu'}
           </button>
         </form>
 

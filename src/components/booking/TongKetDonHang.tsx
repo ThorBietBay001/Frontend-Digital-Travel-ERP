@@ -14,6 +14,13 @@ interface OrderSummaryProps {
   userGreenPoints: number;
   greenPointsDiscount: number;
   extraServicesTotal: number;
+  passengerFareSummary: {
+    adultCount: number;
+    childCount: number;
+    adultSubtotal: number;
+    childSubtotal: number;
+    total: number;
+  };
   currentStep: number;
   vouchers?: Voucher[];
   onNextStep?: () => void;
@@ -32,6 +39,7 @@ export default function TongKetDonHang({
   userGreenPoints,
   greenPointsDiscount,
   extraServicesTotal,
+  passengerFareSummary,
   currentStep,
   vouchers = [],
   onNextStep,
@@ -46,7 +54,7 @@ export default function TongKetDonHang({
   };
 
   const activeVouchers = vouchers.filter(v => v.status === 'active');
-  const baseSubtotal = tour.price * numPeople;
+  const baseSubtotal = passengerFareSummary.total;
   const preVoucherTotal = baseSubtotal + extraServicesTotal;
 
   const handleApplyPromoCode = () => {
@@ -111,13 +119,24 @@ export default function TongKetDonHang({
               </div>
             )}
 
+            <div className="grid grid-cols-2 gap-2 rounded-lg border border-blue-100 bg-blue-50/40 p-2 text-[10px] text-slate-600">
+              <div>
+                <span className="block font-black uppercase text-slate-400">Nguoi lon</span>
+                <span className="font-extrabold text-slate-900">{passengerFareSummary.adultCount} x {formatPrice(tour.price)}</span>
+              </div>
+              <div>
+                <span className="block font-black uppercase text-slate-400">Tre em</span>
+                <span className="font-extrabold text-slate-900">{passengerFareSummary.childCount} x {formatPrice(tour.price * 0.5)}</span>
+              </div>
+            </div>
+
             {tinhDiemXanh() > 0 && (
               <div className="flex justify-between text-green-700 bg-green-50/50 p-2 rounded-lg border border-green-100">
                 <span className="flex items-center space-x-1 font-bold">
                   <Leaf className="w-3.5 h-3.5 text-green-600" />
                   <span>Điểm Xanh tích lũy</span>
                 </span>
-                <span className="font-extrabold">+{tinhDiemXanh()} PTS</span>
+                <span className="font-extrabold">+{tinhDiemXanh()} điểm</span>
               </div>
             )}
 
@@ -221,6 +240,17 @@ export default function TongKetDonHang({
               </div>
             )}
 
+            <div className="grid grid-cols-2 gap-2 rounded-lg border border-blue-100 bg-blue-50/40 p-2 text-[10px] text-slate-600">
+              <div>
+                <span className="block font-black uppercase text-slate-400">Nguoi lon</span>
+                <span className="font-extrabold text-slate-900">{passengerFareSummary.adultCount} x {formatPrice(tour.price)}</span>
+              </div>
+              <div>
+                <span className="block font-black uppercase text-slate-400">Tre em</span>
+                <span className="font-extrabold text-slate-900">{passengerFareSummary.childCount} x {formatPrice(tour.price * 0.5)}</span>
+              </div>
+            </div>
+
             {selectedVoucher && (
               <div className="flex justify-between text-green-700">
                 <span className="flex items-center space-x-1 font-bold">
@@ -251,7 +281,7 @@ export default function TongKetDonHang({
                   <Leaf className="w-3.5 h-3.5 text-green-600" />
                   <span>Điểm Xanh nhận thêm</span>
                 </span>
-                <span className="font-extrabold">+{tinhDiemXanh()} PTS</span>
+                <span className="font-extrabold">+{tinhDiemXanh()} điểm</span>
               </div>
             )}
 

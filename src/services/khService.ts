@@ -17,8 +17,13 @@ export const khService = {
     return res.data;
   },
 
-  quenMatKhau: async (tenDangNhap: string) => {
-    const res = await api.post('/auth/quen-mat-khau', { tenDangNhap });
+  quenMatKhau: async (email: string) => {
+    const res = await api.post('/auth/quen-mat-khau', { email });
+    return res.data;
+  },
+
+  datLaiMatKhau: async (data: any) => {
+    const res = await api.post('/auth/dat-lai-mat-khau', data);
     return res.data;
   },
 
@@ -88,7 +93,7 @@ export const khService = {
 
   // 6. Green Actions & Extra Services
   getGreenActions: async (maTourThucTe?: string) => {
-    const res = await api.get('/khach-hang/hanh-dong-xanh', { params: { maTourThucTe } });
+    const res = await api.get(`/public/tour/${maTourThucTe}/hanh-dong-xanh`);
     return res.data;
   },
 
@@ -105,6 +110,11 @@ export const khService = {
 
   taoYeuCauHoTro: async (data: any) => {
     const res = await api.post('/khach-hang/yeu-cau-ho-tro', data);
+    return res.data;
+  },
+
+  boSungYeuCauHoTro: async (maYeuCau: string, noiDung: string) => {
+    const res = await api.put(`/khach-hang/yeu-cau-ho-tro/${maYeuCau}/bo-sung`, { noiDung });
     return res.data;
   },
 

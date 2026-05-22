@@ -19,6 +19,7 @@ export default function ChiTietTour() {
   const [selectedItineraryDay, setSelectedItineraryDay] = useState<number | null>(null);
   const [showCuaSoXacThuc, setShowCuaSoXacThuc] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [tourReviewsList, setTourReviewsList] = useState<any[]>([]);
 
   // Reviews filters and likes state
   const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'high' | 'images' | 'vip'>('all');
@@ -36,16 +37,32 @@ export default function ChiTietTour() {
       setLoading(true);
       setError('');
       try {
-        const [tourResponse, greenResponse] = await Promise.all([
+        const [tourResponse, greenResponse, reviewsResponse] = await Promise.all([
           khService.layChiTietTour(tourId),
-          khService.getGreenActions(tourId)
+          khService.getGreenActions(tourId).catch(() => ({ data: { content: [] } })),
+          khService.layDanhGiaTour(tourId).catch(() => ({ data: { content: [] } }))
         ]);
 
         const greenActions = unwrapPageContent<any>(greenResponse);
         setTour(mapTourDetail(unwrapData<any>(tourResponse), greenActions));
+
+        const reviewsData = unwrapPageContent<any>(reviewsResponse);
+        setTourReviewsList(reviewsData.map((r: any) => ({
+          id: r.maDanhGia,
+          name: r.hoTenKhachHang || 'Khách hàng',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
+          rating: r.soSao || 5,
+          date: r.ngayDanhGia ? new Date(r.ngayDanhGia).toLocaleDateString('vi-VN') : '',
+          tag: 'Khách đi tour',
+          tier: 'Thành viên',
+          comment: r.nhanXet || '',
+          helpful: Math.floor(Math.random() * 20),
+          images: [],
+          greenAction: 'Đã tham gia du lịch xanh'
+        })));
       } catch (err) {
         console.error(err);
-        setError('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chi ti\u1ebft tour. Vui l\u00f2ng ki\u1ec3m tra h\u1ec7 th\u1ed1ng ho\u1eb7c th\u1eed l\u1ea1i sau.');
+        setError('Không tải được chi tiết tour. Vui lòng kiểm tra hệ thống hoặc thử lại sau.');
       } finally {
         setLoading(false);
       }
@@ -151,50 +168,7 @@ export default function ChiTietTour() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  // Authentic Customer Reviews List
-  const tourReviewsList = [
-    {
-      name: 'Nguyễn Thị Mai',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
-      rating: 5,
-      date: '15/04/2026',
-      tag: 'Gia đình 4 người',
-      tier: 'Vàng',
-      comment: 'Chuyến đi Hạ Long tuyệt vời! Hướng dẫn viên cực kỳ nhiệt tình, lịch trình 3 ngày 2 đêm sắp xếp vô cùng hợp lý, không bị mệt. Khách sạn sạch đẹp, đồ ăn hải sản tươi ngon phong phú. Cả gia đình tôi đều rất hài lòng. Sẽ tiếp tục đặt tour tại Digital Travel!',
-      helpful: 24,
-      images: [
-        'https://images.unsplash.com/photo-1528127269322-539801943592?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=300',
-        'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=300'
-      ],
-      greenAction: 'Đã mang bình nước cá nhân (+50 Điểm Xanh)'
-    },
-    {
-      name: 'Trần Văn Hùng',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
-      rating: 5,
-      date: '10/04/2026',
-      tag: 'Cặp đôi du lịch',
-      tier: 'Bạch kim',
-      comment: 'Cảnh đẹp xuất sắc, dịch vụ chuẩn 5 sao từ đón tiễn đến chăm sóc khách hàng. Đặc biệt ấn tượng với triết lý Du lịch Xanh của công ty - chúng tôi được tặng bình nước cá nhân để hạn chế rác thải nhựa. Rất văn minh và ý nghĩa!',
-      helpful: 18,
-      images: [
-        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=300'
-      ],
-      greenAction: 'Đã tham gia dọn rác bãi biển (+100 Điểm Xanh)'
-    },
-    {
-      name: 'Lê Hoàng Nam',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=120',
-      rating: 4,
-      date: '05/04/2026',
-      tag: 'Khách lẻ tự do',
-      tier: 'Bạc',
-      comment: 'Mọi thứ từ chỗ ở, ăn uống đến tàu tham quan đều xuất sắc. Điểm trừ duy nhất là thời tiết ngày thứ hai hơi mưa nhẹ nên không thể tham gia chèo thuyền kayak lâu. Tuy nhiên, hướng dẫn viên đã linh hoạt bù đắp bằng tiệc trà hoàng hôn rất dễ chịu!',
-      helpful: 12,
-      images: [],
-      greenAction: 'Đã thuê xe đạp thay xe máy (+80 Điểm Xanh)'
-    }
-  ];
+  // Authentic Customer Reviews List is now fetched from the API
 
   const handleHelpfulClick = (idx: number) => {
     setHelpfulCounts(prev => {
@@ -217,7 +191,7 @@ export default function ChiTietTour() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 pt-28 px-4 flex items-center justify-center">
-        <div className="text-sm font-bold text-slate-600">\u0110ang t\u1ea3i chi ti\u1ebft tour...</div>
+        <div className="text-sm font-bold text-slate-600">Đang tải chi tiết tour...</div>
       </div>
     );
   }
@@ -226,11 +200,11 @@ export default function ChiTietTour() {
     return (
       <div className="min-h-screen bg-slate-50 pt-28 px-4">
         <div className="max-w-3xl mx-auto bg-white border border-slate-100 rounded-2xl p-8 text-center shadow-sm">
-          <h1 className="text-xl font-black text-slate-900">Kh\u00f4ng t\u00ecm th\u1ea5y tour</h1>
-          <p className="text-sm text-slate-500 mt-2">{error || 'Tour kh\u00f4ng t\u1ed3n t\u1ea1i trong h\u1ec7 th\u1ed1ng.'}</p>
+          <h1 className="text-xl font-black text-slate-900">Không tìm thấy tour</h1>
+          <p className="text-sm text-slate-500 mt-2">{error || 'Tour không tồn tại trong hệ thống.'}</p>
           <Link to="/" className="inline-flex items-center gap-2 mt-6 text-blue-600 font-bold text-sm">
             <ArrowLeft className="w-4 h-4" />
-            Quay v\u1ec1 trang ch\u1ee7
+            Quay về trang chủ
           </Link>
         </div>
       </div>
@@ -401,7 +375,9 @@ export default function ChiTietTour() {
                   >
                     <div className="space-y-1">
                       <span className="block font-black text-slate-800 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                        Ngày {day.day}: {day.title}
+                        {day.title?.toLowerCase().startsWith(`ngày ${day.day}`) 
+                          ? day.title 
+                          : `Ngày ${day.day}${day.title ? `: ${day.title}` : ''}`}
                       </span>
                       <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
                         <Utensils className="w-3.5 h-3.5 text-slate-400" />
@@ -460,9 +436,13 @@ export default function ChiTietTour() {
                                   <span className="block font-black text-blue-600 text-sm sm:text-base">
                                     Ngày {day.day}
                                   </span>
-                                  <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
-                                    {day.title}
-                                  </h4>
+                                  {(!day.title?.toLowerCase().startsWith(`ngày ${day.day}`) || day.title.length > `ngày ${day.day}`.length + 2) && (
+                                    <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
+                                      {day.title?.toLowerCase().startsWith(`ngày ${day.day}`) 
+                                        ? day.title.substring(`ngày ${day.day}`.length).replace(/^[\s:-]+/, '').trim()
+                                        : day.title}
+                                    </h4>
+                                  )}
                                   <span className="flex items-center text-slate-500 text-[10px] sm:text-xs font-semibold space-x-1.5 mt-1.5">
                                     <Utensils className="w-3.5 h-3.5 text-slate-400" />
                                     <span>{getDayMeals(tour.id, day.day)}</span>
@@ -480,7 +460,7 @@ export default function ChiTietTour() {
                               {/* Activity White Card */}
                               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
                                 <p className="font-extrabold text-slate-800 text-xs sm:text-sm">
-                                  Hoạt động chính: {day.description}
+                                  Hoạt động chính:
                                 </p>
                                 <ul className="space-y-2">
                                   {(day.activities || []).map((activity: string, idx: number) => (
@@ -538,31 +518,33 @@ export default function ChiTietTour() {
             </div>
 
             {/* Eco Commitments section */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50/50 rounded-3xl p-6 sm:p-8 border border-green-150 shadow-sm space-y-6">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-md flex-shrink-0">
-                  <Leaf className="w-5 h-5 animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Cam kết du lịch xanh & bền vững</h3>
-                  <p className="text-[10px] text-green-700 font-black uppercase tracking-wider mt-0.5">Mỗi hành động nhỏ, bảo vệ hành tinh xanh</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {tour.greenActions.map((action) => (
-                  <div key={action.id} className="bg-white p-4.5 rounded-2xl border border-green-100/80 shadow-sm space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-slate-900 text-xs">{action.title}</span>
-                      <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-[10px] font-black whitespace-nowrap">
-                        +{action.points} Điểm Xanh
-                      </span>
-                    </div>
-                    <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{action.description}</p>
+            {tour.greenActions && tour.greenActions.length > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50/50 rounded-3xl p-6 sm:p-8 border border-green-150 shadow-sm space-y-6">
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-10 h-10 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-md flex-shrink-0">
+                    <Leaf className="w-5 h-5 animate-pulse" />
                   </div>
-                ))}
+                  <div>
+                    <h3 className="text-base font-black text-slate-900">Cam kết du lịch xanh & bền vững</h3>
+                    <p className="text-[10px] text-green-700 font-black uppercase tracking-wider mt-0.5">Mỗi hành động nhỏ, bảo vệ hành tinh xanh</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {tour.greenActions.map((action) => (
+                    <div key={action.id} className="bg-white p-4.5 rounded-2xl border border-green-100/80 shadow-sm space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-extrabold text-slate-900 text-xs">{action.title}</span>
+                        <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-[10px] font-black whitespace-nowrap">
+                          +{action.points} Điểm Xanh
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-semibold text-slate-500 leading-relaxed">{action.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Highly Authentic Customer Reviews */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-6">
@@ -590,28 +572,24 @@ export default function ChiTietTour() {
                 </div>
               </div>
 
-              {/* Minimalist Filter Chips */}
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { id: 'all', label: 'Tất cả', count: tourReviewsList.length },
-                  { id: 'high', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
-                  { id: 'images', label: 'Có ảnh', count: tourReviewsList.filter(r => r.images && r.images.length > 0).length },
-                  { id: 'vip', label: 'VIP', count: tourReviewsList.filter(r => r.tier === 'Thành viên Vàng' || r.tier === 'Thành viên Bạch kim').length }
-                ].map((chip) => (
-                  <button
-                    key={chip.id}
-                    onClick={() => setActiveReviewFilter(chip.id as any)}
-                    className={`flex items-center space-x-1.5 px-3 py-1.2 rounded-xl text-[10px] font-bold border transition-all duration-200 ${activeReviewFilter === chip.id
-                      ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                  >
-                    <span>{chip.label}</span>
-                    <span className={`px-1 py-0.2 rounded-full text-[9px] ${activeReviewFilter === chip.id ? 'bg-slate-850 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                      {chip.count}
-                    </span>
-                  </button>
-                ))}
+              {/* Dropdown Filter */}
+              <div className="flex items-center justify-end">
+                <select
+                  value={activeReviewFilter}
+                  onChange={(e) => setActiveReviewFilter(e.target.value as any)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                >
+                  {[
+                    { id: 'all', label: 'Tất cả', count: tourReviewsList.length },
+                    { id: 'high', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
+                    { id: 'images', label: 'Có ảnh', count: tourReviewsList.filter(r => r.images && r.images.length > 0).length },
+                    { id: 'vip', label: 'VIP', count: tourReviewsList.filter(r => r.tier === 'Thành viên Vàng' || r.tier === 'Thành viên Bạch kim').length }
+                  ].map((chip) => (
+                    <option key={chip.id} value={chip.id}>
+                      {chip.label} ({chip.count})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Clean Reviews List */}

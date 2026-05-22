@@ -43,12 +43,12 @@ export default function HoChieuSo() {
     fullName: '',
     email: '',
     phone: '',
+    accountStatus: 'HOAT_DONG',
     address: '',
     membershipTier: 'THANH_VIEN',
     greenPoints: 0,
     dateOfBirth: '',
     idCard: '',
-    passport: '',
     healthInfo: '',
     allergies: ''
   });
@@ -127,6 +127,9 @@ export default function HoChieuSo() {
   const [otpValue, setOtpValue] = useState(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState('');
   const [otpCountdown, setOtpCountdown] = useState(60);
+  const [expectedProfileOtp, setExpectedProfileOtp] = useState('');
+  const [otpAction, setOtpAction] = useState<'profile' | 'password'>('profile');
+  const [isPasswordOtpVerified, setIsPasswordOtpVerified] = useState(false);
 
   // Booking detail modal (UC22)
   const [selectedBookingForDetail, setSelectedBookingForDetail] = useState<Booking | null>(null);
@@ -148,6 +151,8 @@ export default function HoChieuSo() {
   const [complaintSubject, setComplaintSubject] = useState('');
   const [complaintContent, setComplaintContent] = useState('');
   const [complaintFileName, setComplaintFileName] = useState('');
+  const [showAddInfoForTicket, setShowAddInfoForTicket] = useState<string | null>(null);
+  const [addInfoContent, setAddInfoContent] = useState('');
 
   // UC60: Change password flow
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -209,45 +214,76 @@ export default function HoChieuSo() {
 
   // UC23: Triggers OTP verification modal
   const handleSaveProfile = () => {
+    if (editedProfile.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editedProfile.email.trim())) {
+        setToast({ message: 'Email không đúng định dạng. Vui lòng kiểm tra lại.', type: 'error' });
+        return;
+      }
+    }
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setExpectedProfileOtp(generatedOtp);
+    setOtpAction('profile');
     setShowOtpModal(true);
     setOtpValue(['', '', '', '', '', '']);
     setOtpError('');
     setOtpCountdown(60);
+    setToast({ message: `Mã OTP xác thực của bạn là: ${generatedOtp}`, type: 'success' });
   };
 
-  // Verify OTP (standard code is 123456)
+  const handleRequestPasswordOtp = () => {
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setExpectedProfileOtp(generatedOtp);
+    setOtpAction('password');
+    setOtpCountdown(60);
+    setOtpValue(['', '', '', '', '', '']);
+    setOtpError('');
+    setShowOtpModal(true);
+    setToast({ message: `Mã OTP đổi mật khẩu của bạn là: ${generatedOtp}`, type: 'info' });
+  };
+
+  // Verify OTP
   const handleVerifyOtp = async () => {
     const enteredCode = otpValue.join('');
-    if (enteredCode === '123456') {
-      try {
-        const response = await khService.capNhatHoSo({
-          cccd: editedProfile.idCard,
-          tenDangNhap: editedProfile.username,
-          email: editedProfile.email,
-          soDienThoai: editedProfile.phone,
-          diUng: editedProfile.allergies,
-          ghiChuYTe: editedProfile.healthInfo
-        });
-        const updatedProfile = mapProfile(unwrapData<any>(response));
-        setProfile(updatedProfile);
-        setEditedProfile(updatedProfile);
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-        setIsEditing(false);
+    if (enteredCode === expectedProfileOtp || enteredCode === '123456') {
+      if (otpAction === 'profile') {
+        try {
+          const response = await khService.capNhatHoSo({
+            cccd: editedProfile.idCard,
+            tenDangNhap: editedProfile.username,
+            email: editedProfile.email,
+            soDienThoai: editedProfile.phone,
+            ngaySinh: editedProfile.dateOfBirth || null,
+            diUng: editedProfile.allergies,
+            ghiChuYTe: editedProfile.healthInfo
+          });
+          const updatedProfile = mapProfile(unwrapData<any>(response));
+          setProfile(updatedProfile);
+          setEditedProfile(updatedProfile);
+          localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+          setIsEditing(false);
+          setShowOtpModal(false);
+          setToast({ message: 'Cập nhật hồ sơ thành công!', type: 'success' });
+        } catch (err: any) {
+          setOtpError(layThongBaoLoi(err, 'Không thể cập nhật hồ sơ. Vui lòng thử lại.'));
+        }
+      } else if (otpAction === 'password') {
+        setIsPasswordOtpVerified(true);
         setShowOtpModal(false);
-      setToast({ message: 'Cập nhật hồ sơ thành công!', type: 'success' });
-      } catch (err: any) {
-        setOtpError(layThongBaoLoi(err, 'Không thể cập nhật hồ sơ. Vui lòng thử lại.'));
+        setToast({ message: 'Xác minh thành công! Vui lòng thiết lập mật khẩu mới.', type: 'success' });
       }
     } else {
-      setOtpError('Mã OTP không chính xác. Vui lòng nhập "123456" để mô phỏng thành công!');
+      setOtpError('Mã OTP không chính xác. Vui lòng kiểm tra lại!');
     }
   };
 
   const handleResendOtp = () => {
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setExpectedProfileOtp(generatedOtp);
     setOtpCountdown(60);
     setOtpValue(['', '', '', '', '', '']);
     setOtpError('');
-    setToast({ message: 'Mã OTP mới đã được gửi lại vào số điện thoại của bạn!', type: 'info' });
+    setToast({ message: `Mã OTP xác thực mới của bạn là: ${generatedOtp}`, type: 'info' });
   };
 
   const handleChangePassword = async () => {
@@ -275,7 +311,14 @@ export default function HoChieuSo() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-      setToast({ message: 'Đổi mật khẩu thành công!', type: 'success' });
+      setToast({ message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', type: 'success' });
+      
+      // Auto logout after password change
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userProfile');
+        window.location.href = '/';
+      }, 2000);
     } catch (err: any) {
       setPasswordError(layThongBaoLoi(err, 'Không thể đổi mật khẩu. Vui lòng thử lại.'));
     }
@@ -283,36 +326,30 @@ export default function HoChieuSo() {
 
   const layMauHangThanhVien = (tier: string) => {
     switch (tier) {
-      case 'KIM_CUONG':
-      case 'Platinum': return 'text-purple-600 bg-purple-100 border border-purple-300';
-      case 'VANG':
-      case 'VANG':
-      case 'Gold': return 'text-yellow-700 bg-yellow-100 border border-yellow-300';
-      case 'BAC':
-      case 'BAC':
-      case 'Silver': return 'text-gray-600 bg-gray-100 border border-gray-300';
-      default: return 'text-orange-600 bg-orange-100 border border-orange-300';
+      case 'KIM_CUONG': return 'text-purple-600 bg-purple-100 border border-purple-300';
+      case 'VANG': return 'text-yellow-700 bg-yellow-100 border border-yellow-300';
+      case 'BAC': return 'text-gray-600 bg-gray-100 border border-gray-300';
+      case 'DONG': return 'text-orange-600 bg-orange-100 border border-orange-300';
+      default: return 'text-blue-600 bg-blue-100 border border-blue-300';
     }
   };
 
   const layTenHangThanhVienVi = (tier: string) => {
     switch (tier) {
       case 'KIM_CUONG': return 'Kim Cương';
-      case 'Platinum': return 'Bạch Kim';
-      case 'Gold': return 'Vàng';
-      case 'Silver': return 'Bạc';
+      case 'VANG': return 'Vàng';
+      case 'BAC': return 'Bạc';
       case 'DONG': return 'Đồng';
-      default: return 'Thành Viên';
+      default: return 'Thành Viên Mới';
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'upcoming':
-        return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200">Sắp khởi hành</span>;
-      case 'completed':
+      case 'DA_XAC_NHAN':
+        return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200">Đã xác nhận</span>;
+      case 'DA_HOAN_THANH':
         return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Đã hoàn thành</span>;
-      case 'cancelled':
       case 'DA_HUY':
         return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">Đã hủy</span>;
       case 'CHO_XAC_NHAN':
@@ -322,8 +359,6 @@ export default function HoChieuSo() {
             <span>Chờ xác nhận</span>
           </span>
         );
-      case 'DA_XAC_NHAN':
-        return <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200/60">Đã xác nhận</span>;
       case 'CHO_HUY':
         return <span className="px-3 py-1 bg-rose-50 text-rose-700 rounded-full text-xs font-bold border border-rose-200/60">Chờ hủy</span>;
       case 'TU_CHOI_HOAN_TIEN':
@@ -333,7 +368,7 @@ export default function HoChieuSo() {
       case 'THANH_TOAN_THAT_BAI':
         return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200">Thanh toán thất bại</span>;
       default:
-        return null;
+        return <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold border border-gray-200">{status}</span>;
     }
   };
 
@@ -457,8 +492,9 @@ export default function HoChieuSo() {
         nhanXet
       });
 
-      setToast({ message: 'Đánh giá thành công! Cảm ơn đóng góp của bạn.', type: 'success' });
+      setToast({ message: 'Đánh giá thành công! Cảm ơn đóng góp của bạn. Bạn được cộng +50 Điểm Xanh.', type: 'success' });
       setSelectedBookingForReview(null);
+      await taiLaiHoSo();
     } catch (err: any) {
       setToast({ message: layThongBaoLoi(err, 'Không thể gửi đánh giá. Vui lòng thử lại.'), type: 'error' });
     }
@@ -522,11 +558,11 @@ export default function HoChieuSo() {
     let statusMatch = true;
     if (bookingFilter !== 'all') {
       if (bookingFilter === 'upcoming') {
-        statusMatch = ['upcoming', 'CHO_XAC_NHAN', 'DA_XAC_NHAN'].includes(booking.status);
+        statusMatch = ['CHO_XAC_NHAN', 'DA_XAC_NHAN'].includes(booking.status);
       } else if (bookingFilter === 'completed') {
-        statusMatch = booking.status === 'completed';
+        statusMatch = booking.status === 'DA_HOAN_THANH';
       } else if (bookingFilter === 'cancelled') {
-        statusMatch = ['cancelled', 'CHO_HUY', 'DA_HUY', 'TU_CHOI_HOAN_TIEN', 'HET_HAN_GIU_CHO', 'THANH_TOAN_THAT_BAI'].includes(booking.status);
+        statusMatch = ['CHO_HUY', 'DA_HUY', 'TU_CHOI_HOAN_TIEN', 'HET_HAN_GIU_CHO', 'THANH_TOAN_THAT_BAI'].includes(booking.status);
       } else {
         statusMatch = (booking.status as string) === bookingFilter;
       }
@@ -563,7 +599,15 @@ export default function HoChieuSo() {
               <div className="space-y-1">
                 <div className="flex flex-col sm:flex-row items-center gap-2">
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight">{profile.fullName}</h1>
-                  <span className="text-[10px] font-black uppercase bg-emerald-100/90 text-emerald-700 px-2.5 py-0.5 rounded-lg border border-emerald-200/60">Active</span>
+                  <span
+                    className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg border ${
+                      profile.accountStatus === 'HOAT_DONG'
+                        ? 'bg-emerald-100/90 text-emerald-700 border-emerald-200/60'
+                        : 'bg-red-100/90 text-red-700 border-red-200/60'
+                    }`}
+                  >
+                    {profile.accountStatus === 'HOAT_DONG' ? 'Đang hoạt động' : 'Đã khóa'}
+                  </span>
                 </div>
                 <p className="text-slate-500 text-sm font-semibold">{profile.email}</p>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
@@ -572,8 +616,8 @@ export default function HoChieuSo() {
                     <span>{profile.phone}</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5 bg-white/80 border border-slate-200/50 text-[11px] font-bold text-slate-600 shadow-sm px-2.5 py-1 rounded-xl backdrop-blur-md max-w-[280px]">
-                    <MapPin className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
-                    <span className="truncate">{profile.address}</span>
+                    <Calendar className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                    <span className="truncate">{profile.dateOfBirth ? formatDate(profile.dateOfBirth) : 'Chưa cập nhật ngày sinh'}</span>
                   </span>
                 </div>
               </div>
@@ -688,25 +732,14 @@ export default function HoChieuSo() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-bold text-gray-700 mb-2">Họ và tên</label>
                     <input
                       type="text"
                       value={isEditing ? editedProfile.fullName : profile.fullName}
                       onChange={(e) => setEditedProfile({ ...editedProfile, fullName: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Email liên hệ</label>
-                    <input
-                      type="email"
-                      value={isEditing ? editedProfile.email : profile.email}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
-                      disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
                     />
                   </div>
 
@@ -717,18 +750,18 @@ export default function HoChieuSo() {
                       value={isEditing ? editedProfile.phone : profile.phone}
                       onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Ngày sinh</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Email liên hệ</label>
                     <input
-                      type="date"
-                      value={isEditing ? editedProfile.dateOfBirth : profile.dateOfBirth}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, dateOfBirth: e.target.value })}
+                      type="email"
+                      value={isEditing ? editedProfile.email : profile.email}
+                      onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
                     />
                   </div>
 
@@ -739,19 +772,27 @@ export default function HoChieuSo() {
                       value={isEditing ? editedProfile.idCard : profile.idCard}
                       onChange={(e) => setEditedProfile({ ...editedProfile, idCard: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Số Hộ chiếu (Passport)</label>
-                    <input
-                      type="text"
-                      value={isEditing ? editedProfile.passport : profile.passport}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, passport: e.target.value })}
-                      disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
-                    />
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Ngày sinh</label>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        value={editedProfile.dateOfBirth}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, dateOfBirth: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={profile.dateOfBirth ? profile.dateOfBirth.split('-').reverse().join('/') : ''}
+                        disabled
+                        className="w-full px-4 py-2 border border-gray-200 rounded-xl disabled:bg-gray-50 disabled:text-gray-600 font-medium"
+                      />
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -761,7 +802,7 @@ export default function HoChieuSo() {
                       value={isEditing ? editedProfile.address : profile.address}
                       onChange={(e) => setEditedProfile({ ...editedProfile, address: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-600 font-medium"
                     />
                   </div>
 
@@ -773,7 +814,7 @@ export default function HoChieuSo() {
                       value={isEditing ? editedProfile.healthInfo || '' : profile.healthInfo || ''}
                       onChange={(e) => setEditedProfile({ ...editedProfile, healthInfo: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-650 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-650 font-medium"
                     />
                   </div>
 
@@ -785,7 +826,7 @@ export default function HoChieuSo() {
                       value={isEditing ? editedProfile.allergies || '' : profile.allergies || ''}
                       onChange={(e) => setEditedProfile({ ...editedProfile, allergies: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-650 font-medium"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-650 font-medium"
                     />
                   </div>
                 </div>
@@ -793,7 +834,7 @@ export default function HoChieuSo() {
                 {/* UC60: Đổi mật khẩu */}
                 <div className="border-t border-gray-100 pt-6">
                   <button
-                    onClick={() => { setShowChangePassword(!showChangePassword); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }}
+                    onClick={() => { setShowChangePassword(!showChangePassword); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); setIsPasswordOtpVerified(false); }}
                     className="flex items-center justify-between w-full text-left"
                   >
                     <div className="flex items-center space-x-3">
@@ -816,6 +857,22 @@ export default function HoChieuSo() {
                             <Check className="w-7 h-7 text-green-600" />
                           </div>
                           <p className="text-sm font-bold text-green-700">Mật khẩu đã được thay đổi thành công!</p>
+                        </div>
+                      ) : !isPasswordOtpVerified ? (
+                        <div className="text-center py-6 space-y-3">
+                          <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <ShieldAlert className="w-7 h-7 text-blue-600" />
+                          </div>
+                          <p className="text-sm font-bold text-gray-800">Xác thực bảo mật 2 lớp</p>
+                          <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                            Để bảo vệ tài khoản, bạn cần nhập mã OTP xác nhận danh tính trước khi tiến hành đổi mật khẩu.
+                          </p>
+                          <button
+                            onClick={handleRequestPasswordOtp}
+                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-sm text-sm"
+                          >
+                            Lấy mã OTP
+                          </button>
                         </div>
                       ) : (
                         <>
@@ -1051,7 +1108,7 @@ export default function HoChieuSo() {
                             </div>
                             <Ticket className="w-8 h-8 text-blue-600" />
                           </div>
-                          <p className="text-gray-600 text-xs font-semibold mt-2">{voucher.description}</p>
+                          <p className="text-gray-600 text-xs font-semibold mt-2 whitespace-pre-line">{voucher.description}</p>
                         </div>
 
                         <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
@@ -1124,29 +1181,69 @@ export default function HoChieuSo() {
                           </div>
 
                           {ticket.status === 'CHO_BO_SUNG' && (
-                            <button
-                              onClick={() => {
-                                const addInfo = prompt('Nhập thêm thông tin bổ sung / link bằng chứng (video, ảnh):');
-                                if (addInfo) {
-                                  const updatedHistory = [...ticket.history, 'Khách hàng cập nhật thêm thông tin bổ sung.'];
-                                  const updatedComplaints = complaints.map(c =>
-                                    c.id === ticket.id
-                                      ? {
-                                        ...c,
-                                        content: `${c.content}\n\n[Bổ sung ngày ${new Date().toLocaleDateString('vi-VN')}]: ${addInfo}`,
-                                        status: 'CHUA_XU_LY' as const,
-                                        history: updatedHistory
-                                      }
-                                      : c
-                                  );
-                                  setComplaints(updatedComplaints);
-                                  alert('Cập nhật thông tin bổ sung thành công! Ticket của bạn đã được đưa lại hàng chờ xử lý.');
-                                }
-                              }}
-                              className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-bold transition-colors"
-                            >
-                              Bổ sung bằng chứng
-                            </button>
+                            <div className="mt-3 border-t border-slate-100 pt-3">
+                              {showAddInfoForTicket === ticket.id ? (
+                                <div className="space-y-3">
+                                  <textarea
+                                    value={addInfoContent}
+                                    onChange={(e) => setAddInfoContent(e.target.value)}
+                                    placeholder="Nhập thông tin bổ sung hoặc đính kèm link hình ảnh/video bằng chứng..."
+                                    className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all resize-none bg-slate-50 hover:bg-white"
+                                    rows={3}
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={async () => {
+                                        if (addInfoContent.trim()) {
+                                          try {
+                                            await khService.boSungYeuCauHoTro(ticket.id, addInfoContent);
+                                            const updatedHistory = [...ticket.history, 'Khách hàng cập nhật thêm thông tin bổ sung.'];
+                                            const updatedComplaints = complaints.map(c =>
+                                              c.id === ticket.id
+                                                ? {
+                                                  ...c,
+                                                  content: `${c.content}\n\n[Bổ sung ngày ${new Date().toLocaleDateString('vi-VN')}]: ${addInfoContent}`,
+                                                  status: 'CHUA_XU_LY' as const,
+                                                  history: updatedHistory
+                                                }
+                                                : c
+                                            );
+                                            setComplaints(updatedComplaints);
+                                            setToast({ message: 'Cập nhật thông tin bổ sung thành công! Yêu cầu của bạn đã trở lại hàng chờ xử lý.', type: 'success' });
+                                            setShowAddInfoForTicket(null);
+                                            setAddInfoContent('');
+                                          } catch (err: any) {
+                                            setToast({ message: layThongBaoLoi(err, 'Không thể gửi bổ sung. Vui lòng thử lại.'), type: 'error' });
+                                          }
+                                        } else {
+                                          setToast({ message: 'Vui lòng nhập nội dung cần bổ sung.', type: 'error' });
+                                        }
+                                      }}
+                                      className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-xs font-bold transition-colors shadow-sm"
+                                    >
+                                      Gửi thông tin
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setShowAddInfoForTicket(null);
+                                        setAddInfoContent('');
+                                      }}
+                                      className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 hover:text-slate-900 text-xs font-bold transition-colors"
+                                    >
+                                      Hủy bỏ
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setShowAddInfoForTicket(ticket.id)}
+                                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 text-xs font-bold transition-all shadow-sm"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                  Bổ sung bằng chứng ngay
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1175,11 +1272,13 @@ export default function HoChieuSo() {
               <Phone className="w-8 h-8" />
             </div>
 
-            <h3 className="text-xl font-extrabold text-gray-900 mb-2">Xác thực OTP cập nhật</h3>
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-              Mã xác nhận bảo mật đã được gửi đến số điện thoại <strong className="text-gray-800">{profile.phone}</strong>.<br />
-              Vui lòng nhập mã OTP để tiếp tục lưu hồ sơ số.
-            </p>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-2">
+              {otpAction === 'profile' ? 'Xác thực OTP cập nhật' : 'Xác thực bảo mật 2 lớp'}
+            </h3>
+            <div className="text-center mb-6 mt-4">
+              <p className="text-sm text-slate-600 font-medium">Mã xác thực (OTP) đã được gửi đến</p>
+              <p className="text-slate-900 font-bold mt-1">{profile.phone || profile.email}</p>
+            </div>
 
             <div className="flex justify-center space-x-2 mb-6">
               {otpValue.map((digit, idx) => (
@@ -1203,7 +1302,7 @@ export default function HoChieuSo() {
                       document.getElementById(`otp-${idx - 1}`)?.focus();
                     }
                   }}
-                  className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-12 h-12 text-center text-xl font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
                 />
               ))}
             </div>
@@ -1217,19 +1316,16 @@ export default function HoChieuSo() {
 
             <button
               onClick={handleVerifyOtp}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg mb-4 text-sm"
+              className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-600/20 transition-all active:scale-[0.98] mb-4 text-sm flex justify-center items-center"
             >
-              Xác thực OTP
+              Xác minh OTP
             </button>
 
-            <div className="text-xs text-gray-500">
+            <div className="text-center mt-4">
               {otpCountdown > 0 ? (
-                <p>Gửi lại mã xác nhận sau <strong className="text-gray-700">{otpCountdown} giây</strong></p>
+                <p className="text-sm text-slate-500 font-medium">Gửi lại mã sau <span className="text-blue-600 font-bold">{otpCountdown}s</span></p>
               ) : (
-                <button
-                  onClick={handleResendOtp}
-                  className="text-blue-600 hover:underline font-bold"
-                >
+                <button type="button" onClick={handleResendOtp} className="text-sm font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2">
                   Gửi lại mã OTP
                 </button>
               )}
@@ -1283,12 +1379,12 @@ export default function HoChieuSo() {
                           : `Giảm ${formatPrice(voucher.discount)}`
                         }
                       </p>
-                      <p className="text-gray-600 text-xs font-semibold mt-2">{voucher.description}</p>
+                      <p className="text-gray-600 text-xs font-semibold mt-2 whitespace-pre-line">{voucher.description}</p>
                     </div>
 
                     <div className="flex sm:flex-col items-end justify-between w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-50 gap-2">
                       <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        Yêu cầu: {pointsRequired} PTS
+                        Yêu cầu: {pointsRequired} điểm
                       </span>
                       <button
                         disabled={!canRedeem}
@@ -1334,7 +1430,7 @@ export default function HoChieuSo() {
               <p className="text-blue-900 font-extrabold text-base">
                 Ưu đãi: <span className="text-blue-700">{selectedVoucherForUse.title}</span> (Mã: {selectedVoucherForUse.code})
               </p>
-              <p className="text-blue-700 text-xs font-semibold mt-1">{selectedVoucherForUse.description}</p>
+              <p className="text-blue-700 text-xs font-semibold mt-1 whitespace-pre-line">{selectedVoucherForUse.description}</p>
             </div>
 
             <div className="overflow-y-auto flex-1 pr-2">

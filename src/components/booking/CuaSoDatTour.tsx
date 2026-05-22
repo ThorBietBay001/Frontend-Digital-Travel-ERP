@@ -33,6 +33,27 @@ const getStoredProfile = () => {
   }
 };
 
+const CHILD_MAX_AGE = 11;
+
+const getAgeOnDate = (dateOfBirth: string, referenceDate?: string) => {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(dateOfBirth);
+  const targetDate = referenceDate ? new Date(referenceDate) : new Date();
+  if (Number.isNaN(birthDate.getTime()) || Number.isNaN(targetDate.getTime())) return null;
+
+  let age = targetDate.getFullYear() - birthDate.getFullYear();
+  const monthDiff = targetDate.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && targetDate.getDate() < birthDate.getDate())) {
+    age -= 1;
+  }
+  return age;
+};
+
+const isChildPassenger = (dateOfBirth: string, referenceDate?: string) => {
+  const age = getAgeOnDate(dateOfBirth, referenceDate);
+  return age !== null && age <= CHILD_MAX_AGE;
+};
+
 export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -48,8 +69,8 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   }]);
   const [extraServices, setExtraServices] = useState<ExtraService[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [selectedGreenActions, setSelectedGreenActions] = useState<string[]>([]);
-  const [selectedExtraServices, setSelectedExtraServices] = useState<string[]>([]);
+  const [selectedGreenActions, setSelectedGreenActions] = useState<Record<string, number>>({});
+  const [selectedExtraServices, setSelectedExtraServices] = useState<Record<string, number>>({});
   const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const [timeRemaining, setTimeRemaining] = useState(600);
@@ -105,7 +126,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
       setTimeRemaining(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          alert('Hết thời gian giữ chỗ! Vui lòng đặt lại.');
+          setError('Hết thời gian giữ chỗ! Vui lòng đặt lại.');
           onClose();
           return 0;
         }
@@ -123,7 +144,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
         setQrCountdown(prev => {
           if (prev <= 1) {
             clearInterval(timer);
-            alert('Giao dịch thanh toán bằng mã QR đã hết hạn! Vui lòng thực hiện lại.');
+            setError('Giao dịch thanh toán bằng mã QR đã hết hạn! Vui lòng thực hiện lại.');
             setShowQrPayment(false);
             return 0;
           }
@@ -148,7 +169,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
 
   const thayDoiSoLuongKhach = (num: number) => {
     if (num > tour.availableSeats) {
-      alert(`Chỉ còn ${tour.availableSeats} chỗ trống!`);
+      setError(`Chỉ còn ${tour.availableSeats} chỗ trống! Vui lòng giảm số lượng hành khách.`);
       return;
     }
 
@@ -171,33 +192,75 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   };
 
   const chonHanhDongXanh = (actionId: string) => {
-    setSelectedGreenActions(prev =>
-      prev.includes(actionId) ? prev.filter(id => id !== actionId) : [...prev, actionId]
-    );
+    setSelectedGreenActions(prev => {
+      const next = { ...prev };
+      if (next[actionId]) {
+        delete next[actionId];
+      } else {
+        next[actionId] = 1;
+      }
+      return next;
+    });
   };
 
   const chonDichVuThem = (serviceId: string) => {
-    setSelectedExtraServices(prev =>
-      prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
-    );
+    setSelectedExtraServices(prev => {
+      const next = { ...prev };
+      if (next[serviceId]) {
+        delete next[serviceId];
+      } else {
+        next[serviceId] = 1;
+      }
+      return next;
+    });
+  };
+
+  const capNhatSoLuongDichVu = (serviceId: string, quantity: number) => {
+    setSelectedExtraServices(prev => ({
+      ...prev,
+      [serviceId]: Math.max(1, quantity)
+    }));
+  };
+
+  const capNhatSoLuongHanhDongXanh = (actionId: string, quantity: number) => {
+    setSelectedGreenActions(prev => ({
+      ...prev,
+      [actionId]: Math.max(1, quantity)
+    }));
   };
 
   const extraServicesTotal = useMemo(() => {
-    return selectedExtraServices.reduce((sum, id) => {
+    return Object.entries(selectedExtraServices).reduce((sum, [id, quantity]) => {
       const service = extraServices.find(item => item.id === id);
-      return sum + (service?.price || 0);
+      return sum + (service?.price || 0) * quantity;
     }, 0);
   }, [extraServices, selectedExtraServices]);
 
+  const passengerFareSummary = useMemo(() => {
+    const referenceDate = tour.departureDate || tour.startDate;
+    const adultCount = passengers.filter(passenger => !isChildPassenger(passenger.dateOfBirth, referenceDate)).length;
+    const childCount = passengers.length - adultCount;
+    const adultSubtotal = adultCount * tour.price;
+    const childSubtotal = childCount * tour.price * 0.5;
+
+    return {
+      adultCount,
+      childCount,
+      adultSubtotal,
+      childSubtotal,
+      total: adultSubtotal + childSubtotal
+    };
+  }, [passengers, tour.departureDate, tour.price, tour.startDate]);
+
   const tinhDiemXanh = () => {
-    return selectedGreenActions.reduce((sum, actionId) => {
+    return Object.entries(selectedGreenActions).reduce((sum, [actionId, quantity]) => {
       const action = tour.greenActions.find(item => item.id === actionId);
-      return sum + (action?.points || 0);
+      return sum + (action?.points || 0) * quantity;
     }, 0);
   };
 
   const tinhTongTien = () => {
-    let total = tour.price * numPeople + extraServicesTotal;
+    let total = passengerFareSummary.total + extraServicesTotal;
     if (selectedVoucher) {
       const voucher = vouchers.find(item => item.id === selectedVoucher);
       if (voucher) {
@@ -210,22 +273,23 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   };
 
   const handleNextStep = () => {
+    setError('');
     if (currentStep === 1) {
-      const allFilled = passengers.every(p => p.name && p.phone && p.idCard && p.email);
+      const allFilled = passengers.every(p => p.name && p.phone && p.idCard && p.email && p.dateOfBirth);
       if (!allFilled) {
-        alert('Vui lòng điền đầy đủ thông tin hành khách!');
+        setError('Vui lòng điền đầy đủ thông tin hành khách!');
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (passengers.some(p => !emailRegex.test(p.email))) {
-        alert('Vui lòng nhập email hợp lệ!');
+        setError('Vui lòng nhập email hợp lệ!');
         return;
       }
 
       const phoneRegex = /^[0-9]{10,11}$/;
       if (passengers.some(p => !phoneRegex.test(p.phone))) {
-        alert('Vui lòng nhập số điện thoại hợp lệ (10-11 chữ số)!');
+        setError('Vui lòng nhập số điện thoại hợp lệ (10-11 chữ số)!');
         return;
       }
     }
@@ -240,7 +304,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   const mapPaymentMethodToApi = () => {
     if (paymentMethod === 'ewallet') return 'MOMO_WALLET';
     if (paymentMethod === 'credit_card') return 'MOMO_ATM';
-    return 'MOMO_WALLET';
+    return 'CHUYEN_KHOAN';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -251,14 +315,17 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
     try {
       const bookingResponse = await khService.datTour({
         maTourThucTe: tour.id,
-        danhSachDichVu: selectedExtraServices.map(id => ({ maDichVuThem: id, soLuong: 1 })),
+        danhSachDichVu: Object.entries(selectedExtraServices).map(([id, quantity]) => ({ maDichVuThem: id, soLuong: quantity })),
         danhSachNguoiDongHanh: passengers.slice(1).map(passenger => ({
           hoTen: passenger.name.trim(),
           soDienThoai: passenger.phone.trim(),
           cccd: passenger.idCard.trim() || undefined,
           ngaySinh: passenger.dateOfBirth || undefined
         })),
-        danhSachHanhDongXanh: selectedGreenActions
+        danhSachHanhDongXanhChiTiet: Object.entries(selectedGreenActions).map(([id, quantity]) => ({
+          maHanhDongXanh: id,
+          soLuong: quantity
+        }))
       });
 
       const booking = unwrapData<any>(bookingResponse);
@@ -329,10 +396,11 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
         return {
           bg: 'from-blue-700 via-indigo-750 to-indigo-900',
           title: 'VietQR - Ngân hàng TMCP Quân Đội (MB Bank)',
-          account: '0349888888',
+          account: '0763148344',
           bank: 'Ngân hàng Quân Đội (MB Bank)',
           primaryColor: '#0050B3',
           logoText: 'VietQR',
+          qrImageUrl: 'https://img.vietqr.io/image/MB-0763148344-qr_only.png',
           amount: totalAmount,
           desc: 'Quét mã VietQR bằng ứng dụng ngân hàng của bạn để chuyển khoản 24/7 miễn phí.'
         };
@@ -410,37 +478,35 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
           </div>
         </div>
 
-        {!showQrPayment && (
-          <div className="bg-white border-b border-slate-100 px-6 sm:px-8 py-6 pb-6 overflow-x-auto scrollbar-none">
-            <div className="grid grid-cols-[auto_minmax(64px,1fr)_auto_minmax(64px,1fr)_auto] items-center min-w-[760px] max-w-4xl mx-auto">
-              {stepsList.map((s, idx) => {
-                const isActive = s.step === currentStep;
-                const isCompleted = s.step < currentStep;
-                return (
-                  <div key={s.step} className="contents">
-                    <div className="flex items-center space-x-2.5">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${isActive
-                        ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/25 scale-110'
-                        : isCompleted
-                          ? 'bg-green-500 border-green-500 text-white'
-                          : 'bg-white border-slate-200 text-slate-400'
-                        }`}>
-                        {isCompleted ? '✓' : s.step}
-                      </div>
-                      <span className={`text-xs font-bold transition-colors ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>
-                        {s.name}
-                      </span>
+        <div className="bg-white border-b border-slate-100 px-6 sm:px-8 pt-6 pb-8 overflow-x-auto scrollbar-none">
+          <div className="grid grid-cols-[auto_minmax(64px,1fr)_auto_minmax(64px,1fr)_auto] items-center min-w-[760px] max-w-4xl mx-auto">
+            {stepsList.map((s, idx) => {
+              const isActive = s.step === currentStep;
+              const isCompleted = s.step < currentStep;
+              return (
+                <div key={s.step} className="contents">
+                  <div className="flex items-center space-x-2.5">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${isActive
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/25 scale-110'
+                      : isCompleted
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'bg-white border-slate-200 text-slate-400'
+                      }`}>
+                      {isCompleted ? '✓' : s.step}
                     </div>
-                    {idx < stepsList.length - 1 && (
-                      <div className={`h-0.5 mx-4 rounded-full transition-colors duration-500 ${isCompleted ? 'bg-green-500' : 'bg-slate-100'
-                        }`} />
-                    )}
+                    <span className={`text-xs font-bold transition-colors ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>
+                      {s.name}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  {idx < stepsList.length - 1 && (
+                    <div className={`h-0.5 mx-4 rounded-full transition-colors duration-500 ${isCompleted ? 'bg-green-500' : 'bg-slate-100'
+                      }`} />
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f0f4f9] scrollbar-thin">
           {error && !showQrPayment && (
@@ -459,30 +525,38 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
 
                   <div className="relative bg-white p-4.5 rounded-[1.8rem] w-64 h-64 border-4 border-slate-100 shadow-inner flex items-center justify-center overflow-hidden mb-4 group transition-all hover:scale-[1.02]">
                     <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 to-amber-500 animate-scan z-10" />
-                    <svg className="w-full h-full" viewBox="0 0 100 100" fill={brand.primaryColor}>
-                      <rect x="5" y="5" width="22" height="22" rx="2" fill={brand.primaryColor} />
-                      <rect x="9" y="9" width="14" height="14" rx="1" fill="white" />
-                      <rect x="12" y="12" width="8" height="8" rx="0.5" fill={brand.primaryColor} />
-                      <rect x="73" y="5" width="22" height="22" rx="2" fill={brand.primaryColor} />
-                      <rect x="77" y="9" width="14" height="14" rx="1" fill="white" />
-                      <rect x="80" y="12" width="8" height="8" rx="0.5" fill={brand.primaryColor} />
-                      <rect x="5" y="73" width="22" height="22" rx="2" fill={brand.primaryColor} />
-                      <rect x="9" y="77" width="14" height="14" rx="1" fill="white" />
-                      <rect x="12" y="80" width="8" height="8" rx="0.5" fill={brand.primaryColor} />
-                      <rect x="32" y="7" width="6" height="6" />
-                      <rect x="42" y="12" width="8" height="4" />
-                      <rect x="54" y="6" width="4" height="8" />
-                      <rect x="35" y="35" width="30" height="30" fill={brand.primaryColor} opacity="0.08" />
-                      <circle cx="50" cy="50" r="14" fill="white" stroke={brand.primaryColor} strokeWidth="1.5" />
-                      <text x="50" y="52.2" fontSize="5.5" fontWeight="950" textAnchor="middle" fill={brand.primaryColor}>
-                        {brand.logoText}
-                      </text>
-                      <rect x="35" y="75" width="8" height="8" />
-                      <rect x="47" y="82" width="12" height="4" />
-                      <rect x="63" y="76" width="6" height="8" />
-                      <rect x="78" y="78" width="12" height="12" fill={brand.primaryColor} />
-                      <rect x="82" y="82" width="4" height="4" fill="white" />
-                    </svg>
+                    {brand.qrImageUrl ? (
+                      <img
+                        src={brand.qrImageUrl}
+                        alt="VietQR MB Bank 0763148344"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <svg className="w-full h-full" viewBox="0 0 100 100" fill={brand.primaryColor}>
+                        <rect x="5" y="5" width="22" height="22" rx="2" fill={brand.primaryColor} />
+                        <rect x="9" y="9" width="14" height="14" rx="1" fill="white" />
+                        <rect x="12" y="12" width="8" height="8" rx="0.5" fill={brand.primaryColor} />
+                        <rect x="73" y="5" width="22" height="22" rx="2" fill={brand.primaryColor} />
+                        <rect x="77" y="9" width="14" height="14" rx="1" fill="white" />
+                        <rect x="80" y="12" width="8" height="8" rx="0.5" fill={brand.primaryColor} />
+                        <rect x="5" y="73" width="22" height="22" rx="2" fill={brand.primaryColor} />
+                        <rect x="9" y="77" width="14" height="14" rx="1" fill="white" />
+                        <rect x="12" y="80" width="8" height="8" rx="0.5" fill={brand.primaryColor} />
+                        <rect x="32" y="7" width="6" height="6" />
+                        <rect x="42" y="12" width="8" height="4" />
+                        <rect x="54" y="6" width="4" height="8" />
+                        <rect x="35" y="35" width="30" height="30" fill={brand.primaryColor} opacity="0.08" />
+                        <circle cx="50" cy="50" r="14" fill="white" stroke={brand.primaryColor} strokeWidth="1.5" />
+                        <text x="50" y="52.2" fontSize="5.5" fontWeight="950" textAnchor="middle" fill={brand.primaryColor}>
+                          {brand.logoText}
+                        </text>
+                        <rect x="35" y="75" width="8" height="8" />
+                        <rect x="47" y="82" width="12" height="4" />
+                        <rect x="63" y="76" width="6" height="8" />
+                        <rect x="78" y="78" width="12" height="12" fill={brand.primaryColor} />
+                        <rect x="82" y="82" width="4" height="4" fill="white" />
+                      </svg>
+                    )}
                   </div>
 
                   <p className="text-[10px] text-slate-500 font-bold max-w-xs leading-relaxed">
@@ -588,6 +662,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
                       userGreenPoints={profile.greenPoints || 0}
                       greenPointsDiscount={greenPointsDiscount}
                       extraServicesTotal={extraServicesTotal}
+                      passengerFareSummary={passengerFareSummary}
                       currentStep={currentStep}
                       vouchers={vouchers}
                       onNextStep={handleNextStep}
@@ -603,11 +678,13 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
                       extraServices={extraServices}
                       selectedServices={selectedExtraServices}
                       chonDichVuThem={chonDichVuThem}
+                      capNhatSoLuongDichVu={capNhatSoLuongDichVu}
                     />
                     <ChonHanhDongXanh
                       greenActions={tour.greenActions}
                       selectedGreenActions={selectedGreenActions}
                       chonHanhDongXanh={chonHanhDongXanh}
+                      capNhatSoLuongHanhDongXanh={capNhatSoLuongHanhDongXanh}
                     />
                   </div>
 
@@ -624,6 +701,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
                       userGreenPoints={profile.greenPoints || 0}
                       greenPointsDiscount={greenPointsDiscount}
                       extraServicesTotal={extraServicesTotal}
+                      passengerFareSummary={passengerFareSummary}
                       currentStep={currentStep}
                       vouchers={vouchers}
                       onNextStep={handleNextStep}
@@ -664,6 +742,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
                       userGreenPoints={profile.greenPoints || 0}
                       greenPointsDiscount={greenPointsDiscount}
                       extraServicesTotal={extraServicesTotal}
+                      passengerFareSummary={passengerFareSummary}
                       currentStep={currentStep}
                       vouchers={vouchers}
                       isProcessingPayment={isProcessingPayment}

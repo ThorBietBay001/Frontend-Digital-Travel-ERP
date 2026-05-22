@@ -16,8 +16,8 @@ interface PassengerFormProps {
   availableSeats: number;
 }
 
-export default function BieuMauHanhKhach({ 
-  passengers, 
+export default function BieuMauHanhKhach({
+  passengers,
   thayDoiThongTinHanhKhach,
   bookingType,
   setBookingType,
@@ -27,13 +27,14 @@ export default function BieuMauHanhKhach({
 }: PassengerFormProps) {
   return (
     <div className="bg-white rounded-2xl p-6 border-t-4 border-t-blue-600 shadow-sm animate-fadeIn space-y-8">
-      {/* Minimal Booking Type Selection */}
       <div className="space-y-4">
         <div>
           <h3 className="text-base font-black text-slate-900 tracking-tight">Loại hình đặt Tour</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Chọn số lượng thành viên tham gia chuyến đi để hệ thống chuẩn bị dịch vụ tốt nhất.</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Chọn số lượng thành viên tham gia chuyến đi để hệ thống chuẩn bị dịch vụ tốt nhất.
+          </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4">
           <label className="flex-1 flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-300 transition-all">
             <input
@@ -51,7 +52,7 @@ export default function BieuMauHanhKhach({
               <span className="block text-xs text-slate-500">Đặt chỗ nhanh cho 1 người</span>
             </div>
           </label>
-          
+
           <label className="flex-1 flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-300 transition-all">
             <input
               type="radio"
@@ -103,8 +104,7 @@ export default function BieuMauHanhKhach({
         {passengers.map((passenger, index) => (
           <div key={index} className="space-y-6">
             {index > 0 && <hr className="border-slate-100" />}
-            
-            {/* Header Block */}
+
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-extrabold ${
@@ -121,7 +121,6 @@ export default function BieuMauHanhKhach({
               )}
             </div>
 
-            {/* Form fields in clean Google Forms bottom-border only style */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
               <div className="sm:col-span-2">
                 <label className="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">
@@ -167,7 +166,7 @@ export default function BieuMauHanhKhach({
 
               <div>
                 <label className="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">
-                  Số CCCD hoặc Passport <span className="text-red-500">*</span>
+                  Số CCCD <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -175,16 +174,17 @@ export default function BieuMauHanhKhach({
                   value={passenger.idCard}
                   onChange={(e) => thayDoiThongTinHanhKhach(index, 'idCard', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
-                  placeholder="Nhập 12 số CCCD hoặc mã hộ chiếu"
+                  placeholder="Nhập 12 số CCCD"
                 />
               </div>
 
               <div>
                 <label className="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">
-                  Ngày tháng năm sinh
+                  Ngày tháng năm sinh <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
+                  required
                   value={passenger.dateOfBirth}
                   onChange={(e) => thayDoiThongTinHanhKhach(index, 'dateOfBirth', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
