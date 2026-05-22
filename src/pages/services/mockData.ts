@@ -18,7 +18,7 @@ export interface ApiResponseVoid {
   status?: number;
   success?: boolean;
   message?: string;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 

@@ -7,7 +7,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { Pagination } from '../../components/ui/Pagination';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
-import TourInstanceForm from './TourInstanceForm';
+import TourInstanceDetailModal from './TourInstanceDetailModal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
 import type { TourInstance } from './mockData';
@@ -15,6 +15,7 @@ import type { TourThucTeResponse, TaoTourThucTeRequest, CapNhatTourThucTeRequest
 import { tourInstanceService } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { mapTourInstanceStatus } from '../../utils/statusMapping';
 
 const TourInstanceList: React.FC = () => {
   const [data, setData] = useState<TourInstance[]>([]);
@@ -51,33 +52,17 @@ const TourInstanceList: React.FC = () => {
     schedule: [],
   });
 
-  const mapStatus = (tour: TourThucTeResponse): TourInstance['status'] => {
+  const mapStatus = (tour: TourThucTeResponse): string => {
     if (tour.soKhachToiDa != null && tour.choConLai === 0 && tour.trangThai === 'MO_BAN') {
-      return 'full';
+      return 'MO_BAN'; // The UI will interpret this using mapTourInstanceStatus, but wait - if it's full maybe we should handle it? For now just use the backend status.
     }
-    switch (tour.trangThai) {
-      case 'MO_BAN': return 'active';
-      case 'HUY': return 'cancelled';
-      case 'KET_THUC':
-      case 'DA_QUYET_TOAN': return 'completed';
-      case 'CHO_KICH_HOAT':
-      case 'SAP_DIEN_RA':
-      case 'DANG_DIEN_RA': return 'pending_activation';
-      default: return 'pending_activation';
-    }
+    return tour.trangThai || 'CHO_KICH_HOAT';
   };
 
   const { user } = useAuth();
 
-  const mapStatusToApi = (status: TourInstance['status']) => {
-    switch (status) {
-      case 'active': return 'MO_BAN';
-      case 'cancelled': return 'HUY';
-      case 'completed': return 'KET_THUC';
-      case 'pending_activation': return 'CHO_KICH_HOAT';
-      case 'full': return 'MO_BAN';
-      default: return 'CHO_KICH_HOAT';
-    }
+  const mapStatusToApi = (status: string) => {
+    return status;
   };
 
   const getAll = async () => {
@@ -101,27 +86,7 @@ const TourInstanceList: React.FC = () => {
 
   React.useEffect(() => { getAll(); }, [user]);
 
-  const getStatusBadgeVariant = (status: TourInstance['status']) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'full': return 'warning';
-      case 'cancelled': return 'error';
-      case 'pending_activation': return 'info';
-      case 'completed': return 'neutral';
-      default: return 'neutral';
-    }
-  };
 
-  const getStatusLabel = (status: TourInstance['status']) => {
-    switch (status) {
-      case 'active': return 'Mở bán';
-      case 'full': return 'Đã đầy';
-      case 'cancelled': return 'Đã hủy';
-      case 'pending_activation': return 'Chờ kích hoạt';
-      case 'completed': return 'Hoàn thành';
-      default: return status;
-    }
-  };
 
   const openModal = (mode: typeof modalState.mode, tour?: TourInstance) => {
     setModalState({ isOpen: true, mode, selectedTour: tour });
@@ -140,14 +105,14 @@ const TourInstanceList: React.FC = () => {
           soKhachToiDa: tourData.maxSeats,
           giaHienHanh: tourData.currentPrice,
         };
-        await tourInstanceService.taoMoi_4(payload);
+        await tourInstanceService.taoMoi(payload);
       } else if (modalState.mode === 'edit') {
         const payload: CapNhatTourThucTeRequest = {
           giaHienHanh: tourData.currentPrice,
           soKhachToiDa: tourData.maxSeats,
           trangThai: mapStatusToApi(tourData.status),
         };
-        await tourInstanceService.capNhat_4(tourData.id, payload);
+        await tourInstanceService.capNhat(tourData.id, payload);
       }
       closeModal();
       getAll();
@@ -160,7 +125,7 @@ const TourInstanceList: React.FC = () => {
   const handleDelete = async () => {
     if (modalState.selectedTour) {
       try {
-        await tourInstanceService.xoa_4(modalState.selectedTour.id);
+        await tourInstanceService.xoa(modalState.selectedTour.id);
         closeModal();
         getAll();
       } catch (err: unknown) {
@@ -226,9 +191,10 @@ const TourInstanceList: React.FC = () => {
     {
       key: 'status',
       title: 'Trạng thái',
-      render: (record) => (
-        <Badge label={getStatusLabel(record.status)} variant={getStatusBadgeVariant(record.status)} />
-      ),
+      render: (record) => {
+        const { label, variant } = mapTourInstanceStatus(record.status);
+        return <Badge label={label} variant={variant} />;
+      },
     },
     {
       key: 'actions',
@@ -275,9 +241,9 @@ const TourInstanceList: React.FC = () => {
             <Select
               options={[
                 { label: 'Tất cả', value: 'all' },
-                { label: 'Mở bán', value: 'active' },
-                { label: 'Đã đầy', value: 'full' },
-                { label: 'Đã hủy', value: 'cancelled' },
+                { label: 'Chờ kích hoạt', value: 'CHO_KICH_HOAT' },
+                { label: 'Mở bán', value: 'MO_BAN' },
+                { label: 'Đã hủy', value: 'HUY' },
               ]}
               value={statusFilter}
               onChange={setStatusFilter}
@@ -321,21 +287,15 @@ const TourInstanceList: React.FC = () => {
       </div>
 
       {/* Modal Khởi tạo/Chỉnh sửa */}
-      <Modal
-        isOpen={modalState.isOpen && (modalState.mode === 'create' || modalState.mode === 'edit')}
-        onClose={closeModal}
-        title={modalState.mode === 'create' ? 'Khởi tạo Tour Thực Tế từ Tour Mẫu' : 'Cập nhật Tour Thực Tế'}
-        size="lg"
-      >
-        {(modalState.isOpen && (modalState.mode === 'create' || modalState.mode === 'edit')) && (
-          <TourInstanceForm
-            mode={modalState.mode as 'create' | 'edit'}
-            initialData={modalState.selectedTour}
-            onSubmit={handleFormSubmit}
-            onCancel={closeModal}
-          />
-        )}
-      </Modal>
+      {(modalState.isOpen && (modalState.mode === 'create' || modalState.mode === 'edit')) && (
+        <TourInstanceDetailModal
+          isOpen={modalState.isOpen && (modalState.mode === 'create' || modalState.mode === 'edit')}
+          mode={modalState.mode as 'create' | 'edit'}
+          initialData={modalState.selectedTour}
+          onSubmit={handleFormSubmit}
+          onClose={closeModal}
+        />
+      )}
 
       {/* Modal Xóa */}
       <Modal

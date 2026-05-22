@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import MainLayout from '../../components/layouts/MainLayout';
+
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
@@ -156,20 +156,11 @@ const GreenActionList: React.FC = () => {
   ];
 
   return (
-    <MainLayout
-      activeMenu="Hành động Xanh"
-      expandedMenus={['Quản lý Sản phẩm Tour']}
-      breadcrumb={[
-        { label: 'Quản lý Sản phẩm Tour' },
-        { label: 'Hành động Xanh' },
-      ]}
-      userName="Admin Hệ Thống"
-      userRole="Quản trị viên"
-    >
-      <div className="flex flex-col h-full gap-6">
+    <>
+      <div className="flex flex-col h-full gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[32px] font-bold text-[#121C2C]">Quản lý Danh mục Hành động Xanh</h1>
+            <h2 className="text-xl font-bold text-[#121C2C]">Danh mục Hành động Xanh</h2>
             <p className="text-gray-500 text-sm mt-1">Thiết lập kho điểm thưởng gốc để áp dụng cho các tour.</p>
           </div>
           <Button variant="primary" icon={<Plus size={18} />} onClick={() => openModal('create')}>
@@ -247,7 +238,7 @@ const GreenActionList: React.FC = () => {
           <p>Bạn có chắc chắn muốn xóa hành động <strong>'{modalState.selectedAction?.name}'</strong>?</p>
         </div>
       </Modal>
-    </MainLayout>
+    </>
   );
 };
 

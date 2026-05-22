@@ -29,8 +29,16 @@ export interface DatTourListParams extends PageQueryParams {
 
 export const ordersService = {
   danhSachTatCa: async (params?: DatTourListParams): Promise<PageDonDatTourResponse | undefined> => {
-    const response = await api.get<ApiResponsePageDonDatTourResponse>('/api/kinh-doanh/don-dat-tour', {
-      params: { page: 0, size: 200, trangThai: '', maTourThucTe: '', ...params },
+    const queryParams: Record<string, string | number> = {
+      page: params?.page ?? 0,
+      size: params?.size ?? 200,
+      sort: params?.sort ?? 'khachHang,desc',
+    };
+    if (params?.trangThai) queryParams.trangThai = params.trangThai;
+    if (params?.maTourThucTe) queryParams.maTourThucTe = params.maTourThucTe;
+
+    const response = await api.get<ApiResponsePageDonDatTourResponse>('/api/kinh-doanh/dat-tour', {
+      params: queryParams,
     });
     return unwrapApiData(response);
   },

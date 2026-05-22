@@ -17,6 +17,7 @@ import type { NhanVienResponse } from '../../../services/system/accounts';
 import { customersService, type HoChieuSoResponse } from '../../../services/customers';
 import { useAuth } from '../../../context/AuthContext';
 import { hasAccess } from '../../../config/rolePermissions';
+import { mapAccountStatus } from '../../../utils/statusMapping';
 
 export const ROLE_MAP: Record<string, string> = {
   'ADMIN': 'Quản trị viên',
@@ -62,8 +63,8 @@ const AccountList: React.FC = () => {
 
   const statusOptions = [
     { value: 'all', label: 'Tất cả trạng thái' },
-    { value: 'active', label: 'Đang hoạt động' },
-    { value: 'locked', label: 'Bị khóa' },
+    { value: 'HOAT_DONG', label: 'Đang hoạt động' },
+    { value: 'KHOA', label: 'Bị khóa' },
   ];
 
   const filteredAccounts = useMemo(() => {
@@ -115,7 +116,7 @@ const AccountList: React.FC = () => {
         phone: nv.soDienThoai || '',
         username: nv.tenDangNhap || '',
         role: ROLE_MAP[nv.maVaiTro?.replace('ROLE_', '') || ''] || 'Nhân viên',
-        status: nv.trangThaiTaiKhoan === 'HOAT_DONG' ? 'active' : 'locked',
+        status: nv.trangThaiTaiKhoan || 'HOAT_DONG',
         avatar: undefined
       }));
       const mappedKH = (resKhachHang?.content || []).map((kh: HoChieuSoResponse): Account => ({
@@ -126,7 +127,7 @@ const AccountList: React.FC = () => {
         phone: kh.soDienThoai || '',
         username: kh.tenDangNhap || kh.email || '',
         role: 'Khách hàng',
-        status: 'active',
+        status: 'HOAT_DONG',
         avatar: undefined
       }));
       setAccounts([...mappedNV, ...mappedKH]);
@@ -153,7 +154,7 @@ const AccountList: React.FC = () => {
       phone: '',
       username: '',
       role: '',
-      status: 'active',
+      status: 'HOAT_DONG',
     });
     setFormOpen(true);
   };
@@ -169,19 +170,19 @@ const AccountList: React.FC = () => {
   };
 
   const handleToggleStatus = async (account: Account) => {
-    const nextStatus = account.status === 'active' ? 'locked' : 'active';
+    const nextStatus = account.status === 'HOAT_DONG' ? 'KHOA' : 'HOAT_DONG';
     const confirmed = window.confirm(
-      `${nextStatus === 'locked' ? 'Khóa' : 'Mở khóa'} tài khoản ${account.code}?`
+      `${nextStatus === 'KHOA' ? 'Khóa' : 'Mở khóa'} tài khoản ${account.code}?`
     );
     if (!confirmed) return;
 
     try {
-      if (nextStatus === 'locked') {
+      if (nextStatus === 'KHOA') {
         await accountsService.khoaTaiKhoan(account.id);
       } else {
         await accountsService.moKhoaTaiKhoan(account.id);
       }
-      alert(`${nextStatus === 'locked' ? 'Khóa' : 'Mở khóa'} tài khoản thành công.`);
+      alert(`${nextStatus === 'KHOA' ? 'Khóa' : 'Mở khóa'} tài khoản thành công.`);
       fetchAccounts();
     } catch (error) {
       alert('Lỗi khi thao tác tài khoản');
@@ -273,12 +274,10 @@ const AccountList: React.FC = () => {
       key: 'status',
       title: 'Trạng thái',
       align: 'center',
-      render: (record) => (
-        <Badge
-          label={record.status === 'active' ? 'Đang hoạt động' : 'Bị khóa'}
-          variant={record.status === 'active' ? 'success' : 'error'}
-        />
-      ),
+      render: (record) => {
+        const { label, variant } = mapAccountStatus(record.status);
+        return <Badge label={label} variant={variant} />;
+      },
     },
     {
       key: 'actions',
@@ -291,7 +290,7 @@ const AccountList: React.FC = () => {
             size="sm"
             icon={<ShieldCheck size={18} />}
             onClick={() => handleOpenPermissions(record)}
-            disabled={record.status !== 'active'}
+            disabled={record.status !== 'HOAT_DONG'}
             aria-label="Phân quyền"
             className="px-2"
           />
@@ -303,7 +302,7 @@ const AccountList: React.FC = () => {
             aria-label="Chỉnh sửa"
             className="px-2"
           />
-          {record.status === 'active' ? (
+          {record.status === 'HOAT_DONG' ? (
             <Button
               variant="ghost"
               size="sm"

@@ -5,7 +5,7 @@ import { getRoleLabel } from '../../config/rolePermissions';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const roleLabel = getRoleLabel(user?.maVaiTro);
+  const roleLabel = getRoleLabel(user?.maVaiTro || '');
 
   return (
     <MainLayout

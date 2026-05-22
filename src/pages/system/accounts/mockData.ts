@@ -90,7 +90,7 @@ export interface Account {
   phone: string;
   username: string;
   role: string;
-  status: 'active' | 'locked';
+  status: string;
   avatar?: string;
 }
 

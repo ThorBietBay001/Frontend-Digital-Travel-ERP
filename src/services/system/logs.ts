@@ -1,33 +1,34 @@
 import api from '../api';
 import { unwrapApiData, type PageQueryParams } from '../../utils/apiHelpers';
 import type {
-  ApiResponsePageNhatKyBaoMatResponse,
-  PageNhatKyBaoMatResponse,
-  NhatKyBaoMatResponse,
+  ApiResponsePageNhatKyHeThongResponse,
+  PageNhatKyHeThongResponse,
+  NhatKyHeThongResponse,
   PageableObject,
   SortObject,
 } from '../../pages/system/logs/mockData';
 
 export type {
-  ApiResponsePageNhatKyBaoMatResponse,
-  PageNhatKyBaoMatResponse,
-  NhatKyBaoMatResponse,
+  ApiResponsePageNhatKyHeThongResponse,
+  PageNhatKyHeThongResponse,
+  NhatKyHeThongResponse,
   PageableObject,
   SortObject,
 };
 
-export interface NhatKyBaoMatQueryParams extends PageQueryParams {
+export interface NhatKyHeThongQueryParams extends PageQueryParams {
   maTaiKhoan?: string;
   hanhDong?: string;
-  ketQua?: string;
-  tuThoiDiem?: string;
-  denThoiDiem?: string;
+  doiTuong?: string;
+  maDoiTuong?: string;
+  tuThoiGian?: string;
+  denThoiGian?: string;
 }
 
 export const logsService = {
-  nhatKyBaoMat: async (params?: NhatKyBaoMatQueryParams): Promise<PageNhatKyBaoMatResponse | undefined> => {
-    const response = await api.get<ApiResponsePageNhatKyBaoMatResponse>('/api/quan-tri/nhat-ky-he-thong', {
-      params: { page: 0, size: 200, ...params },
+  nhatKyHeThong: async (params?: NhatKyHeThongQueryParams): Promise<PageNhatKyHeThongResponse | undefined> => {
+    const response = await api.get<ApiResponsePageNhatKyHeThongResponse>('/api/quan-tri/nhat-ky-he-thong', {
+      params: { page: 0, size: 500, sort: 'taiKhoan,desc', ...params },
     });
     return unwrapApiData(response);
   },

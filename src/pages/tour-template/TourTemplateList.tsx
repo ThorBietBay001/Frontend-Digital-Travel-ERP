@@ -11,7 +11,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { PlusCircle, Pencil, Copy, Trash2 } from 'lucide-react';
 import type { TourTemplate } from './mockData';
 import type { TourMauResponse, TaoTourMauRequest, CapNhatTourMauRequest } from '../../services/tour-template';
-import TourTemplateForm from './TourTemplateForm';
+import TourTemplateDetailModal from './TourTemplateDetailModal';
 import { tourTemplateService } from '../../services/tour-template';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
@@ -282,26 +282,15 @@ const TourTemplateList: React.FC = () => {
         />
       </div>
 
-      {/* Modal Thêm/Sửa/Sao chép */}
-      <Modal
-        isOpen={modalState.isOpen && modalState.mode !== 'delete'}
-        onClose={closeModal}
-        title={
-          modalState.mode === 'create' ? 'Thêm mới Tour Mẫu' :
-          modalState.mode === 'edit' ? 'Chỉnh sửa Tour Mẫu' :
-          'Sao chép Tour Mẫu'
-        }
-        size="lg"
-      >
-        {(modalState.isOpen && modalState.mode !== 'delete') && (
-          <TourTemplateForm
+        {modalState.isOpen && (
+          <TourTemplateDetailModal
+            isOpen={modalState.isOpen}
             mode={modalState.mode as 'create' | 'edit' | 'copy'}
             initialData={modalState.selectedTour}
             onSubmit={handleFormSubmit}
-            onCancel={closeModal}
+            onClose={closeModal}
           />
         )}
-      </Modal>
 
       {/* Modal Xác nhận Xóa */}
       <Modal

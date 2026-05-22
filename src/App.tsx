@@ -1,8 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import TourTemplateList from './pages/tour-template/TourTemplateList'
 import TourInstanceList from './pages/tour-instance/TourInstanceList'
-import ServiceList from './pages/services/ServiceList'  
-import GreenActionList from './pages/green-actions/GreenActionList' 
 import OrderList from './pages/orders/OrderList'
 import CustomerList from './pages/customers/CustomerList'
 import ComplaintList from './pages/complaints/ComplaintList'
@@ -51,16 +49,6 @@ function App() {
       <Route path="/tour-instance" element={
         <ProtectedRoute allowedRoles={ROLES_TOUR_INSTANCE}>
           <TourInstanceList />
-        </ProtectedRoute>
-      } />
-      <Route path="/services" element={
-        <ProtectedRoute allowedRoles={ROLES_SANPHAM}>
-          <ServiceList />
-        </ProtectedRoute>
-      } />
-      <Route path="/green-actions" element={
-        <ProtectedRoute allowedRoles={ROLES_SANPHAM}>
-          <GreenActionList />
         </ProtectedRoute>
       } />
 

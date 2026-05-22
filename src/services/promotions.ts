@@ -1,4 +1,5 @@
-import api from '../services/api';
+import api from './api';
+import { type PageQueryParams } from '../utils/apiHelpers';
 import type {
     ApiResponseVoucherResponse,
     VoucherRequest,
@@ -36,10 +37,10 @@ export const promotionsService = {
         return response.data.data;
     },
     voHieuVoucher: async (maVoucher: string) => {
-        const response = await api.put<ApiResponseVoucherResponse>(`/api/kinh-doanh/voucher/${maVoucher}/vo-hieu`, {});
+        const response = await api.put<ApiResponseVoucherResponse>(`/api/kinh-doanh/voucher/${maVoucher}/vo-hieu-hoa`, {});
         return response.data.data;
     },
-    danhSach_4: async (params?: Record<string, any>) => {
+    danhSach_4: async (params?: PageQueryParams) => {
         const response = await api.get<ApiResponsePageVoucherResponse>('/api/kinh-doanh/voucher', { params });
         return response.data.data;
     },
