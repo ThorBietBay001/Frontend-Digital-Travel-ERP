@@ -5,15 +5,16 @@ import {
   Phone, Edit, Gift, Ticket, X, Check, Bell,
   AlertTriangle, ShieldAlert, FileText, MessageSquare, ArrowRight, CheckCircle, ChevronDown, Search
 } from 'lucide-react';
+import { khService } from '../services/khService';
 import {
-  mockUserProfile,
-  mockBookings,
-  mockVouchers,
-  availableVouchers,
-  mockTours,
-  type Booking,
-  type Voucher
-} from '../data/mockData';
+  mapBooking,
+  mapProfile,
+  mapPublicTour,
+  mapVoucher,
+  unwrapData,
+  unwrapPageContent
+} from '../services/apiHelpers';
+import type { Booking, Voucher } from '../types';
 import { Link } from 'react-router';
 
 type Tab = 'profile' | 'bookings' | 'vouchers' | 'complaints';
@@ -32,38 +33,94 @@ interface ComplaintTicket {
   history: string[];
 }
 
-export default function DigitalPassport() {
+export default function HoChieuSo() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [bookingFilter, setBookingFilter] = useState<BookingFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
-  // Dynamic states backed by localStorage
-  const [profile, setProfile] = useState(() => {
-    const stored = localStorage.getItem('userProfile');
-    return stored ? JSON.parse(stored) : mockUserProfile;
+  const [profile, setProfile] = useState<any>({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    membershipTier: 'THANH_VIEN',
+    greenPoints: 0,
+    dateOfBirth: '',
+    idCard: '',
+    passport: '',
+    healthInfo: '',
+    allergies: ''
   });
 
-  const [editedProfile, setEditedProfile] = useState(profile);
-
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    const stored = localStorage.getItem('bookings');
-    return stored ? JSON.parse(stored) : mockBookings;
-  });
-
-  const [vouchers, setVouchers] = useState<Voucher[]>(() => {
-    const stored = localStorage.getItem('vouchers');
-    return stored ? JSON.parse(stored) : mockVouchers;
-  });
-
-  const [complaints, setComplaints] = useState<ComplaintTicket[]>(() => {
-    const stored = localStorage.getItem('complaints');
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [editedProfile, setEditedProfile] = useState<any>(profile);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [redeemableVouchers, setRedeemableVouchers] = useState<Voucher[]>([]);
+  const [complaints, setComplaints] = useState<ComplaintTicket[]>([]);
+  const [allTours, setAllTours] = useState<any[]>([]);
 
   // Modal control states
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [selectedVoucherForUse, setSelectedVoucherForUse] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [profileRes, bookingsRes, pastToursRes, vouchersRes, redeemableVouchersRes, toursRes, complaintsRes] = await Promise.all([
+          khService.layHoChieuSo().catch(() => ({ data: null })),
+          khService.getMyBookings().catch(() => ({ data: { content: [] } })),
+          khService.getPastTours().catch(() => ({ data: { content: [] } })),
+          khService.getVouchers().catch(() => ({ data: { content: [] } })),
+          khService.getRedeemableVouchers().catch(() => ({ data: { content: [] } })),
+          khService.layDanhSachTour().catch(() => ({ data: [] })),
+          khService.layYeuCauHoTro().catch(() => ({ data: { content: [] } }))
+        ]);
+
+        const profileData = unwrapData(profileRes);
+        if (profileData) {
+          const loadedProfile = mapProfile(profileData);
+          setProfile(loadedProfile);
+          setEditedProfile(loadedProfile);
+        }
+
+        const activeBks = unwrapPageContent(bookingsRes).map(mapBooking);
+        const pastBks = unwrapPageContent(pastToursRes).map((b: any) => ({
+          id: b.maLichSuTour,
+          tourId: b.maTourThucTe,
+          tourName: b.tieuDeTour,
+          bookingDate: b.ngayThamGia,
+          departureDate: b.ngayKhoiHanh,
+          totalAmount: 0,
+          status: 'completed' as const,
+          guests: 1,
+          passengers: 1,
+          tourImage: `https://picsum.photos/seed/${b.maTourThucTe}/900/650`,
+          qrCode: `QR-${b.maLichSuTour}`
+        }));
+
+        setBookings([...activeBks, ...pastBks]);
+        setVouchers(unwrapPageContent(vouchersRes).map(mapVoucher));
+        setRedeemableVouchers(unwrapPageContent(redeemableVouchersRes).map(mapVoucher));
+        setAllTours(unwrapPageContent(toursRes).map(mapPublicTour));
+        setComplaints(unwrapPageContent(complaintsRes).map((c: any) => ({
+          id: c.maYeuCau,
+          bookingId: c.maDatTour || '',
+          tourName: c.maDatTour || 'Đơn đặt tour',
+          category: c.loaiYeuCau === 'KHIEU_NAI' ? 'Khiếu nại' : c.loaiYeuCau === 'HOAN_TIEN' ? 'Hoàn tiền' : 'Hỗ trợ',
+          subject: c.loaiYeuCau || 'Yêu cầu hỗ trợ',
+          content: c.noiDung || '',
+          status: c.trangThai || 'CHUA_XU_LY',
+          createdAt: '',
+          updatedAt: '',
+          history: [`Trạng thái hiện tại: ${c.trangThai || 'CHUA_XU_LY'}`]
+        })));
+      } catch (err) {
+        console.error("Failed to load digital passport data:", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Custom OTP verification modal states (UC23)
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -103,23 +160,21 @@ export default function DigitalPassport() {
   // Toast notification system
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  const layThongBaoLoi = (err: any, fallback: string) => {
+    return err?.response?.data?.message || err?.message || fallback;
+  };
 
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('userProfile', JSON.stringify(profile));
-  }, [profile]);
+  const taiLaiHoSo = async () => {
+    const profileResponse = await khService.layHoChieuSo();
+    const loadedProfile = mapProfile(unwrapData<any>(profileResponse));
+    setProfile(loadedProfile);
+    setEditedProfile(loadedProfile);
+    localStorage.setItem('userProfile', JSON.stringify(loadedProfile));
+    return loadedProfile;
+  };
 
-  useEffect(() => {
-    localStorage.setItem('bookings', JSON.stringify(bookings));
-  }, [bookings]);
 
-  useEffect(() => {
-    localStorage.setItem('vouchers', JSON.stringify(vouchers));
-  }, [vouchers]);
-
-  useEffect(() => {
-    localStorage.setItem('complaints', JSON.stringify(complaints));
-  }, [complaints]);
+  // Sync logic removed because we fetch from API
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -161,13 +216,28 @@ export default function DigitalPassport() {
   };
 
   // Verify OTP (standard code is 123456)
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     const enteredCode = otpValue.join('');
     if (enteredCode === '123456') {
-      setProfile(editedProfile);
-      setIsEditing(false);
-      setShowOtpModal(false);
+      try {
+        const response = await khService.capNhatHoSo({
+          cccd: editedProfile.idCard,
+          tenDangNhap: editedProfile.username,
+          email: editedProfile.email,
+          soDienThoai: editedProfile.phone,
+          diUng: editedProfile.allergies,
+          ghiChuYTe: editedProfile.healthInfo
+        });
+        const updatedProfile = mapProfile(unwrapData<any>(response));
+        setProfile(updatedProfile);
+        setEditedProfile(updatedProfile);
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        setIsEditing(false);
+        setShowOtpModal(false);
       setToast({ message: 'Cập nhật hồ sơ thành công!', type: 'success' });
+      } catch (err: any) {
+        setOtpError(layThongBaoLoi(err, 'Không thể cập nhật hồ sơ. Vui lòng thử lại.'));
+      }
     } else {
       setOtpError('Mã OTP không chính xác. Vui lòng nhập "123456" để mô phỏng thành công!');
     }
@@ -180,21 +250,59 @@ export default function DigitalPassport() {
     setToast({ message: 'Mã OTP mới đã được gửi lại vào số điện thoại của bạn!', type: 'info' });
   };
 
-  const getTierColor = (tier: string) => {
+  const handleChangePassword = async () => {
+    if (!currentPassword) {
+      setPasswordError('Vui lòng nhập mật khẩu hiện tại!');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự!');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+
+    try {
+      await khService.doiMatKhau({
+        matKhauCu: currentPassword,
+        matKhauMoi: newPassword,
+        xacNhanMatKhau: confirmNewPassword
+      });
+      setPasswordError('');
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setToast({ message: 'Đổi mật khẩu thành công!', type: 'success' });
+    } catch (err: any) {
+      setPasswordError(layThongBaoLoi(err, 'Không thể đổi mật khẩu. Vui lòng thử lại.'));
+    }
+  };
+
+  const layMauHangThanhVien = (tier: string) => {
     switch (tier) {
+      case 'KIM_CUONG':
       case 'Platinum': return 'text-purple-600 bg-purple-100 border border-purple-300';
+      case 'VANG':
+      case 'VANG':
       case 'Gold': return 'text-yellow-700 bg-yellow-100 border border-yellow-300';
+      case 'BAC':
+      case 'BAC':
       case 'Silver': return 'text-gray-600 bg-gray-100 border border-gray-300';
       default: return 'text-orange-600 bg-orange-100 border border-orange-300';
     }
   };
 
-  const getTierNameVi = (tier: string) => {
+  const layTenHangThanhVienVi = (tier: string) => {
     switch (tier) {
+      case 'KIM_CUONG': return 'Kim Cương';
       case 'Platinum': return 'Bạch Kim';
       case 'Gold': return 'Vàng';
       case 'Silver': return 'Bạc';
-      default: return 'Đồng';
+      case 'DONG': return 'Đồng';
+      default: return 'Thành Viên';
     }
   };
 
@@ -230,32 +338,30 @@ export default function DigitalPassport() {
   };
 
   // UC30: Redeem Green Points for Voucher
-  const handleRedeemPoints = (voucher: any, pointsRequired: number) => {
+  const tinhDiemCanDoiVoucher = (voucher: Voucher) => {
+    return voucher.discountType === 'fixed'
+      ? Math.ceil(voucher.discount / 100)
+      : voucher.discount * 50;
+  };
+
+  const handleRedeemPoints = async (voucher: any, pointsRequired: number) => {
     if (profile.greenPoints < pointsRequired) {
       setToast({ message: 'Không đủ điểm xanh để quy đổi voucher này!', type: 'error' });
       return;
     }
 
     // Deduct points
-    const updatedPoints = profile.greenPoints - pointsRequired;
+    try {
+      const response = await khService.doiVoucher(voucher.id);
+      const newVoucher = mapVoucher(unwrapData<any>(response));
+      await taiLaiHoSo();
 
-    // Add to my vouchers
-    const newVoucher: Voucher = {
-      id: `voucher-${Date.now()}`,
-      code: voucher.code,
-      title: voucher.title,
-      discount: voucher.discount,
-      discountType: voucher.discountType,
-      minPurchase: voucher.minPurchase,
-      expiryDate: voucher.expiryDate,
-      status: 'active',
-      description: voucher.description
-    };
-
-    setProfile({ ...profile, greenPoints: updatedPoints });
-    setVouchers([newVoucher, ...vouchers]);
+      setVouchers(prev => [newVoucher, ...prev.filter(v => v.id !== newVoucher.id)]);
     setShowRedeemModal(false);
     setToast({ message: `Quy đổi thành công voucher "${voucher.title}"! Điểm thưởng xanh đã được khấu trừ.`, type: 'success' });
+    } catch (err: any) {
+      setToast({ message: layThongBaoLoi(err, 'Không thể quy đổi voucher. Vui lòng thử lại.'), type: 'error' });
+    }
   };
 
   // UC32: Handle open cancel modal & calculate penalty
@@ -263,8 +369,7 @@ export default function DigitalPassport() {
     setSelectedBookingForCancel(booking);
     setCancellationReason('');
 
-    // Check cancellation dates relative to departure date (today is simulated as 2026-05-19)
-    const today = new Date('2026-05-19');
+    const today = new Date();
     const depDate = new Date(booking.departureDate);
     const diffTime = depDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -285,10 +390,10 @@ export default function DigitalPassport() {
   };
 
   // Confirm tour cancellation (UC32 / UC33)
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!selectedBookingForCancel) return;
 
-    const today = new Date('2026-05-19');
+    const today = new Date();
     const depDate = new Date(selectedBookingForCancel.departureDate);
     const diffTime = depDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -299,22 +404,25 @@ export default function DigitalPassport() {
       return;
     }
 
-    // Update booking status in local storage to CHO_HUY
-    const updatedBookings = bookings.map(b =>
+    try {
+      if (selectedBookingForCancel.status === 'CHO_XAC_NHAN') {
+        await khService.huyDatTour(selectedBookingForCancel.id);
+      } else {
+        await khService.yeuCauHuyTour(selectedBookingForCancel.id, { lyDo: cancellationReason.trim() });
+      }
+
+      setBookings(prev => prev.map(b =>
       b.id === selectedBookingForCancel.id
-        ? { ...b, status: 'CHO_HUY' as any }
+        ? { ...b, status: selectedBookingForCancel.status === 'CHO_XAC_NHAN' ? 'DA_HUY' as any : 'CHO_HUY' as any }
         : b
-    );
-    setBookings(updatedBookings);
+      ));
 
     // UC48 in SPEC-Status-Flows.md: If booking is cancelled, return voucher to CO_HIEU_LUC
-    const updatedVouchers = vouchers.map(v =>
-      v.code === 'SUMMER2026' ? { ...v, status: 'active' as const } : v
-    );
-    setVouchers(updatedVouchers);
-
     setToast({ message: `Yêu cầu hủy tour đã được gửi! Trạng thái: Chờ hủy. Số tiền hoàn trả dự kiến: ${formatPrice(cancellationPenalty.refund)}.`, type: 'success' });
-    setSelectedBookingForCancel(null);
+      setSelectedBookingForCancel(null);
+    } catch (err: any) {
+      setToast({ message: layThongBaoLoi(err, 'Không thể gửi yêu cầu hủy tour. Vui lòng thử lại.'), type: 'error' });
+    }
   };
 
   // UC35: Open review modal
@@ -333,28 +441,27 @@ export default function DigitalPassport() {
   };
 
   // Submit tour review (UC35)
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!selectedBookingForReview) return;
 
     // Award +50 Green Points for submitting review
-    const rewardPoints = 50;
-    const updatedPoints = profile.greenPoints + rewardPoints;
+    try {
+      const nhanXet = [
+        reviewComment.trim(),
+        selectedReviewTags.length ? `Tags: ${selectedReviewTags.join(', ')}` : ''
+      ].filter(Boolean).join('\n');
 
-    // Membership promotion
-    let newTier = profile.membershipTier;
-    if (updatedPoints >= 50000) newTier = 'Platinum';
-    else if (updatedPoints >= 20000) newTier = 'Gold';
-    else if (updatedPoints >= 5000) newTier = 'Silver';
-    else newTier = 'Bronze';
+      await khService.taoDanhGia({
+        maTourThucTe: selectedBookingForReview.tourId,
+        soSao: reviewStars,
+        nhanXet
+      });
 
-    setProfile({
-      ...profile,
-      greenPoints: updatedPoints,
-      membershipTier: newTier
-    });
-
-    setToast({ message: `Đánh giá thành công! Cảm ơn đóng góp của bạn. Bạn đã được cộng +${rewardPoints} Điểm xanh vào Hộ chiếu số.`, type: 'success' });
-    setSelectedBookingForReview(null);
+      setToast({ message: 'Đánh giá thành công! Cảm ơn đóng góp của bạn.', type: 'success' });
+      setSelectedBookingForReview(null);
+    } catch (err: any) {
+      setToast({ message: layThongBaoLoi(err, 'Không thể gửi đánh giá. Vui lòng thử lại.'), type: 'error' });
+    }
   };
 
   // UC36: Open complaint modal
@@ -367,7 +474,7 @@ export default function DigitalPassport() {
   };
 
   // Submit complaint ticket (UC36)
-  const handleSubmitComplaint = () => {
+  const handleSubmitComplaint = async () => {
     if (!selectedBookingForComplaint) return;
 
     if (!complaintSubject.trim() || !complaintContent.trim()) {
@@ -375,23 +482,38 @@ export default function DigitalPassport() {
       return;
     }
 
-    const newTicket: ComplaintTicket = {
-      id: `comp-${Date.now()}`,
-      bookingId: selectedBookingForComplaint.id,
-      tourName: selectedBookingForComplaint.tourName,
-      category: complaintCategory,
-      subject: complaintSubject,
-      content: complaintContent,
-      status: 'CHUA_XU_LY',
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-      history: ['Khách hàng gửi khiếu nại lên hệ thống.']
-    };
+    try {
+      const response = await khService.taoYeuCauHoTro({
+        maDatTour: selectedBookingForComplaint.id,
+        loaiYeuCau: 'KHIEU_NAI',
+        noiDung: [
+          `Danh mục: ${complaintCategory}`,
+          `Tiêu đề: ${complaintSubject.trim()}`,
+          complaintContent.trim(),
+          complaintFileName ? `File đính kèm: ${complaintFileName}` : ''
+        ].filter(Boolean).join('\n')
+      });
+      const c = unwrapData<any>(response);
+      const newTicket: ComplaintTicket = {
+        id: c.maYeuCau || `comp-${Date.now()}`,
+        bookingId: c.maDatTour || selectedBookingForComplaint.id,
+        tourName: selectedBookingForComplaint.tourName,
+        category: complaintCategory,
+        subject: complaintSubject,
+        content: complaintContent,
+        status: c.trangThai || 'CHUA_XU_LY',
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
+        history: ['Khách hàng gửi khiếu nại lên hệ thống.']
+      };
 
-    setComplaints([newTicket, ...complaints]);
-    setToast({ message: 'Khiếu nại đã được gửi thành công! Ban điều hành sẽ tiếp nhận và xử lý trong vòng 24h làm việc.', type: 'success' });
-    setSelectedBookingForComplaint(null);
-    setActiveTab('complaints');
+      setComplaints([newTicket, ...complaints]);
+      setToast({ message: 'Khiếu nại đã được gửi thành công! Ban điều hành sẽ tiếp nhận và xử lý trong vòng 24h làm việc.', type: 'success' });
+      setSelectedBookingForComplaint(null);
+      setActiveTab('complaints');
+    } catch (err: any) {
+      setToast({ message: layThongBaoLoi(err, 'Không thể gửi khiếu nại. Vui lòng thử lại.'), type: 'error' });
+    }
   };
 
   // Filtered Bookings
@@ -460,8 +582,8 @@ export default function DigitalPassport() {
             <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3.5 w-full lg:w-auto">
               <div className="text-center bg-white/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-100 shadow-sm min-w-[130px] flex-1 sm:flex-initial">
                 <p className="text-slate-450 text-[10px] uppercase tracking-wider mb-2 font-bold">Hạng Thành Viên</p>
-                <span className={`inline-block px-3 py-1 rounded-lg text-xs font-black uppercase ${getTierColor(profile.membershipTier)}`}>
-                  {getTierNameVi(profile.membershipTier)}
+                <span className={`inline-block px-3 py-1 rounded-lg text-xs font-black uppercase ${layMauHangThanhVien(profile.membershipTier)}`}>
+                  {layTenHangThanhVienVi(profile.membershipTier)}
                 </span>
               </div>
 
@@ -486,8 +608,8 @@ export default function DigitalPassport() {
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`flex-1 py-4 px-6 text-center font-bold transition-all flex items-center justify-center space-x-2 text-sm ${activeTab === 'profile'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
                   }`}
               >
                 <User className="w-4 h-4" />
@@ -496,8 +618,8 @@ export default function DigitalPassport() {
               <button
                 onClick={() => setActiveTab('bookings')}
                 className={`flex-1 py-4 px-6 text-center font-bold transition-all flex items-center justify-center space-x-2 text-sm ${activeTab === 'bookings'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
                   }`}
               >
                 <Calendar className="w-4 h-4" />
@@ -506,8 +628,8 @@ export default function DigitalPassport() {
               <button
                 onClick={() => setActiveTab('vouchers')}
                 className={`flex-1 py-4 px-6 text-center font-bold transition-all flex items-center justify-center space-x-2 text-sm ${activeTab === 'vouchers'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
                   }`}
               >
                 <Wallet className="w-4 h-4" />
@@ -516,8 +638,8 @@ export default function DigitalPassport() {
               <button
                 onClick={() => setActiveTab('complaints')}
                 className={`flex-1 py-4 px-6 text-center font-bold transition-all flex items-center justify-center space-x-2 text-sm ${activeTab === 'complaints'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
                   }`}
               >
                 <MessageSquare className="w-4 h-4" />
@@ -668,116 +790,85 @@ export default function DigitalPassport() {
                   </div>
                 </div>
 
-              {/* UC60: Đổi mật khẩu */}
-              <div className="border-t border-gray-100 pt-6">
-                <button
-                  onClick={() => { setShowChangePassword(!showChangePassword); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }}
-                  className="flex items-center justify-between w-full text-left"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                      <ShieldAlert className="w-4.5 h-4.5 text-slate-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-gray-900 text-sm">Bảo mật tài khoản</h3>
-                      <p className="text-xs text-gray-500 font-medium">Thay đổi mật khẩu đăng nhập</p>
-                    </div>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showChangePassword ? 'rotate-180' : ''}`} />
-                </button>
-
-                {showChangePassword && (
-                  <div className="mt-4 space-y-4 bg-gray-50 p-5 rounded-2xl border border-gray-200 animate-fadeIn">
-                    {passwordSuccess ? (
-                      <div className="text-center py-6 space-y-3">
-                        <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                          <Check className="w-7 h-7 text-green-600" />
-                        </div>
-                        <p className="text-sm font-bold text-green-700">Mật khẩu đã được thay đổi thành công!</p>
+                {/* UC60: Đổi mật khẩu */}
+                <div className="border-t border-gray-100 pt-6">
+                  <button
+                    onClick={() => { setShowChangePassword(!showChangePassword); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }}
+                    className="flex items-center justify-between w-full text-left"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                        <ShieldAlert className="w-4.5 h-4.5 text-slate-600" />
                       </div>
-                    ) : (
-                      <>
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-1.5">Mật khẩu hiện tại</label>
-                          <input
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="Nhập mật khẩu hiện tại"
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          />
+                      <div>
+                        <h3 className="font-extrabold text-gray-900 text-sm">Bảo mật tài khoản</h3>
+                        <p className="text-xs text-gray-500 font-medium">Thay đổi mật khẩu đăng nhập</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showChangePassword ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showChangePassword && (
+                    <div className="mt-4 space-y-4 bg-gray-50 p-5 rounded-2xl border border-gray-200 animate-fadeIn">
+                      {passwordSuccess ? (
+                        <div className="text-center py-6 space-y-3">
+                          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                            <Check className="w-7 h-7 text-green-600" />
+                          </div>
+                          <p className="text-sm font-bold text-green-700">Mật khẩu đã được thay đổi thành công!</p>
                         </div>
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-1.5">Mật khẩu mới</label>
-                          <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-1.5">Xác nhận mật khẩu mới</label>
-                          <input
-                            type="password"
-                            value={confirmNewPassword}
-                            onChange={(e) => setConfirmNewPassword(e.target.value)}
-                            placeholder="Nhập lại mật khẩu mới"
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          />
-                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Mật khẩu hiện tại</label>
+                            <input
+                              type="password"
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              placeholder="Nhập mật khẩu hiện tại"
+                              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Mật khẩu mới</label>
+                            <input
+                              type="password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Xác nhận mật khẩu mới</label>
+                            <input
+                              type="password"
+                              value={confirmNewPassword}
+                              onChange={(e) => setConfirmNewPassword(e.target.value)}
+                              placeholder="Nhập lại mật khẩu mới"
+                              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            />
+                          </div>
 
-                        {passwordError && (
-                          <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 flex items-center">
-                            <AlertTriangle className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                            {passwordError}
-                          </p>
-                        )}
+                          {passwordError && (
+                            <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 flex items-center">
+                              <AlertTriangle className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                              {passwordError}
+                            </p>
+                          )}
 
-                        <button
-                          onClick={() => {
-                            // Validate
-                            const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                            const currentUser = storedUsers.find((u: any) => u.email === profile.email || u.username === profile.email);
-                            const validOldPass = currentUser ? currentUser.password === currentPassword : currentPassword === '123';
-
-                            if (!validOldPass) {
-                              setPasswordError('Mật khẩu hiện tại không đúng!');
-                              return;
-                            }
-                            if (newPassword.length < 6) {
-                              setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự!');
-                              return;
-                            }
-                            if (newPassword !== confirmNewPassword) {
-                              setPasswordError('Mật khẩu xác nhận không khớp!');
-                              return;
-                            }
-
-                            // Save new password
-                            if (currentUser) {
-                              const updated = storedUsers.map((u: any) =>
-                                (u.email === profile.email || u.username === profile.email)
-                                  ? { ...u, password: newPassword }
-                                  : u
-                              );
-                              localStorage.setItem('registeredUsers', JSON.stringify(updated));
-                            }
-                            setPasswordError('');
-                            setPasswordSuccess(true);
-                            setToast({ message: 'Đổi mật khẩu thành công!', type: 'success' });
-                          }}
-                          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-sm text-sm"
-                        >
-                          Xác nhận đổi mật khẩu
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
+                          <button
+                            onClick={handleChangePassword}
+                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-sm text-sm"
+                          >
+                            Xác nhận đổi mật khẩu
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
             )}
 
             {/* Bookings Tab */}
@@ -804,22 +895,22 @@ export default function DigitalPassport() {
 
                     {/* Minimalist Dropdown Filter */}
                     <div className="relative min-w-[170px]">
-                    <select
-                      value={bookingFilter}
-                      onChange={(e) => setBookingFilter(e.target.value as BookingFilter)}
-                      className="w-full pl-4 pr-10 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all appearance-none cursor-pointer shadow-sm"
-                    >
-                      <option value="all">Tất cả chuyến đi</option>
-                      <option value="upcoming">Sắp khởi hành</option>
-                      <option value="completed">Đã hoàn thành</option>
-                      <option value="cancelled">Đã hủy & Hoàn tiền</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <ChevronDown className="w-3.5 h-3.5" />
+                      <select
+                        value={bookingFilter}
+                        onChange={(e) => setBookingFilter(e.target.value as BookingFilter)}
+                        className="w-full pl-4 pr-10 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all appearance-none cursor-pointer shadow-sm"
+                      >
+                        <option value="all">Tất cả chuyến đi</option>
+                        <option value="upcoming">Sắp khởi hành</option>
+                        <option value="completed">Đã hoàn thành</option>
+                        <option value="cancelled">Đã hủy & Hoàn tiền</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
                 {filteredBookings.length === 0 ? (
                   <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
@@ -952,7 +1043,7 @@ export default function DigitalPassport() {
                             <div>
                               <h4 className="font-extrabold text-gray-900 text-base">{voucher.title}</h4>
                               <p className="text-blue-600 font-black text-2xl mt-1">
-                                {voucher.discountType === 'percentage'
+                                {voucher.discountType === 'percent'
                                   ? `${voucher.discount}%`
                                   : formatPrice(voucher.discount)
                                 }
@@ -1172,14 +1263,14 @@ export default function DigitalPassport() {
               <span className="text-gray-700 font-bold">Số dư Điểm xanh của bạn:</span>
               <span className="text-green-600 font-black text-2xl flex items-center">
                 <Star className="w-6 h-6 mr-1.5 fill-current" />
-                {profile.greenPoints} PTS
+                {profile.greenPoints} ĐIỂM
               </span>
             </div>
 
             <h3 className="font-extrabold text-gray-900 mb-4 text-base">Kho ưu đãi xanh khả dụng (UC30)</h3>
             <div className="space-y-4">
-              {availableVouchers.map((voucher) => {
-                const pointsRequired = voucher.id === 'store-001' ? 200 : voucher.id === 'store-002' ? 500 : 300;
+              {redeemableVouchers.map((voucher) => {
+                const pointsRequired = tinhDiemCanDoiVoucher(voucher);
                 const canRedeem = profile.greenPoints >= pointsRequired;
 
                 return (
@@ -1187,7 +1278,7 @@ export default function DigitalPassport() {
                     <div className="flex-1">
                       <h4 className="font-extrabold text-gray-900">{voucher.title}</h4>
                       <p className="text-blue-600 font-extrabold text-lg mt-1">
-                        {voucher.discountType === 'percentage'
+                        {voucher.discountType === 'percent'
                           ? `Giảm ${voucher.discount}%`
                           : `Giảm ${formatPrice(voucher.discount)}`
                         }
@@ -1203,8 +1294,8 @@ export default function DigitalPassport() {
                         disabled={!canRedeem}
                         onClick={() => handleRedeemPoints(voucher, pointsRequired)}
                         className={`px-5 py-2.5 rounded-xl font-bold transition-all text-xs w-full sm:w-auto text-center ${canRedeem
-                            ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
-                            : 'bg-gray-150 text-gray-400 cursor-not-allowed border border-gray-200'
+                          ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
+                          : 'bg-gray-150 text-gray-400 cursor-not-allowed border border-gray-200'
                           }`}
                       >
                         {canRedeem ? 'Đổi voucher' : 'Không đủ điểm'}
@@ -1248,7 +1339,7 @@ export default function DigitalPassport() {
 
             <div className="overflow-y-auto flex-1 pr-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
-                {mockTours.slice(0, 4).map((tour) => (
+                {allTours.slice(0, 4).map((tour) => (
                   <div key={tour.id} className="border border-gray-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition-shadow bg-white">
                     <img src={tour.image} alt={tour.name} className="w-full sm:w-32 h-full object-cover" />
                     <div className="p-4 flex-1 flex flex-col justify-between">
@@ -1279,7 +1370,7 @@ export default function DigitalPassport() {
 
       {/* UC22: Custom Detailed Booking Modal */}
       {selectedBookingForDetail && (() => {
-        const fullTour = mockTours.find(t => t.id === selectedBookingForDetail.tourId);
+        const fullTour = allTours.find(t => t.id === selectedBookingForDetail.tourId);
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
             <div className="bg-white rounded-3xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl relative">
@@ -1326,7 +1417,7 @@ export default function DigitalPassport() {
                     </h4>
                     {fullTour ? (
                       <div className="relative pl-6 border-l border-slate-200 ml-3 space-y-5">
-                        {fullTour.itinerary.map((day) => (
+                        {fullTour.itinerary.map((day: any) => (
                           <div key={day.day} className="relative">
                             {/* Timeline Pin Indicator */}
                             <div className="absolute -left-[34px] top-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center z-10 border border-slate-100 shadow-sm">
@@ -1424,10 +1515,10 @@ export default function DigitalPassport() {
                   {/* UC33/UC50: Refund / Cancellation state display */}
                   {['cancelled', 'DA_HUY', 'CHO_HUY', 'TU_CHOI_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
                     <div className={`rounded-2xl p-4 space-y-2 border ${selectedBookingForDetail.status === 'CHO_HUY'
-                        ? 'bg-amber-50 border-amber-200 text-amber-850'
-                        : selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN'
-                          ? 'bg-red-50 border-red-200 text-red-850'
-                          : 'bg-green-50 border-green-200 text-green-850'
+                      ? 'bg-amber-50 border-amber-200 text-amber-850'
+                      : selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN'
+                        ? 'bg-red-50 border-red-200 text-red-850'
+                        : 'bg-green-50 border-green-200 text-green-850'
                       }`}>
                       <h5 className="font-extrabold text-xs flex items-center">
                         {selectedBookingForDetail.status === 'CHO_HUY' && (
@@ -1520,8 +1611,8 @@ export default function DigitalPassport() {
                 disabled={!cancellationReason.trim()}
                 onClick={handleConfirmCancel}
                 className={`flex-1 py-3 rounded-xl font-bold transition-all text-xs text-white ${cancellationReason.trim()
-                    ? 'bg-red-600 hover:bg-red-700 shadow-md'
-                    : 'bg-gray-300 cursor-not-allowed'
+                  ? 'bg-red-600 hover:bg-red-700 shadow-md'
+                  : 'bg-gray-300 cursor-not-allowed'
                   }`}
               >
                 Xác nhận hủy & Hoàn tiền
@@ -1565,8 +1656,8 @@ export default function DigitalPassport() {
                   >
                     <Star
                       className={`w-10 h-10 transition-colors ${star <= reviewStars
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300'
+                        ? 'text-yellow-400 fill-current'
+                        : 'text-gray-300'
                         }`}
                     />
                   </button>
@@ -1600,8 +1691,8 @@ export default function DigitalPassport() {
                       type="button"
                       onClick={() => handleToggleReviewTag(tag)}
                       className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors border ${selected
-                          ? 'bg-green-600 text-white border-green-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                        ? 'bg-green-600 text-white border-green-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                         }`}
                     >
                       {tag}
@@ -1733,16 +1824,14 @@ export default function DigitalPassport() {
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-fadeIn">
-          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-md min-w-[320px] max-w-lg ${
-            toast.type === 'success'
+          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-md min-w-[320px] max-w-lg ${toast.type === 'success'
               ? 'bg-emerald-50/95 border-emerald-200 text-emerald-800'
               : toast.type === 'error'
                 ? 'bg-red-50/95 border-red-200 text-red-800'
                 : 'bg-blue-50/95 border-blue-200 text-blue-800'
-          }`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-              toast.type === 'success' ? 'bg-emerald-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
             }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${toast.type === 'success' ? 'bg-emerald-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+              }`}>
               {toast.type === 'success' && <CheckCircle className="w-4.5 h-4.5 text-white" />}
               {toast.type === 'error' && <AlertTriangle className="w-4.5 h-4.5 text-white" />}
               {toast.type === 'info' && <Bell className="w-4.5 h-4.5 text-white" />}

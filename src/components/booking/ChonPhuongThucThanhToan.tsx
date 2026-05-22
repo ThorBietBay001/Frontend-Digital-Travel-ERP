@@ -3,7 +3,7 @@ interface PaymentMethodSelectionProps {
   setPaymentMethod: (method: string) => void;
 }
 
-export default function PaymentMethodSelection({ paymentMethod, setPaymentMethod }: PaymentMethodSelectionProps) {
+export default function ChonPhuongThucThanhToan({ paymentMethod, setPaymentMethod }: PaymentMethodSelectionProps) {
   const methods = [
     {
       id: 'credit_card',

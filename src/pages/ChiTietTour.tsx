@@ -3,17 +3,22 @@ import { useParams, Link } from 'react-router';
 import {
   Star, ArrowLeft, Check, X, Leaf, Eye, Utensils, ChevronRight, Compass, MapPin, ThumbsUp
 } from 'lucide-react';
-import { mockTours } from '../data/mockData';
-import BookingModal from '../components/booking/BookingModal';
-import AuthModal from '../components/modals/AuthModal';
+import type { Tour } from '../types';
+import { khService } from '../services/khService';
+import { mapTourDetail, unwrapData, unwrapPageContent } from '../services/apiHelpers';
+import CuaSoDatTour from '../components/booking/CuaSoDatTour';
+import CuaSoXacThuc from '../components/modals/CuaSoXacThuc';
 
-export default function TourDetail() {
+export default function ChiTietTour() {
   const { tourId } = useParams();
-  const tour = mockTours.find(t => t.id === tourId);
-  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showCuaSoDatTour, setShowCuaSoDatTour] = useState(false);
   const [showItineraryModal, setShowItineraryModal] = useState(false);
   const [selectedItineraryDay, setSelectedItineraryDay] = useState<number | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showCuaSoXacThuc, setShowCuaSoXacThuc] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   // Reviews filters and likes state
   const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'high' | 'images' | 'vip'>('all');
@@ -22,6 +27,31 @@ export default function TourDetail() {
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tourId]);
+
+  useEffect(() => {
+    if (!tourId) return;
+
+    const fetchTour = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [tourResponse, greenResponse] = await Promise.all([
+          khService.layChiTietTour(tourId),
+          khService.getGreenActions(tourId)
+        ]);
+
+        const greenActions = unwrapPageContent<any>(greenResponse);
+        setTour(mapTourDetail(unwrapData<any>(tourResponse), greenActions));
+      } catch (err) {
+        console.error(err);
+        setError('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chi ti\u1ebft tour. Vui l\u00f2ng ki\u1ec3m tra h\u1ec7 th\u1ed1ng ho\u1eb7c th\u1eed l\u1ea1i sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTour();
   }, [tourId]);
 
   // Smooth scroll to selected day in itinerary detail modal
@@ -70,17 +100,6 @@ export default function TourDetail() {
     return tourImgs[(day - 1) % tourImgs.length];
   };
 
-  if (!tour) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Không tìm thấy tour</h2>
-        <Link to="/" className="text-blue-600 hover:text-blue-700 mt-4 inline-block">
-          Quay về trang chủ
-        </Link>
-      </div>
-    );
-  }
-
   // Scenery Galleries database
   const tourGalleries: Record<string, string[]> = {
     '1': [
@@ -110,18 +129,18 @@ export default function TourDetail() {
   };
 
   const defaultSceneries = [
-    tour.image,
+    tour?.image || '',
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
     'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
     'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
     'https://images.unsplash.com/photo-1547950518-c0b021f7c54e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
     'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800'
   ];
-  const gallery = tourGalleries[tour.id] || defaultSceneries;
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const gallery = tour ? (tourGalleries[tour.id] || defaultSceneries) : [];
 
   // Automatically cycle scenery images every 5 seconds
   useEffect(() => {
+    if (!gallery.length) return;
     const timer = setInterval(() => {
       setActiveImageIndex((prev) => (prev + 1) % gallery.length);
     }, 5000);
@@ -194,6 +213,29 @@ export default function TourDetail() {
     if (activeReviewFilter === 'vip') return review.tier === 'Vàng' || review.tier === 'Bạch kim';
     return true;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-28 px-4 flex items-center justify-center">
+        <div className="text-sm font-bold text-slate-600">\u0110ang t\u1ea3i chi ti\u1ebft tour...</div>
+      </div>
+    );
+  }
+
+  if (error || !tour) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-28 px-4">
+        <div className="max-w-3xl mx-auto bg-white border border-slate-100 rounded-2xl p-8 text-center shadow-sm">
+          <h1 className="text-xl font-black text-slate-900">Kh\u00f4ng t\u00ecm th\u1ea5y tour</h1>
+          <p className="text-sm text-slate-500 mt-2">{error || 'Tour kh\u00f4ng t\u1ed3n t\u1ea1i trong h\u1ec7 th\u1ed1ng.'}</p>
+          <Link to="/" className="inline-flex items-center gap-2 mt-6 text-blue-600 font-bold text-sm">
+            <ArrowLeft className="w-4 h-4" />
+            Quay v\u1ec1 trang ch\u1ee7
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16 font-sans">
@@ -347,7 +389,7 @@ export default function TourDetail() {
               </h2>
 
               <div className="divide-y divide-slate-100">
-                {tour.itinerary.map((day) => (
+                {tour.itinerary.map((day: any) => (
                   <button
                     key={day.day}
                     type="button"
@@ -392,7 +434,7 @@ export default function TourDetail() {
                   <div className="flex-1 overflow-y-auto p-6 scrollbar-thin space-y-8">
                     <div className="relative pl-5 sm:pl-7 border-l border-slate-200 ml-3 space-y-10 py-2">
 
-                      {tour.itinerary.map((day) => {
+                      {tour.itinerary.map((day: any) => {
                         const isSelected = selectedItineraryDay === day.day;
                         return (
                           <div
@@ -441,7 +483,7 @@ export default function TourDetail() {
                                   Hoạt động chính: {day.description}
                                 </p>
                                 <ul className="space-y-2">
-                                  {day.activities.map((activity, idx) => (
+                                  {(day.activities || []).map((activity: string, idx: number) => (
                                     <li key={idx} className="flex items-start text-xs font-semibold text-slate-650">
                                       <span className="w-1.5 h-1.5 rounded-full bg-slate-900 mr-2.5 mt-2 flex-shrink-0" />
                                       <span className="leading-relaxed">{activity}</span>
@@ -729,11 +771,11 @@ export default function TourDetail() {
                 <button
                   type="button"
                   onClick={() => {
-                    const isLoggedIn = !!localStorage.getItem('userProfile');
+                    const isLoggedIn = !!localStorage.getItem('token');
                     if (!isLoggedIn) {
-                      setShowAuthModal(true);
+                      setShowCuaSoXacThuc(true);
                     } else {
-                      setShowBookingModal(true);
+                      setShowCuaSoDatTour(true);
                     }
                   }}
                   className="w-full bg-[#1a56db] hover:bg-[#1140b3] text-white py-3.5 rounded-2xl transition-all font-black text-sm shadow-md active:scale-[0.98] text-center"
@@ -748,19 +790,19 @@ export default function TourDetail() {
             </div>
           </div>
 
-          {showBookingModal && (
-            <BookingModal
+          {showCuaSoDatTour && (
+            <CuaSoDatTour
               tour={tour}
-              onClose={() => setShowBookingModal(false)}
+              onClose={() => setShowCuaSoDatTour(false)}
             />
           )}
 
-          {showAuthModal && (
-            <AuthModal
-              onClose={() => setShowAuthModal(false)}
+          {showCuaSoXacThuc && (
+            <CuaSoXacThuc
+              onClose={() => setShowCuaSoXacThuc(false)}
               onLoginSuccess={() => {
-                setShowAuthModal(false);
-                setShowBookingModal(true);
+                setShowCuaSoXacThuc(false);
+                setShowCuaSoDatTour(true);
               }}
             />
           )}

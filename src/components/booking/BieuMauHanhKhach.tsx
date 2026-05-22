@@ -8,21 +8,21 @@ export interface PassengerData {
 
 interface PassengerFormProps {
   passengers: PassengerData[];
-  handlePassengerChange: (index: number, field: string, value: string) => void;
+  thayDoiThongTinHanhKhach: (index: number, field: string, value: string) => void;
   bookingType: 'individual' | 'group';
   setBookingType: (type: 'individual' | 'group') => void;
   numPeople: number;
-  handleGroupSizeChange: (num: number) => void;
+  thayDoiSoLuongKhach: (num: number) => void;
   availableSeats: number;
 }
 
-export default function PassengerForm({ 
+export default function BieuMauHanhKhach({ 
   passengers, 
-  handlePassengerChange,
+  thayDoiThongTinHanhKhach,
   bookingType,
   setBookingType,
   numPeople,
-  handleGroupSizeChange,
+  thayDoiSoLuongKhach,
   availableSeats
 }: PassengerFormProps) {
   return (
@@ -42,7 +42,7 @@ export default function PassengerForm({
               checked={bookingType === 'individual'}
               onChange={() => {
                 setBookingType('individual');
-                handleGroupSizeChange(1);
+                thayDoiSoLuongKhach(1);
               }}
               className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500/20 mr-3"
             />
@@ -59,7 +59,7 @@ export default function PassengerForm({
               checked={bookingType === 'group'}
               onChange={() => {
                 setBookingType('group');
-                handleGroupSizeChange(2);
+                thayDoiSoLuongKhach(2);
               }}
               className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500/20 mr-3"
             />
@@ -79,7 +79,7 @@ export default function PassengerForm({
             <div className="flex items-center space-x-3">
               <button
                 type="button"
-                onClick={() => handleGroupSizeChange(Math.max(2, numPeople - 1))}
+                onClick={() => thayDoiSoLuongKhach(Math.max(2, numPeople - 1))}
                 className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center font-bold hover:bg-slate-100 active:scale-95 transition-all"
               >
                 -
@@ -87,7 +87,7 @@ export default function PassengerForm({
               <span className="font-extrabold text-sm text-slate-800 w-4 text-center">{numPeople}</span>
               <button
                 type="button"
-                onClick={() => handleGroupSizeChange(Math.min(availableSeats, numPeople + 1))}
+                onClick={() => thayDoiSoLuongKhach(Math.min(availableSeats, numPeople + 1))}
                 className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center font-bold hover:bg-slate-100 active:scale-95 transition-all"
               >
                 +
@@ -131,7 +131,7 @@ export default function PassengerForm({
                   type="text"
                   required
                   value={passenger.name}
-                  onChange={(e) => handlePassengerChange(index, 'name', e.target.value)}
+                  onChange={(e) => thayDoiThongTinHanhKhach(index, 'name', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
                   placeholder="Ví dụ: NGUYEN VAN AN"
                 />
@@ -145,7 +145,7 @@ export default function PassengerForm({
                   type="tel"
                   required
                   value={passenger.phone}
-                  onChange={(e) => handlePassengerChange(index, 'phone', e.target.value)}
+                  onChange={(e) => thayDoiThongTinHanhKhach(index, 'phone', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
                   placeholder="Ví dụ: 0912345678"
                 />
@@ -159,7 +159,7 @@ export default function PassengerForm({
                   type="email"
                   required
                   value={passenger.email}
-                  onChange={(e) => handlePassengerChange(index, 'email', e.target.value)}
+                  onChange={(e) => thayDoiThongTinHanhKhach(index, 'email', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
                   placeholder="Ví dụ: hotro@digitaltravel.vn"
                 />
@@ -173,7 +173,7 @@ export default function PassengerForm({
                   type="text"
                   required
                   value={passenger.idCard}
-                  onChange={(e) => handlePassengerChange(index, 'idCard', e.target.value)}
+                  onChange={(e) => thayDoiThongTinHanhKhach(index, 'idCard', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
                   placeholder="Nhập 12 số CCCD hoặc mã hộ chiếu"
                 />
@@ -186,7 +186,7 @@ export default function PassengerForm({
                 <input
                   type="date"
                   value={passenger.dateOfBirth}
-                  onChange={(e) => handlePassengerChange(index, 'dateOfBirth', e.target.value)}
+                  onChange={(e) => thayDoiThongTinHanhKhach(index, 'dateOfBirth', e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
                 />
               </div>

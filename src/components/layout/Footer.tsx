@@ -30,14 +30,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#tours" className="hover:text-blue-500 transition-colors">
+                <Link to="/#tours" className="hover:text-blue-500 transition-colors">
                   Tour du lịch
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#faq" className="hover:text-blue-500 transition-colors">
+                <Link to="/about" className="hover:text-blue-500 transition-colors">
                   Câu hỏi thường gặp
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/passport" className="hover:text-blue-500 transition-colors">
@@ -52,24 +52,24 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-4">Dịch vụ</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-blue-500 transition-colors">
+                <Link to="/#tours" className="hover:text-blue-500 transition-colors">
                   Tour trong nước
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-500 transition-colors">
+                <Link to="/#tours" className="hover:text-blue-500 transition-colors">
                   Tour quốc tế
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-500 transition-colors">
+                <Link to="/about" className="hover:text-blue-500 transition-colors">
                   Du lịch xanh
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-500 transition-colors">
+                <Link to="/passport" className="hover:text-blue-500 transition-colors">
                   Tích điểm thưởng
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

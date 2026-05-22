@@ -1,13 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-
 @import './tailwind.css';
 @import './theme.css';
 
-*, ::before, ::after, html, body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6, strong, label, code {
-  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
-}
-
 @layer base {
+  html,
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--font-sans);
+  }
+
   body {
     background-color: #f0f7ff;
     color: #1e293b;

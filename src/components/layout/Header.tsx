@@ -1,40 +1,26 @@
 import { Link } from 'react-router';
 import { User, Menu, X, Bell, LogOut, HelpCircle, Search, ChevronDown, Plane, AlertCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import AuthModal from '../modals/AuthModal';
+import CuaSoXacThuc from '../modals/CuaSoXacThuc';
 import FAQModal from '../modals/FAQModal';
+import { khService } from '../../services/khService';
+import { unwrapPageContent } from '../../services/apiHelpers';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('userProfile'));
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('token'));
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; desc: string; time: string; unread: boolean }>>([]);
   const categoryRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
-
-  const searchSuggestions = [
-    'Tour Hạ Long 3N2Đ',
-    'Tour Sapa 4N3Đ',
-    'Tour Phú Quốc 4N3Đ',
-    'Tour Đà Nẵng - Hội An',
-    'Tour Nha Trang',
-    'Tour Đà Lạt',
-    'Tour Miền Tây',
-    'Tour Cần Thơ'
-  ];
-
-  const notifications = [
-    { id: 1, title: 'Cập nhật điểm thưởng', desc: 'Bạn vừa nhận được 500 điểm từ chuyến đi gần nhất!', time: '2 giờ trước', unread: true },
-    { id: 2, title: 'Tour sắp khởi hành', desc: 'Tour Đà Nẵng của bạn sẽ bắt đầu sau 3 ngày nữa.', time: '1 ngày trước', unread: true },
-    { id: 3, title: 'Voucher mới', desc: 'Bạn nhận được 1 voucher giảm giá 20% cho tour Phú Quốc.', time: '3 ngày trước', unread: false },
-  ];
-
   const tourCategories = [
     { id: 'beach', name: 'Biển Đảo', icon: '🏖️' },
     { id: 'mountain', name: 'Miền Núi', icon: '⛰️' },
@@ -42,15 +28,46 @@ export default function Header() {
     { id: 'countryside', name: 'Miền Tây', icon: '🌾' },
   ];
 
-  const defaultAvatarUrl = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzNXx8YXZhdGFyfGVufDF8fHx8MTc3OTA1MDQ1OXww&ixlib=rb-4.1.0&q=80&w=120';
-  const getStoredAvatarUrl = () => {
-    try {
-      const profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-      return profile?.avatarUrl || defaultAvatarUrl;
-    } catch {
-      return defaultAvatarUrl;
-    }
-  };
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const res = await khService.layDanhSachTour({ size: 20 });
+        const titles = unwrapPageContent(res)
+          .map((tour: any) => tour.tieuDeTour)
+          .filter(Boolean);
+        setSearchSuggestions(Array.from(new Set(titles)));
+      } catch (error) {
+        console.error('Không thể tải gợi ý tìm kiếm:', error);
+        setSearchSuggestions([]);
+      }
+    };
+    fetchSuggestions();
+  }, []);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!isLoggedIn) {
+        setNotifications([]);
+        return;
+      }
+
+      try {
+        const res = await khService.getMyBookings({ size: 5 });
+        const items = unwrapPageContent(res).map((booking: any) => ({
+          id: booking.maDatTour,
+          title: 'Cập nhật đơn đặt tour',
+          desc: `${booking.tieuDeTour || booking.maTourThucTe}: ${booking.trangThai}`,
+          time: booking.ngayDat ? new Date(booking.ngayDat).toLocaleDateString('vi-VN') : '',
+          unread: booking.trangThai === 'CHO_XAC_NHAN'
+        }));
+        setNotifications(items);
+      } catch (error) {
+        console.error('Không thể tải thông báo:', error);
+        setNotifications([]);
+      }
+    };
+    fetchNotifications();
+  }, [isLoggedIn]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -86,13 +103,24 @@ export default function Header() {
     setShowAuthModal(false);
   };
 
-  const handleLogout = () => {
+  const xuLyDangXuat = () => {
+    localStorage.removeItem('token');
     localStorage.removeItem('userProfile');
     setIsLoggedIn(false);
     setShowLogoutConfirm(false);
     if (window.location.pathname.includes('/passport')) {
       window.location.href = '/';
     }
+  };
+
+  const danhDauTatCaDaDoc = () => {
+    setNotifications(prev => prev.map(notif => ({ ...notif, unread: false })));
+  };
+
+  const moThongBaoDatTour = (id: string) => {
+    setNotifications(prev => prev.map(notif => notif.id === id ? { ...notif, unread: false } : notif));
+    setShowNotifications(false);
+    window.location.href = '/passport';
   };
 
   return (
@@ -209,7 +237,9 @@ export default function Header() {
                     className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                   >
                     <Bell className="w-5 h-5" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    {notifications.some((notif) => notif.unread) && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    )}
                   </button>
 
                   {/* Notification Dropdown */}
@@ -217,11 +247,23 @@ export default function Header() {
                     <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
                       <div className="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
                         <h3 className="font-semibold text-gray-800">Thông báo</h3>
-                        <span className="text-xs text-blue-600 cursor-pointer hover:underline">Đánh dấu đã đọc</span>
+                        <button
+                          type="button"
+                          onClick={danhDauTatCaDaDoc}
+                          className="text-xs text-blue-600 cursor-pointer hover:underline"
+                        >
+                          Đánh dấu đã đọc
+                        </button>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
-                        {notifications.map(notif => (
-                          <div key={notif.id} className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-50 cursor-pointer ${notif.unread ? 'bg-blue-50/50' : ''}`}>
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-sm text-gray-500">Chưa có thông báo mới</div>
+                        ) : notifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => moThongBaoDatTour(notif.id)}
+                            className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-50 cursor-pointer ${notif.unread ? 'bg-blue-50/50' : ''}`}
+                          >
                             <div className="flex justify-between items-start mb-1">
                               <h4 className={`text-sm font-medium ${notif.unread ? 'text-gray-900' : 'text-gray-700'}`}>{notif.title}</h4>
                               {notif.unread && <span className="w-2 h-2 bg-blue-600 rounded-full mt-1.5"></span>}
@@ -232,7 +274,16 @@ export default function Header() {
                         ))}
                       </div>
                       <div className="px-4 py-2 border-t border-gray-100 text-center">
-                        <span className="text-sm text-blue-600 cursor-pointer hover:underline">Xem tất cả</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNotifications(false);
+                            window.location.href = '/passport';
+                          }}
+                          className="text-sm text-blue-600 cursor-pointer hover:underline"
+                        >
+                          Xem tất cả
+                        </button>
                       </div>
                     </div>
                   )}
@@ -274,7 +325,7 @@ export default function Header() {
                   >
                     <HelpCircle className="w-5 h-5" />
                   </button>
-                  {/* User icon + label - triggers login modal */}
+                  {/* User icon + label - triggers dangNhap modal */}
                   <button
                     onClick={() => setShowAuthModal(true)}
                     className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -316,7 +367,9 @@ export default function Header() {
                           className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                         >
                           <Bell className="w-5 h-5" />
-                          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                          {notifications.some((notif) => notif.unread) && (
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                          )}
                         </button>
                         <button
                           onClick={() => {
@@ -331,8 +384,17 @@ export default function Header() {
                     </div>
                     {showNotifications && (
                       <div className="bg-gray-50 rounded-lg p-2 max-h-60 overflow-y-auto">
-                        {notifications.map(notif => (
-                          <div key={notif.id} className="p-2 border-b border-gray-100 last:border-0">
+                        {notifications.length === 0 ? (
+                          <div className="p-3 text-sm text-gray-500">Chưa có thông báo mới</div>
+                        ) : notifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              moThongBaoDatTour(notif.id);
+                            }}
+                            className="p-2 border-b border-gray-100 last:border-0 cursor-pointer"
+                          >
                             <h4 className={`text-sm ${notif.unread ? 'font-bold text-gray-900' : 'text-gray-700'}`}>{notif.title}</h4>
                             <p className="text-xs text-gray-600">{notif.desc}</p>
                           </div>
@@ -403,7 +465,7 @@ export default function Header() {
                 Hủy
               </button>
               <button
-                onClick={handleLogout}
+                onClick={xuLyDangXuat}
                 className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors text-sm shadow-sm"
               >
                 Đăng xuất
@@ -414,7 +476,7 @@ export default function Header() {
       )}
 
       {showAuthModal && (
-        <AuthModal
+        <CuaSoXacThuc
           onClose={() => setShowAuthModal(false)}
           onLoginSuccess={handleLoginSuccess}
         />

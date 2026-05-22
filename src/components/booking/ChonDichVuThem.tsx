@@ -10,15 +10,15 @@ export interface ExtraService {
 interface ExtraServicesSelectionProps {
   extraServices: ExtraService[];
   selectedServices: string[];
-  toggleService: (serviceId: string) => void;
+  chonDichVuThem: (serviceId: string) => void;
 }
 
-export default function ExtraServicesSelection({
+export default function ChonDichVuThem({
   extraServices,
   selectedServices,
-  toggleService
+  chonDichVuThem
 }: ExtraServicesSelectionProps) {
-  const formatPrice = (price: number) => {
+  const dinhDangGia = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
@@ -47,7 +47,7 @@ export default function ExtraServicesSelection({
               <input
                 type="checkbox"
                 checked={isSelected}
-                onChange={() => toggleService(service.id)}
+                onChange={() => chonDichVuThem(service.id)}
                 className="w-4 h-4 rounded text-amber-500 border-slate-300 focus:ring-amber-500/20 mt-1 cursor-pointer"
               />
               <div className="flex-1">
@@ -56,7 +56,7 @@ export default function ExtraServicesSelection({
                     {service.title}
                   </span>
                   <span className="font-extrabold text-sm text-slate-900">
-                    +{formatPrice(service.price)}
+                    +{dinhDangGia(service.price)}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">

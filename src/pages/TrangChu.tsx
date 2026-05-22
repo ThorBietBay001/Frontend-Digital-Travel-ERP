@@ -1,17 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, DollarSign, Star, Users } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
-import { mockTours } from '../data/mockData';
+import { khService } from '../services/khService';
+import { mapPublicTour, unwrapPageContent } from '../services/apiHelpers';
+import type { Tour } from '../types';
 
-export default function Home() {
+export default function TrangChu() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [destination, setDestination] = useState('');
   const [departureDate, setDepartureDate] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [filteredTours, setFilteredTours] = useState(mockTours);
+  const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
+  const [allTours, setAllTours] = useState<Tour[]>([]);
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchTours = async () => {
+      try {
+        const response = await khService.layDanhSachTour();
+        const tours = unwrapPageContent<any>(response).map(mapPublicTour);
+        setAllTours(tours);
+        setFilteredTours(tours);
+      } catch (error) {
+        console.error('Lỗi tải danh sách tour:', error);
+      }
+    };
+    fetchTours();
+  }, []);
 
   const heroImages = [
     'https://images.unsplash.com/photo-1535262412227-85541e910204?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHx0cm9waWNhbCUyMGJlYWNoJTIwcGFyYWRpc2UlMjBhenVyZSUyMHdhdGVyfGVufDF8fHx8MTc3OTA1MTQyN3ww&ixlib=rb-4.1.0&q=80&w=1920',
@@ -28,25 +45,8 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // Handle filters from URL
-  useEffect(() => {
-    const destParam = searchParams.get('destination');
-    const categoryParam = searchParams.get('category');
-    const searchParam = searchParams.get('search');
-
-    if (destParam) {
-      setSelectedDestination(destParam);
-      handleDestinationFilter(destParam);
-    } else if (categoryParam) {
-      setSelectedCategory(categoryParam);
-      handleCategoryFilter(categoryParam);
-    } else if (searchParam) {
-      handleSearchFilter(searchParam);
-    }
-  }, [searchParams]);
-
-  const handleSearch = () => {
-    let results = [...mockTours];
+  const xuLyTimKiem = () => {
+    let results = [...allTours];
 
     if (destination) {
       results = results.filter(tour =>
@@ -75,19 +75,19 @@ export default function Home() {
     }
 
     // Scroll to results after short delay to allow render
-    setTimeout(() => scrollToTours(), 100);
+    setTimeout(() => cuonDenDanhSachTour(), 100);
   };
 
-  const handleDestinationFilter = (destName: string) => {
-    const results = mockTours.filter(tour =>
+  const xuLyLocDiemDen = (destName: string) => {
+    const results = allTours.filter(tour =>
       tour.destination.toLowerCase().includes(destName.toLowerCase())
     );
     setFilteredTours(results);
-    scrollToTours();
+    cuonDenDanhSachTour();
   };
 
-  const handleCategoryFilter = (categoryId: string) => {
-    let results = [...mockTours];
+  const xuLyLocDanhMuc = (categoryId: string) => {
+    let results = [...allTours];
 
     switch (categoryId) {
       case 'beach':
@@ -118,56 +118,56 @@ export default function Home() {
     }
 
     setFilteredTours(results);
-    scrollToTours();
+    cuonDenDanhSachTour();
   };
 
   const handleSearchFilter = (query: string) => {
-    const results = mockTours.filter(tour =>
+    const results = allTours.filter(tour =>
       tour.name.toLowerCase().includes(query.toLowerCase()) ||
       tour.destination.toLowerCase().includes(query.toLowerCase()) ||
       tour.description.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredTours(results);
-    scrollToTours();
+    cuonDenDanhSachTour();
   };
 
-  const scrollToTours = () => {
+  const cuonDenDanhSachTour = () => {
     const toursSection = document.getElementById('tours');
     if (toursSection) {
       toursSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  const handleDestinationClick = (destName: string) => {
+  const xuLyChonDiemDen = (destName: string) => {
     setSelectedDestination(destName);
     setSelectedCategory(null);
     setSearchParams({ destination: destName });
-    handleDestinationFilter(destName);
+    xuLyLocDiemDen(destName);
   };
 
-  const resetFilters = () => {
+  const datLaiBoLoc = () => {
     setSelectedDestination(null);
     setSelectedCategory(null);
-    setFilteredTours(mockTours);
+    setFilteredTours(allTours);
     setSearchParams({});
   };
 
-  const normalizeText = (value: string) => {
+  const chuanHoaVanBan = (value: string) => {
     return value
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
   };
 
-  const matchesDestination = (tourDestination: string, destName: string) => {
-    return normalizeText(tourDestination).includes(normalizeText(destName));
+  const khopDiemDen = (tourDestination: string, destName: string) => {
+    return chuanHoaVanBan(tourDestination).includes(chuanHoaVanBan(destName));
   };
 
-  const formatPrice = (price: number) => {
+  const dinhDangGia = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const getCategoryName = (categoryId: string) => {
+  const layTenDanhMuc = (categoryId: string) => {
     const categories: { [key: string]: string } = {
       beach: 'Tour Biển Đảo',
       mountain: 'Tour Miền Núi',
@@ -176,6 +176,29 @@ export default function Home() {
     };
     return categories[categoryId] || 'Tour';
   };
+
+  // Handle filters from URL after tours and filter handlers are ready.
+  useEffect(() => {
+    const destParam = searchParams.get('destination');
+    const categoryParam = searchParams.get('category');
+    const searchParam = searchParams.get('search');
+
+    if (destParam) {
+      setSelectedDestination(destParam);
+      setSelectedCategory(null);
+      xuLyLocDiemDen(destParam);
+    } else if (categoryParam) {
+      setSelectedDestination(null);
+      setSelectedCategory(categoryParam);
+      xuLyLocDanhMuc(categoryParam);
+    } else if (searchParam) {
+      setSelectedDestination(null);
+      setSelectedCategory(null);
+      handleSearchFilter(searchParam);
+    } else {
+      setFilteredTours(allTours);
+    }
+  }, [searchParams, allTours]);
 
   return (
     <div className="min-h-screen">
@@ -258,7 +281,7 @@ export default function Home() {
             </div>
 
             <button
-              onClick={handleSearch}
+              onClick={xuLyTimKiem}
               className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
             >
               <Search className="w-5 h-5" />
@@ -284,8 +307,8 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockTours.filter(t => t.originalPrice).slice(0, 3).map((tour) => (
-              <TourCard key={tour.id} tour={tour} formatPrice={formatPrice} />
+            {allTours.filter(t => t.originalPrice).slice(0, 3).map((tour) => (
+              <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
             ))}
           </div>
         </div>
@@ -314,11 +337,11 @@ export default function Home() {
               { name: 'Đà Nẵng', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400' },
               { name: 'Cần Thơ', image: 'https://images.unsplash.com/photo-1543411789-1a67a2ac05c6?w=400' }
             ].map((dest, idx) => {
-              const tourCount = mockTours.filter(tour => matchesDestination(tour.destination, dest.name)).length;
+              const tourCount = allTours.filter(tour => khopDiemDen(tour.destination, dest.name)).length;
               return (
               <div
                 key={idx}
-                onClick={() => handleDestinationClick(dest.name)}
+                onClick={() => xuLyChonDiemDen(dest.name)}
                 className={`relative group cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all ${selectedDestination === dest.name ? 'ring-4 ring-blue-500' : ''
                   }`}
               >
@@ -350,7 +373,7 @@ export default function Home() {
             {selectedDestination
               ? `Tour ${selectedDestination}`
               : selectedCategory
-                ? getCategoryName(selectedCategory)
+                ? layTenDanhMuc(selectedCategory)
                 : searchParams.get('search')
                   ? `Kết quả tìm kiếm: "${searchParams.get('search')}"`
                   : 'Khám Phá Các Tour Nổi Bật'}
@@ -360,7 +383,7 @@ export default function Home() {
               <span>
                 Tìm thấy {filteredTours.length} tour •
                 <button
-                  onClick={resetFilters}
+                  onClick={datLaiBoLoc}
                   className="text-blue-600 hover:underline ml-2"
                 >
                   Xem tất cả tour
@@ -375,7 +398,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredTours.length > 0 ? (
             filteredTours.slice(0, 6).map((tour) => (
-              <TourCard key={tour.id} tour={tour} formatPrice={formatPrice} />
+              <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
             ))
           ) : (
             <div className="col-span-3 text-center py-12">
@@ -383,7 +406,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   setSelectedDestination(null);
-                  setFilteredTours(mockTours);
+                  setFilteredTours(allTours);
                   setSearchParams({});
                 }}
                 className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -437,7 +460,7 @@ export default function Home() {
 }
 
 // Tour Card Component
-function TourCard({ tour, formatPrice }: { tour: any; formatPrice: (price: number) => string }) {
+function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: number) => string }) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
       <div className="relative">
@@ -470,11 +493,11 @@ function TourCard({ tour, formatPrice }: { tour: any; formatPrice: (price: numbe
           <div>
             {tour.originalPrice && (
               <p className="text-gray-400 line-through text-sm">
-                {formatPrice(tour.originalPrice)}
+                {dinhDangGia(tour.originalPrice)}
               </p>
             )}
             <p className="text-blue-600 font-bold text-xl">
-              {formatPrice(tour.price)}
+              {dinhDangGia(tour.price)}
             </p>
           </div>
           <div className="flex items-center text-sm text-gray-600">

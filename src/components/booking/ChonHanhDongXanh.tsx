@@ -1,16 +1,16 @@
 import { Leaf } from 'lucide-react';
-import { type GreenAction } from '../../data/mockData';
+import { type GreenAction } from '../../types';
 
 interface GreenActionSelectionProps {
   greenActions: GreenAction[];
   selectedGreenActions: string[];
-  toggleGreenAction: (actionId: string) => void;
+  chonHanhDongXanh: (actionId: string) => void;
 }
 
-export default function GreenActionSelection({
+export default function ChonHanhDongXanh({
   greenActions,
   selectedGreenActions,
-  toggleGreenAction
+  chonHanhDongXanh
 }: GreenActionSelectionProps) {
   return (
     <div className="bg-white rounded-2xl p-6 border-t-4 border-t-green-600 shadow-sm space-y-5 animate-fadeIn">
@@ -35,7 +35,7 @@ export default function GreenActionSelection({
               <input
                 type="checkbox"
                 checked={isSelected}
-                onChange={() => toggleGreenAction(action.id)}
+                onChange={() => chonHanhDongXanh(action.id)}
                 className="w-4 h-4 rounded text-green-600 border-slate-300 focus:ring-green-500/20 mt-1 cursor-pointer"
               />
               <div className="flex-1">

@@ -1,25 +1,27 @@
 import { Check, Leaf, X, Clock } from 'lucide-react';
-import { type Tour } from '../../data/mockData';
+import { useState } from 'react';
+import { type Tour } from '../../types';
 
 interface BookingSuccessProps {
   tour: Tour;
   onClose: () => void;
-  handleSuccess: () => void;
+  xuLyThanhCong: () => void;
   greenPoints: number;
   bookingStatus?: string;
   qrCode?: string;
 }
 
-export default function BookingSuccess({
+export default function DatTourThanhCong({
   tour,
   onClose,
-  handleSuccess,
+  xuLyThanhCong,
   greenPoints,
   bookingStatus = 'upcoming',
   qrCode
 }: BookingSuccessProps) {
   const isPending = bookingStatus === 'CHO_XAC_NHAN';
-  const displayQrCode = qrCode || `QR-${tour.id.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+  const [generatedQrCode] = useState(() => `QR-${tour.id.toUpperCase()}-${Date.now().toString().slice(-6)}`);
+  const displayQrCode = qrCode || generatedQrCode;
 
   return (
     <div className="fixed inset-0 bg-[#020617]/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
@@ -92,7 +94,7 @@ export default function BookingSuccess({
 
           {/* Action Button */}
           <button
-            onClick={handleSuccess}
+            onClick={xuLyThanhCong}
             className={`w-full py-3.5 text-white rounded-xl transition-all font-black text-xs shadow-md tracking-wide active:scale-[0.98] ${
               isPending 
                 ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/10' 

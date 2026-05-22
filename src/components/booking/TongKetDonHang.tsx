@@ -1,37 +1,39 @@
 import { useState } from 'react';
 import { Gift, Ticket, Leaf, Star, Calendar, ShieldCheck } from 'lucide-react';
-import { type Tour, mockVouchers } from '../../data/mockData';
+import type { Tour, Voucher } from '../../types';
 
 interface OrderSummaryProps {
   tour: Tour;
   numPeople: number;
   selectedVoucher: string | null;
   setSelectedVoucher: (id: string | null) => void;
-  calculateTotal: () => number;
-  calculateGreenPoints: () => number;
+  tinhTongTien: () => number;
+  tinhDiemXanh: () => number;
   useGreenPoints: boolean;
   setUseGreenPoints: (use: boolean) => void;
   userGreenPoints: number;
   greenPointsDiscount: number;
   extraServicesTotal: number;
   currentStep: number;
+  vouchers?: Voucher[];
   onNextStep?: () => void;
   isProcessingPayment?: boolean;
 }
 
-export default function OrderSummary({
+export default function TongKetDonHang({
   tour,
   numPeople,
   selectedVoucher,
   setSelectedVoucher,
-  calculateTotal,
-  calculateGreenPoints,
+  tinhTongTien,
+  tinhDiemXanh,
   useGreenPoints,
   setUseGreenPoints,
   userGreenPoints,
   greenPointsDiscount,
   extraServicesTotal,
   currentStep,
+  vouchers = [],
   onNextStep,
   isProcessingPayment
 }: OrderSummaryProps) {
@@ -43,33 +45,28 @@ export default function OrderSummary({
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const activeVouchers = mockVouchers.filter(v => v.status === 'active');
+  const activeVouchers = vouchers.filter(v => v.status === 'active');
   const baseSubtotal = tour.price * numPeople;
   const preVoucherTotal = baseSubtotal + extraServicesTotal;
 
-  // Handle custom code entry
   const handleApplyPromoCode = () => {
     setPromoError('');
     setPromoSuccess('');
     if (!customCode.trim()) return;
 
-    const matched = mockVouchers.find(
+    const matched = activeVouchers.find(
       v => v.code.toUpperCase() === customCode.toUpperCase()
     );
 
     if (matched) {
-      if (matched.status !== 'active') {
-        setPromoError('Mã giảm giá đã được sử dụng hoặc hết hạn!');
-      } else {
-        setSelectedVoucher(matched.id);
-        setPromoSuccess(`Đã áp dụng mã "${matched.code}" thành công!`);
-      }
+      setSelectedVoucher(matched.id);
+      setPromoSuccess(`Đã áp dụng mã "${matched.code}" thành công!`);
     } else {
-      setPromoError('Mã giảm giá không hợp lệ!');
+      setPromoError('Mã giảm giá không hợp lệ hoặc không còn hiệu lực!');
     }
   };
 
-  const finalTotal = Math.max(0, calculateTotal() - (useGreenPoints ? greenPointsDiscount : 0));
+  const finalTotal = Math.max(0, tinhTongTien() - (useGreenPoints ? greenPointsDiscount : 0));
 
   return (
     <div className="bg-white rounded-2xl p-6 border-t-4 border-t-blue-600 shadow-sm space-y-5 transition-all duration-300">
@@ -79,11 +76,10 @@ export default function OrderSummary({
         </h3>
       </div>
 
-      {/* Tour Quick Details */}
       <div className="flex space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-100/50">
-        <img 
-          src={tour.image} 
-          alt={tour.name} 
+        <img
+          src={tour.image}
+          alt={tour.name}
           className="w-14 h-14 rounded-lg object-cover"
         />
         <div className="flex-1 min-w-0">
@@ -91,14 +87,12 @@ export default function OrderSummary({
           <span className="block text-[10px] text-slate-500 mt-0.5 truncate">{tour.destination}</span>
           <div className="flex items-center space-x-1 mt-1.5 text-[10px] text-blue-600 font-bold">
             <Calendar className="w-3 h-3" />
-            <span>KH: {new Date(tour.departureDate).toLocaleDateString('vi-VN')}</span>
+            <span>KH: {tour.departureDate ? new Date(tour.departureDate).toLocaleDateString('vi-VN') : 'Đang cập nhật'}</span>
           </div>
         </div>
       </div>
 
-      {/* Step Conditional Rendering */}
       {currentStep < 3 ? (
-        // Step 1 & 2: Base Order Information
         <div className="space-y-4 pt-1">
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100/50 text-xs font-semibold text-slate-650">
             <div className="flex justify-between">
@@ -109,7 +103,7 @@ export default function OrderSummary({
               <span>Đơn giá tour</span>
               <span className="text-slate-900 font-bold">{formatPrice(tour.price)}</span>
             </div>
-            
+
             {extraServicesTotal > 0 && (
               <div className="flex justify-between">
                 <span>Dịch vụ thêm</span>
@@ -117,13 +111,13 @@ export default function OrderSummary({
               </div>
             )}
 
-            {calculateGreenPoints() > 0 && (
+            {tinhDiemXanh() > 0 && (
               <div className="flex justify-between text-green-700 bg-green-50/50 p-2 rounded-lg border border-green-100">
                 <span className="flex items-center space-x-1 font-bold">
                   <Leaf className="w-3.5 h-3.5 text-green-600" />
                   <span>Điểm Xanh tích lũy</span>
                 </span>
-                <span className="font-extrabold">+{calculateGreenPoints()} PTS</span>
+                <span className="font-extrabold">+{tinhDiemXanh()} PTS</span>
               </div>
             )}
 
@@ -143,17 +137,13 @@ export default function OrderSummary({
           </button>
         </div>
       ) : (
-        // Step 2: Advanced checkout details + vouchers + payment button
         <div className="space-y-4 pt-1 animate-fadeIn">
-          
-          {/* Voucher Dropdown + Custom Input Code */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100/50">
             <h4 className="font-black text-slate-800 text-xs flex items-center space-x-1.5 uppercase tracking-wide">
               <Gift className="w-4 h-4 text-blue-600" />
               <span>Khuyến mãi & Quà tặng</span>
             </h4>
 
-            {/* Selector Dropdown */}
             <div className="space-y-1">
               <label className="block text-[9px] font-black text-slate-500 uppercase">Chọn Voucher có sẵn</label>
               <select
@@ -168,13 +158,12 @@ export default function OrderSummary({
                 <option value="">-- Chọn mã giảm giá --</option>
                 {activeVouchers.map((voucher) => (
                   <option key={voucher.id} value={voucher.id}>
-                    {voucher.title} ({voucher.code}) - {voucher.discountType === 'percentage' ? `${voucher.discount}%` : formatPrice(voucher.discount)}
+                    {voucher.title} ({voucher.code}) - {voucher.discountType === 'percent' ? `${voucher.discount}%` : formatPrice(voucher.discount)}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Custom Input */}
             <div className="space-y-1.5 pt-1.5 border-t border-slate-100">
               <label className="block text-[9px] font-black text-slate-500 uppercase">Nhập mã ưu đãi khác</label>
               <div className="flex space-x-2">
@@ -198,7 +187,6 @@ export default function OrderSummary({
             </div>
           </div>
 
-          {/* Green Points Deduction Toggle */}
           {userGreenPoints > 0 && (
             <div className="space-y-3 bg-green-50/30 p-4 rounded-xl border border-green-150 shadow-sm">
               <h4 className="font-bold text-green-900 text-xs flex items-center space-x-1.5 uppercase tracking-wide">
@@ -220,7 +208,6 @@ export default function OrderSummary({
             </div>
           )}
 
-          {/* Price breakdown */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100/50 text-xs font-medium text-slate-650">
             <div className="flex justify-between">
               <span>Đơn giá tour ({numPeople} người)</span>
@@ -233,7 +220,7 @@ export default function OrderSummary({
                 <span className="font-bold text-slate-900">+{formatPrice(extraServicesTotal)}</span>
               </div>
             )}
-            
+
             {selectedVoucher && (
               <div className="flex justify-between text-green-700">
                 <span className="flex items-center space-x-1 font-bold">
@@ -241,7 +228,7 @@ export default function OrderSummary({
                   <span>Mã giảm giá áp dụng</span>
                 </span>
                 <span className="font-bold">
-                  -{formatPrice(preVoucherTotal - calculateTotal())}
+                  -{formatPrice(preVoucherTotal - tinhTongTien())}
                 </span>
               </div>
             )}
@@ -258,13 +245,13 @@ export default function OrderSummary({
               </div>
             )}
 
-            {calculateGreenPoints() > 0 && (
+            {tinhDiemXanh() > 0 && (
               <div className="flex justify-between text-green-700 bg-green-50/50 p-2 rounded-lg border border-green-100">
                 <span className="flex items-center space-x-1 font-bold">
                   <Leaf className="w-3.5 h-3.5 text-green-600" />
                   <span>Điểm Xanh nhận thêm</span>
                 </span>
-                <span className="font-extrabold">+{calculateGreenPoints()} PTS</span>
+                <span className="font-extrabold">+{tinhDiemXanh()} PTS</span>
               </div>
             )}
 
