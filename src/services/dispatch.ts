@@ -39,4 +39,9 @@ export const dispatchService = {
     const response = await api.delete<ApiResponseVoid>(`/api/dieu-hanh/phan-cong/${maPhanCong}`);
     unwrapApiData(response);
   },
+
+  tourCuaToi: async (): Promise<PhanCongResponse[]> => {
+    const response = await api.get<{ data: PhanCongResponse[] }>('/api/huong-dan-vien/tour-cua-toi');
+    return response.data.data ?? [];
+  },
 };

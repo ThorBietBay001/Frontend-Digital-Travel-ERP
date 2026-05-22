@@ -16,23 +16,25 @@ import { promotionsService } from '../../services/promotions';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError } from '../../utils/apiHelpers';
+import { mapVoucherStatus } from '../../utils/statusMapping';
 
 const statusOptions = [
   { value: 'all', label: 'Tất cả trạng thái' },
-  { value: 'ready', label: 'Sẵn sàng' },
-  { value: 'disabled', label: 'Vô hiệu hóa' },
+  { value: 'SAN_SANG', label: 'Sẵn sàng' },
+  { value: 'VO_HIEU_HOA', label: 'Vô hiệu hóa' },
 ];
 
 const mapToUI = (api: VoucherResponse): Voucher => ({
   id: api.maVoucher || '',
   code: api.maCode || '',
   name: api.dieuKienApDung || api.maCode || '',
-  discountType: api.loaiUuDai?.toUpperCase() === 'PERCENT' ? 'percent' : 'amount',
+  discountType: api.loaiUuDai?.toUpperCase() === 'PHAN_TRAM' || api.loaiUuDai?.toUpperCase() === 'PERCENT' ? 'percent' : 'amount',
   discountValue: api.giaTriGiam || 0,
   quantity: api.soLuotPhatHanh || 0,
   distributed: api.soLuotDaDung || 0,
+  startDate: api.ngayHieuLuc || '',
   expiryDate: api.ngayHetHan || '',
-  status: api.trangThai?.toUpperCase() === 'ACTIVE' ? 'ready' : 'disabled',
+  status: api.trangThai || 'SAN_SANG',
 });
 
 const VoucherList: React.FC = () => {
@@ -65,17 +67,8 @@ const VoucherList: React.FC = () => {
 
   React.useEffect(() => { getAll(); }, [user]);
 
-  const handleCreateVoucher = async (newVoucher: Voucher) => {
+  const handleCreateVoucher = async (payload: VoucherRequest) => {
     try {
-      const payload: VoucherRequest = {
-        maCode: newVoucher.code,
-        loaiUuDai: newVoucher.discountType === 'percent' ? 'PERCENT' : 'AMOUNT',
-        giaTriGiam: newVoucher.discountValue,
-        soLuotPhatHanh: newVoucher.quantity,
-        ngayHieuLuc: (newVoucher as any).startDate || new Date().toISOString().split('T')[0],
-        ngayHetHan: newVoucher.expiryDate,
-        dieuKienApDung: newVoucher.name,
-      };
       await promotionsService.taoVoucher(payload);
       alert('Tạo voucher thành công');
       setIsCreateModalOpen(false);
@@ -83,6 +76,7 @@ const VoucherList: React.FC = () => {
     } catch (err: unknown) {
       const msg = formatApiError(err, 'Lỗi khi tạo voucher');
       alert('Lỗi: ' + msg);
+      throw err;
     }
   };
 
@@ -145,16 +139,17 @@ const VoucherList: React.FC = () => {
     {
       key: 'status',
       title: 'Trạng Thái',
-      render: (record) => (
-        <Badge variant={record.status === 'ready' ? 'success' : 'error'} label={record.status === 'ready' ? 'Sẵn sàng' : 'Vô hiệu hóa'} />
-      )
+      render: (record) => {
+        const { label, variant } = mapVoucherStatus(record.status);
+        return <Badge variant={variant} label={label} />;
+      }
     },
     {
       key: 'actions',
       title: 'Hành Động',
       align: 'center',
       render: (record) => (
-        record.status === 'ready' ? (
+        record.status === 'SAN_SANG' ? (
           <div className="flex justify-center gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); setDistributeVoucher(record); }}

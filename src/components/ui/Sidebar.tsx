@@ -51,8 +51,6 @@ const MENU_ITEMS: MenuItem[] = [
     children: [
       { title: 'Tour Mẫu', path: '/tour-template', key: 'tour-template' },
       { title: 'Tour Thực Tế', path: '/tour-instance', key: 'tour-instance' },
-      { title: 'Dịch vụ Bổ sung', path: '/services', key: 'services' },
-      { title: 'Hành động Xanh', path: '/green-actions', key: 'green-actions' },
     ],
   },
   {

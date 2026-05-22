@@ -42,3 +42,16 @@ export const hasAccess = (role: string | undefined, menuKey: string): boolean =>
   // Check for specific menu key access
   return permissions.includes(menuKey);
 };
+
+export const getRoleLabel = (role: string): string => {
+  const labels: Record<string, string> = {
+    ADMIN: 'Quản trị viên',
+    SANPHAM: 'Nhân viên sản phẩm',
+    KINHDOANH: 'Nhân viên kinh doanh',
+    DIEUHANH: 'Nhân viên điều hành',
+    KETOAN: 'Nhân viên kế toán',
+    HDV: 'Hướng dẫn viên',
+    KHACHHANG: 'Khách hàng',
+  };
+  return labels[role] || role;
+};

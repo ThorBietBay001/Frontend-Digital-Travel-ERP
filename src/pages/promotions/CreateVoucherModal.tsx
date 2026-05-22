@@ -3,13 +3,14 @@ import { Save } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import type { Voucher } from './mockData';
+import type { VoucherRequest } from '../../services/promotions';
 
 interface CreateVoucherModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode?: 'create' | 'edit';
   initialData?: Voucher | null;
-  onSubmit: (data: Voucher) => void;
+  onSubmit: (data: VoucherRequest) => Promise<void>;
 }
 
 const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose, mode = 'create', initialData, onSubmit }) => {
@@ -54,36 +55,35 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
 
-    const newVoucher: Voucher = {
-      id: initialData?.id || Math.random().toString(36).substr(2, 9),
-      code: code.trim() || `VC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      name,
-      discountType,
-      discountValue: Number(discountValue),
-      maxDiscount: discountType === 'percent' ? Number(maxDiscount) : undefined,
-      minOrderValue: Number(minOrderValue),
-      quantity: Number(quantity),
-      distributed: 0,
-      startDate: startDate || new Date().toISOString().split('T')[0],
-      expiryDate: endDate,
-      status: isActive ? 'ready' : 'disabled',
-    } as Voucher;
+    const payload = {
+      maCode: code.trim() || `VC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      loaiUuDai: discountType === 'percent' ? 'PHAN_TRAM' : 'SO_TIEN',
+      giaTriGiam: Number(discountValue),
+      dieuKienApDung: name,
+      soLuotPhatHanh: Math.floor(Number(quantity)),
+      ngayHieuLuc: startDate || new Date().toISOString().split('T')[0],
+      ngayHetHan: endDate,
+    };
 
-    onSubmit(newVoucher);
-    setCode('');
-    setName('');
-    setQuantity('');
-    setStartDate('');
-    setEndDate('');
-    setIsActive(true);
-    setDiscountType('percent');
-    setDiscountValue('');
-    setMaxDiscount('');
-    setMinOrderValue('');
-    setErrors({});
+    try {
+      await onSubmit(payload);
+      setCode('');
+      setName('');
+      setQuantity('');
+      setStartDate('');
+      setEndDate('');
+      setIsActive(true);
+      setDiscountType('percent');
+      setDiscountValue('');
+      setMaxDiscount('');
+      setMinOrderValue('');
+      setErrors({});
+    } catch (err) {
+      // Error is handled in the parent, or we can handle it here if we pass the service
+    }
   };
 
   return (

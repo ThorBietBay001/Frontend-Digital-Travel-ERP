@@ -99,7 +99,7 @@ export interface TourInstance {
   bookedSeats: number;
   currentPrice: number;
   basePrice: number;
-  status: 'pending_activation' | 'active' | 'completed' | 'full' | 'cancelled';
+  status: string;
   templateId: string;
   schedule: DaySchedule[];
 }

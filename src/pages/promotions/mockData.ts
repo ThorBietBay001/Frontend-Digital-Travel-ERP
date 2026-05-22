@@ -104,8 +104,9 @@ export interface Voucher {
   minOrderValue?: number;
   quantity: number;
   distributed: number;
+  startDate?: string;
   expiryDate: string;
-  status: 'ready' | 'disabled';
+  status: string;
   applicableTours?: string[];
   applicableTiers?: ('diamond' | 'gold' | 'silver' | 'bronze')[];
 }

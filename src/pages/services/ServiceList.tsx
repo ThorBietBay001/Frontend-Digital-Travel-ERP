@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import MainLayout from '../../components/layouts/MainLayout';
+
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
@@ -12,9 +12,7 @@ import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
 import type { Service } from './mockData';
 import type {
-  LoaiPhongResponse,
   DichVuThemResponse,
-  LoaiPhongRequest,
   DichVuThemRequest,
 } from '../../services/services';
 import { servicesService } from '../../services/services';
@@ -37,15 +35,7 @@ const ServiceList: React.FC = () => {
     selectedService: Service | undefined;
   }>({ isOpen: false, mode: null, selectedService: undefined });
 
-  const mapRoom = (r: LoaiPhongResponse): Service => ({
-    id: r.maLoaiPhong || '',
-    code: r.maLoaiPhong || '',
-    name: r.tenLoai || '',
-    category: 'room',
-    price: r.mucPhuThu || 0,
-    unit: 'Phòng',
-    status: r.trangThai?.toUpperCase() === 'ACTIVE' ? 'active' : 'inactive',
-  });
+
 
   const mapExtra = (r: DichVuThemResponse): Service => ({
     id: r.maDichVuThem || '',
@@ -64,11 +54,8 @@ const ServiceList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [rooms, extras] = await Promise.all([
-        servicesService.danhSachLoaiPhong(),
-        servicesService.danhSachDichVuThem(),
-      ]);
-      setData([...rooms.map(mapRoom), ...extras.map(mapExtra)]);
+      const extras = await servicesService.danhSachDichVuThem();
+      setData(extras.map(mapExtra));
     } catch (err: unknown) {
       setError(formatApiError(err, 'Lỗi khi tải dữ liệu dịch vụ'));
     } finally {
@@ -88,39 +75,21 @@ const ServiceList: React.FC = () => {
   const handleFormSubmit = async (serviceData: Service) => {
     try {
       if (modalState.mode === 'create') {
-        if (serviceData.category === 'room') {
-          const payload: LoaiPhongRequest = {
-            tenLoai: serviceData.name,
-            mucPhuThu: serviceData.price,
-            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
-          };
-          await servicesService.taoLoaiPhong(payload);
-        } else {
-          const payload: DichVuThemRequest = {
-            ten: serviceData.name,
-            donViTinh: serviceData.unit,
-            donGia: serviceData.price,
-            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
-          };
-          await servicesService.taoDichVuThem(payload);
-        }
+        const payload: DichVuThemRequest = {
+          ten: serviceData.name,
+          donViTinh: serviceData.unit,
+          donGia: serviceData.price,
+          trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+        };
+        await servicesService.taoDichVuThem(payload);
       } else if (modalState.mode === 'edit') {
-        if (serviceData.category === 'room') {
-          const payload: LoaiPhongRequest = {
-            tenLoai: serviceData.name,
-            mucPhuThu: serviceData.price,
-            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
-          };
-          await servicesService.capNhatLoaiPhong(serviceData.id, payload);
-        } else {
-          const payload: DichVuThemRequest = {
-            ten: serviceData.name,
-            donViTinh: serviceData.unit,
-            donGia: serviceData.price,
-            trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
-          };
-          await servicesService.capNhatDichVuThem(serviceData.id, payload);
-        }
+        const payload: DichVuThemRequest = {
+          ten: serviceData.name,
+          donViTinh: serviceData.unit,
+          donGia: serviceData.price,
+          trangThai: serviceData.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+        };
+        await servicesService.capNhatDichVuThem(serviceData.id, payload);
       }
       closeModal();
       await getAll();
@@ -132,33 +101,18 @@ const ServiceList: React.FC = () => {
   const handleDelete = async () => {
     if (!modalState.selectedService) return;
     try {
-      if (modalState.selectedService.category === 'room') {
-        await servicesService.xoaLoaiPhong(modalState.selectedService.id);
-      } else {
-        await servicesService.xoaDichVuThem(modalState.selectedService.id);
-      }
+      await servicesService.xoaDichVuThem(modalState.selectedService.id);
       closeModal();
       await getAll();
     } catch (err: unknown) {
-      const payload =
-        modalState.selectedService.category === 'room'
-          ? ({
-              tenLoai: modalState.selectedService.name,
-              mucPhuThu: modalState.selectedService.price,
-              trangThai: 'INACTIVE',
-            } as LoaiPhongRequest)
-          : ({
-              ten: modalState.selectedService.name,
-              donGia: modalState.selectedService.price,
-              trangThai: 'INACTIVE',
-            } as DichVuThemRequest);
+      const payload: DichVuThemRequest = {
+        ten: modalState.selectedService.name,
+        donGia: modalState.selectedService.price,
+        trangThai: 'INACTIVE',
+      };
 
       try {
-        if (modalState.selectedService.category === 'room') {
-          await servicesService.capNhatLoaiPhong(modalState.selectedService.id, payload as LoaiPhongRequest);
-        } else {
-          await servicesService.capNhatDichVuThem(modalState.selectedService.id, payload as DichVuThemRequest);
-        }
+        await servicesService.capNhatDichVuThem(modalState.selectedService.id, payload);
         closeModal();
         await getAll();
       } catch {
@@ -231,17 +185,11 @@ const ServiceList: React.FC = () => {
   ];
 
   return (
-    <MainLayout
-      activeMenu="Dịch vụ Bổ sung"
-      expandedMenus={['Quản lý Sản phẩm Tour']}
-      breadcrumb={[{ label: 'Quản lý Sản phẩm Tour' }, { label: 'Dịch vụ Bổ sung' }]}
-      userName="Admin Hệ Thống"
-      userRole="Quản trị viên"
-    >
-      <div className="flex flex-col h-full gap-6">
+    <>
+      <div className="flex flex-col h-full gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[32px] font-bold text-[#121C2C]">Dịch vụ Bổ sung</h1>
+            <h2 className="text-xl font-bold text-[#121C2C]">Dịch vụ Bổ sung</h2>
             <p className="text-gray-500 text-sm mt-1">Quản lý danh mục các dịch vụ cộng thêm cho tour.</p>
           </div>
           <Button variant="primary" icon={<Plus size={18} />} onClick={() => openModal('create')}>
@@ -319,7 +267,7 @@ const ServiceList: React.FC = () => {
           </p>
         </div>
       </Modal>
-    </MainLayout>
+    </>
   );
 };
 
