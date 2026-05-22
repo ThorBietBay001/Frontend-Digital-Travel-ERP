@@ -55,8 +55,18 @@ const VoucherList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await promotionsService.danhSach_4();
-      setVouchers(res && res.content ? res.content.map(mapToUI) : []);
+      const pageSize = 100;
+      const firstPage = await promotionsService.danhSach_4({ page: 0, size: pageSize });
+      const totalPages = firstPage?.totalPages ?? 1;
+      const remainingPages = totalPages > 1
+        ? await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            promotionsService.danhSach_4({ page: index + 1, size: pageSize })
+          )
+        )
+        : [];
+      const allVouchers = [firstPage, ...remainingPages].flatMap(page => page?.content ?? []);
+      setVouchers(allVouchers.map(mapToUI));
     } catch (err: unknown) {
       const msg = formatApiError(err, 'Lỗi khi tải dữ liệu');
       setError(msg);
@@ -113,9 +123,10 @@ const VoucherList: React.FC = () => {
     { key: 'name', title: 'Tên Chương Trình', dataIndex: 'name' },
     {
       key: 'discount',
-      title: 'Loại Giảm Giá',
+      title: <span className="whitespace-nowrap">Loại Giảm Giá</span>,
+      align: 'center',
       render: (record) => (
-        <span>
+        <span className="whitespace-nowrap">
           {record.discountType === 'percent'
             ? `Giảm ${record.discountValue}%`
             : `Giảm ${(record.discountValue / 1000).toFixed(0)}k`}
@@ -124,7 +135,8 @@ const VoucherList: React.FC = () => {
     },
     {
       key: 'quantity',
-      title: 'Số Lượng',
+      title: <span className="whitespace-nowrap">Số Lượng</span>,
+      align: 'center',
       render: (record) => {
         const percent = record.quantity > 0 ? (record.distributed / record.quantity) * 100 : 0;
         return (
@@ -139,18 +151,19 @@ const VoucherList: React.FC = () => {
         );
       }
     },
-    { key: 'expiryDate', title: 'Hạn Sử Dụng', dataIndex: 'expiryDate' },
+    { key: 'expiryDate', title: <span className="whitespace-nowrap">Hạn Sử Dụng</span>, dataIndex: 'expiryDate', align: 'center' },
     {
       key: 'status',
-      title: 'Trạng Thái',
+      title: <span className="whitespace-nowrap">Trạng Thái</span>,
+      align: 'center',
       render: (record) => {
         const { label, variant } = mapVoucherStatus(record.status);
-        return <Badge variant={variant} label={label} />;
+        return <Badge variant={variant} label={label} className="whitespace-nowrap" />;
       }
     },
     {
       key: 'actions',
-      title: 'Hành Động',
+      title: <span className="whitespace-nowrap">Hành Động</span>,
       align: 'center',
       render: (record) => (
         record.status === 'SAN_SANG' ? (
