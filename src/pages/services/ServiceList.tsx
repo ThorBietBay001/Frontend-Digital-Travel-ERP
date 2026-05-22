@@ -190,7 +190,7 @@ const ServiceList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-[#121C2C]">Dịch vụ Bổ sung</h2>
-            <p className="text-gray-500 text-sm mt-1">Quản lý danh mục các dịch vụ cộng thêm cho tour.</p>
+            {/* <p className="text-gray-500 text-sm mt-1">Quản lý danh mục các dịch vụ cộng thêm cho tour.</p> */}
           </div>
           <Button variant="primary" icon={<Plus size={18} />} onClick={() => openModal('create')}>
             Thêm dịch vụ

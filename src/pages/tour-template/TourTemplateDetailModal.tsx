@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import type { TourTemplate, DaySchedule } from './mockData';
-import GreenActionList from '../green-actions/GreenActionList';
-import ServiceList from '../services/ServiceList';
+import TourTemplateServiceTab from './TourTemplateServiceTab';
 
 export interface TourTemplateDetailModalProps {
   isOpen: boolean;
@@ -26,14 +25,14 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
   initialData,
   onSubmit,
 }) => {
-  const [activeTab, setActiveTab] = useState<'info' | 'schedule' | 'green' | 'services'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'schedule' | 'services'>('info');
 
   const [formData, setFormData] = useState<Partial<TourTemplate>>({
     title: '',
     description: '',
     duration: { days: 1, nights: 0 },
     basePrice: 0,
-    status: 'active',
+    status: 'HOAT_DONG',
     schedule: [{ ...defaultDaySchedule }],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,8 +59,9 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
         description: '',
         duration: { days: 1, nights: 0 },
         basePrice: 0,
-        status: 'active',
+        status: 'HOAT_DONG',
         schedule: [{ ...defaultDaySchedule }],
+        services: [],
       });
     }
   }, [initialData, mode, isOpen]);
@@ -163,17 +163,7 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
       </button>
       {mode !== 'create' && (
         <>
-          <button
-            type="button"
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === 'green'
-                ? 'border-b-2 border-[#00668A] text-[#00668A]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('green')}
-          >
-            Hành động xanh
-          </button>
+
           <button
             type="button"
             className={`px-4 py-2 font-medium text-sm transition-colors ${
@@ -328,15 +318,14 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
               </div>
             )}
 
-            {activeTab === 'green' && (
-              <div className="min-h-[400px]">
-                <GreenActionList />
-              </div>
-            )}
+
 
             {activeTab === 'services' && (
               <div className="min-h-[400px]">
-                <ServiceList />
+                <TourTemplateServiceTab 
+                  selectedServices={formData.services || []} 
+                  onChange={(services) => handleChange('services', services)} 
+                />
               </div>
             )}
           </div>
@@ -345,11 +334,9 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
             <Button type="button" variant="secondary" onClick={onClose}>
               Đóng
             </Button>
-            {['info', 'schedule'].includes(activeTab) && (
-              <Button type="submit" variant="primary">
-                {mode === 'copy' ? 'Lưu bản sao' : mode === 'edit' ? 'Lưu thay đổi' : 'Tạo mới'}
-              </Button>
-            )}
+            <Button type="submit" variant="primary">
+              {mode === 'copy' ? 'Lưu bản sao' : mode === 'edit' ? 'Lưu thay đổi' : 'Tạo mới'}
+            </Button>
           </div>
         </form>
       )}

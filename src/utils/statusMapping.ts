@@ -16,12 +16,20 @@ export const mapAccountStatus = (status?: string): StatusMapping => {
 export const mapTourInstanceStatus = (status?: string): StatusMapping => {
   switch (status) {
     case 'CHO_KICH_HOAT': return { label: 'Chờ kích hoạt', variant: 'warning' };
-    case 'MO_BAN': return { label: 'Mở bán', variant: 'info' };
-    case 'SAP_DIEN_RA': return { label: 'Sắp diễn ra', variant: 'neutral' };
-    case 'DANG_DIEN_RA': return { label: 'Đang diễn ra', variant: 'success' };
+    case 'MO_BAN': return { label: 'Mở bán', variant: 'success' };
+    case 'SAP_DIEN_RA': return { label: 'Sắp diễn ra', variant: 'info' };
+    case 'DANG_DIEN_RA': return { label: 'Đang diễn ra', variant: 'info' };
     case 'KET_THUC': return { label: 'Kết thúc', variant: 'neutral' };
     case 'HUY': return { label: 'Hủy', variant: 'error' };
     case 'DA_QUYET_TOAN': return { label: 'Đã quyết toán', variant: 'success' };
+    default: return { label: status || 'Không xác định', variant: 'neutral' };
+  }
+};
+
+export const mapTourTemplateStatus = (status?: string): StatusMapping => {
+  switch (status) {
+    case 'HOAT_DONG': return { label: 'Đang hoạt động', variant: 'success' };
+    case 'KHOA': return { label: 'Bị khóa', variant: 'error' };
     default: return { label: status || 'Không xác định', variant: 'neutral' };
   }
 };

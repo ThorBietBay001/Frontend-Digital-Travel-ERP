@@ -165,7 +165,7 @@ const CustomerList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[32px] font-bold text-[#121C2C]">Quản Lý Hồ Sơ Khách Hàng</h1>
-            <p className="text-gray-500 text-sm mt-1">Tra cứu và xem lịch sử giao dịch, hạng thành viên của khách hàng.</p>
+            {/* <p className="text-gray-500 text-sm mt-1">Tra cứu và xem lịch sử giao dịch, hạng thành viên của khách hàng.</p> */}
           </div>
         </div>
 

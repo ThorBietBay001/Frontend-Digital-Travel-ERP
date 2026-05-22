@@ -100,7 +100,14 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
       onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Lỗi phân phối voucher';
-      setError(message);
+      
+      let mappedMessage = message;
+      if (message.includes('Khach hang nay da co voucher nay roi')) mappedMessage = 'Khách hàng này đã có voucher này rồi';
+      if (message.includes('Voucher da bi vo hieu hoa')) mappedMessage = 'Voucher đã bị vô hiệu hóa';
+      if (message.includes('Voucher chua den ngay hieu luc hoac da het han')) mappedMessage = 'Voucher chưa đến ngày hiệu lực hoặc đã hết hạn';
+      if (message.includes('Voucher da het luot phat hanh')) mappedMessage = 'Voucher đã hết lượt phát hành';
+      
+      setError(mappedMessage);
     } finally {
       setSubmitting(false);
     }

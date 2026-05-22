@@ -4,7 +4,6 @@ import type {
   LoaiPhongRequest,
   ApiResponseLoaiPhongResponse,
   ApiResponseVoid,
-  DichVuThemRequest,
   ApiResponseDichVuThemResponse,
   ApiResponseListLoaiPhongResponse,
   ApiResponseListDichVuThemResponse,
@@ -12,10 +11,16 @@ import type {
   DichVuThemResponse,
 } from '../pages/services/mockData';
 
+export interface DichVuThemRequest {
+  ten: string;
+  donViTinh?: string;
+  donGia: number;
+  trangThai?: string;
+}
+
 export type {
   LoaiPhongRequest,
   LoaiPhongResponse,
-  DichVuThemRequest,
   DichVuThemResponse,
   ApiResponseLoaiPhongResponse,
   ApiResponseVoid,

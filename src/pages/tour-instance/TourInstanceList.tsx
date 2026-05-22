@@ -6,7 +6,7 @@ import { Modal } from '../../components/ui/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { Pagination } from '../../components/ui/Pagination';
-import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, Ban, Eye } from 'lucide-react';
 import TourInstanceDetailModal from './TourInstanceDetailModal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
@@ -29,9 +29,10 @@ const TourInstanceList: React.FC = () => {
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    mode: 'create' | 'edit' | 'delete' | null;
+    mode: 'create' | 'edit' | 'delete' | 'close' | null;
     selectedTour: TourInstance | undefined;
   }>({ isOpen: false, mode: null, selectedTour: undefined });
+  const [closeReason, setCloseReason] = useState('');
 
   const mapToUI = (api: TourThucTeResponse): TourInstance => ({
     id: api.maTourThucTe || '',
@@ -94,6 +95,7 @@ const TourInstanceList: React.FC = () => {
 
   const closeModal = () => {
     setModalState({ isOpen: false, mode: null, selectedTour: undefined });
+    setCloseReason('');
   };
 
   const handleFormSubmit = async (tourData: TourInstance) => {
@@ -104,6 +106,10 @@ const TourInstanceList: React.FC = () => {
           ngayKhoiHanh: tourData.startDate,
           soKhachToiDa: tourData.maxSeats,
           giaHienHanh: tourData.currentPrice,
+          lichTrinh: tourData.schedule,
+          dichVu: tourData.services,
+          hanhDongXanh: tourData.greenActions,
+          trangThai: tourData.status
         };
         await tourInstanceService.taoMoi(payload);
       } else if (modalState.mode === 'edit') {
@@ -111,6 +117,9 @@ const TourInstanceList: React.FC = () => {
           giaHienHanh: tourData.currentPrice,
           soKhachToiDa: tourData.maxSeats,
           trangThai: mapStatusToApi(tourData.status),
+          lichTrinh: tourData.schedule,
+          dichVu: tourData.services,
+          hanhDongXanh: tourData.greenActions
         };
         await tourInstanceService.capNhat(tourData.id, payload);
       }
@@ -125,11 +134,19 @@ const TourInstanceList: React.FC = () => {
   const handleDelete = async () => {
     if (modalState.selectedTour) {
       try {
-        await tourInstanceService.xoa(modalState.selectedTour.id);
+        const payload: CapNhatTourThucTeRequest = {
+          giaHienHanh: modalState.selectedTour.currentPrice,
+          soKhachToiDa: modalState.selectedTour.maxSeats,
+          trangThai: 'HUY',
+          lichTrinh: modalState.selectedTour.schedule,
+          dichVu: modalState.selectedTour.services,
+          hanhDongXanh: modalState.selectedTour.greenActions
+        };
+        await tourInstanceService.capNhat(modalState.selectedTour.id, payload);
         closeModal();
-        getAll();
+        await getAll();
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Xảy ra lỗi khi xóa';
+        const msg = err instanceof Error ? err.message : 'Xảy ra lỗi khi hủy tour';
         alert('Lỗi: ' + msg);
       }
     }
@@ -200,12 +217,27 @@ const TourInstanceList: React.FC = () => {
       key: 'actions',
       title: 'Hành động',
       align: 'center',
-      render: (record) => (
-        <div className="flex items-center justify-center gap-1">
-          <Button variant="ghost" size="sm" icon={<Pencil size={18} />} onClick={() => openModal('edit', record)} className="p-2" aria-label="Sửa" />
-          <Button variant="ghost" size="sm" icon={<Trash2 size={18} />} onClick={() => openModal('delete', record)} className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50" aria-label="Xóa" />
-        </div>
-      ),
+      render: (record) => {
+        return (
+          <div className="flex items-center justify-center gap-1">
+            {!['CHO_KICH_HOAT', 'SAP_DIEN_RA'].includes(record.status) && (
+              <Button variant="ghost" size="sm" icon={<Eye size={18} />} onClick={() => openModal('edit', record)} className="p-2 text-gray-500" aria-label="Xem chi tiết" />
+            )}
+            
+            {['CHO_KICH_HOAT', 'SAP_DIEN_RA'].includes(record.status) && (
+              <Button variant="ghost" size="sm" icon={<Pencil size={18} />} onClick={() => openModal('edit', record)} className="p-2" aria-label="Sửa" />
+            )}
+            
+            {record.status === 'MO_BAN' && (
+              <Button variant="ghost" size="sm" icon={<Ban size={18} />} onClick={() => openModal('delete', record)} className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50" aria-label="Khóa tour" />
+            )}
+            
+            {['CHO_KICH_HOAT', 'SAP_DIEN_RA'].includes(record.status) && (
+              <Button variant="ghost" size="sm" icon={<Trash2 size={18} />} onClick={() => openModal('delete', record)} className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50" aria-label="Xóa" />
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -225,7 +257,7 @@ const TourInstanceList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[32px] font-bold text-[#121C2C]">Tour Thực Tế</h1>
-            <p className="text-gray-500 text-sm mt-1">Quản lý và theo dõi các chuyến đi cụ thể đang hoạt động</p>
+            {/* <p className="text-gray-500 text-sm mt-1">Quản lý và theo dõi các chuyến đi cụ thể đang hoạt động</p> */}
           </div>
           <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => openModal('create')}>
             Khởi tạo Tour
@@ -243,6 +275,10 @@ const TourInstanceList: React.FC = () => {
                 { label: 'Tất cả', value: 'all' },
                 { label: 'Chờ kích hoạt', value: 'CHO_KICH_HOAT' },
                 { label: 'Mở bán', value: 'MO_BAN' },
+                { label: 'Sắp diễn ra', value: 'SAP_DIEN_RA' },
+                { label: 'Đang diễn ra', value: 'DANG_DIEN_RA' },
+                { label: 'Kết thúc', value: 'KET_THUC' },
+                { label: 'Đã quyết toán', value: 'DA_QUYET_TOAN' },
                 { label: 'Đã hủy', value: 'HUY' },
               ]}
               value={statusFilter}
@@ -301,22 +337,29 @@ const TourInstanceList: React.FC = () => {
       <Modal
         isOpen={modalState.isOpen && modalState.mode === 'delete'}
         onClose={closeModal}
-        title="Xác nhận xóa"
+        title="Xác nhận hủy tour"
         size="sm"
         footer={
           <>
             <Button variant="secondary" onClick={closeModal}>Hủy</Button>
-            <Button variant="danger" onClick={handleDelete}>Xác nhận xóa</Button>
+            <Button variant="danger" onClick={handleDelete}>Xác nhận hủy</Button>
           </>
         }
       >
         <div className="text-gray-700">
-          <p>Bạn có chắc chắn muốn xóa tour thực tế <strong>{modalState.selectedTour?.name}</strong> mã <strong>{modalState.selectedTour?.code}</strong>?</p>
-          {(modalState.selectedTour?.bookedSeats || 0) > 0 && (
-            <p className="mt-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
-              Cảnh báo: Tour đã có <span className="font-bold">{modalState.selectedTour?.bookedSeats} khách đặt</span>.
-              Hủy tour sẽ lập tức kích hoạt quy trình hoàn tiền tự động.
-            </p>
+          <p>Bạn có chắc muốn hủy tour này?</p>
+          {modalState.selectedTour?.status === 'MO_BAN' && (
+            <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
+              <p className="font-bold mb-2">Cảnh báo: Tour đã có {modalState.selectedTour?.bookedSeats || 0} khách đặt.</p>
+              <label className="block text-xs font-semibold mb-1">Vui lòng nhập lý do hủy:</label>
+              <textarea 
+                className="w-full px-3 py-2 border border-red-200 rounded focus:outline-none focus:ring-1 focus:ring-red-400"
+                rows={2}
+                value={closeReason}
+                onChange={(e) => setCloseReason(e.target.value)}
+                placeholder="Nhập lý do hủy tour..."
+              ></textarea>
+            </div>
           )}
         </div>
       </Modal>

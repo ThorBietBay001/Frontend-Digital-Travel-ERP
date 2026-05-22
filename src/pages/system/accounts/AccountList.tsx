@@ -348,9 +348,9 @@ const AccountList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[32px] font-bold text-[#121C2C]">Quản lý Tài khoản</h1>
-            <p className="text-gray-500 text-sm mt-1">
+            {/* <p className="text-gray-500 text-sm mt-1">
               Tạo, phân quyền và quản lý tài khoản nhân viên và khách hàng trong hệ thống.
-            </p>
+            </p> */}
           </div>
           <Button
             variant="primary"

@@ -14,6 +14,8 @@ export interface CapNhatTourMauRequest {
   thoiLuong?: number;
   giaSan?: number;
   trangThai?: string;
+  lichTrinh?: LichTrinhRequest[];
+  dichVu?: any[];
 }
 
 export interface ApiResponseTourMauResponse {
@@ -150,10 +152,11 @@ export interface TourTemplate {
     nights: number;
   };
   basePrice: number;
-  status: 'active' | 'inactive';
+  status: string;
   tags: string;
   image: string;
   schedule: DaySchedule[];
+  services?: any[]; // using any[] or importing Service to avoid circular deps. Let's use any[] for now, we will cast it.
 }
 
 export const mockTourTemplates: TourTemplate[] = [

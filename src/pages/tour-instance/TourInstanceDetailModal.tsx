@@ -7,6 +7,10 @@ import type { DaySchedule } from '../tour-template/mockData';
 import { Pencil } from 'lucide-react';
 import GreenActionList from '../green-actions/GreenActionList';
 import ServiceList from '../services/ServiceList';
+import TourInstanceGreenActionTab from './TourInstanceGreenActionTab';
+import TourInstanceServiceTab from './TourInstanceServiceTab';
+import { tourTemplateService } from '../../services/tour-template';
+import type { TourMauResponse } from '../../services/tour-template';
 
 export interface TourInstanceDetailModalProps {
   isOpen: boolean;
@@ -16,14 +20,7 @@ export interface TourInstanceDetailModalProps {
   onSubmit: (data: TourInstance) => void;
 }
 
-// Mock templates
-const mockTemplates = [
-  { id: 'TM-HL-001', name: 'Mẫu: Khám phá Vịnh Hạ Long', basePrice: 2000000, schedule: [] },
-  { id: 'TM-HG-002', name: 'Mẫu: Hà Giang - Mùa Hoa Tam Giác Mạch', basePrice: 3500000, schedule: [] },
-  { id: 'TM-ECO-001', name: 'Mẫu: Khám Phá Rừng Ngập Mặn Cần Giờ', basePrice: 1850000, schedule: [
-    { title: 'Ngày 1: TP.HCM - Cần Giờ', description: 'Điểm đến sinh thái', meals: { breakfast: '', lunch: '', dinner: '' } }
-  ] },
-];
+// No static mockTemplates anymore
 
 const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
   isOpen,
@@ -38,12 +35,11 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     name: '',
     startDate: '',
     endDate: '',
-    vehicle: '',
     maxSeats: 10,
     bookedSeats: 0,
     currentPrice: 0,
     basePrice: 0,
-    status: 'pending_activation',
+    status: 'CHO_KICH_HOAT',
     templateId: '',
     schedule: [],
     departureDate: '',
@@ -53,6 +49,15 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
   
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
   const [editingDayData, setEditingDayData] = useState<DaySchedule | null>(null);
+  const [templates, setTemplates] = useState<TourMauResponse[]>([]);
+
+  useEffect(() => {
+    tourTemplateService.danhSach().then(res => {
+      if (res && res.content) {
+        setTemplates(res.content);
+      }
+    }).catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,17 +67,40 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     }
     if (initialData && mode === 'edit') {
       setFormData({ ...initialData });
+      tourInstanceService.chiTiet(initialData.id).then(res => {
+        if (res) {
+           const rawSchedule = (res as any).lichTrinh;
+           if (rawSchedule && Array.isArray(rawSchedule) && rawSchedule.length > 0) {
+             const parsedSchedule = rawSchedule.map((lt: any) => {
+               let meals = { breakfast: '', lunch: '', dinner: '' };
+               if (lt.thucDon) {
+                 try { meals = JSON.parse(lt.thucDon); } catch { /* ignore */ }
+               } else if (lt.meals) {
+                 meals = lt.meals;
+               }
+               return {
+                 title: lt.hoatDong || lt.title || `Ngày ${lt.ngayThu || ''}`,
+                 description: lt.moTa || lt.description || '',
+                 meals
+               };
+             });
+             setFormData(prev => ({
+               ...prev,
+               schedule: parsedSchedule
+             }));
+           }
+        }
+      }).catch(console.error);
     } else {
       setFormData({
         name: '',
         startDate: '',
         endDate: '',
-        vehicle: '',
         maxSeats: 10,
         bookedSeats: 0,
         currentPrice: 0,
         basePrice: 0,
-        status: 'pending_activation',
+        status: 'CHO_KICH_HOAT',
         templateId: '',
         schedule: [],
         departureDate: '',
@@ -80,10 +108,9 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     }
   }, [initialData, mode, isOpen]);
 
-  const isCompleted = formData.status === 'completed';
-  const isActive = formData.status === 'active';
-  const isFormDisabled = isCompleted;
-  const isStartDateVehicleDisabled = isCompleted || isActive;
+  const isFormDisabled = mode === 'edit' && !['CHO_KICH_HOAT', 'SAP_DIEN_RA'].includes(formData.status || '');
+  const isStartDateDisabled = isFormDisabled || mode === 'edit';
+  const isStatusDisabled = isFormDisabled;
 
   const handleChange = (field: keyof TourInstance, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -92,23 +119,42 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     }
   };
 
-  const handleTemplateSelect = (templateId: string) => {
-    const template = mockTemplates.find(t => t.id === templateId);
+  const handleTemplateSelect = async (templateId: string) => {
+    const template = templates.find(t => t.maTourMau === templateId);
     if (template) {
-      setFormData((prev) => ({
-        ...prev,
-        templateId: template.id,
-        name: template.name.replace('Mẫu: ', ''),
-        basePrice: template.basePrice,
-        currentPrice: template.basePrice,
-        schedule: template.schedule.length > 0 ? template.schedule : [{ title: 'Ngày 1: Chưa có thông tin', description: '', meals: { breakfast: '', lunch: '', dinner: '' } }]
-      }));
+      try {
+        const detail = await tourTemplateService.chiTiet(templateId);
+        const parsedSchedule = (detail.lichTrinh || []).map((lt: any) => {
+          let meals = { breakfast: '', lunch: '', dinner: '' };
+          if (lt.thucDon) {
+            try { meals = JSON.parse(lt.thucDon); } catch { /* ignore */ }
+          }
+          return {
+            title: lt.hoatDong || `Ngày ${lt.ngayThu}`,
+            description: lt.moTa || '',
+            meals
+          };
+        });
+
+        setFormData((prev) => ({
+          ...prev,
+          templateId: template.maTourMau,
+          name: template.tieuDe || '',
+          basePrice: template.giaSan || 0,
+          currentPrice: template.giaSan || 0,
+          schedule: parsedSchedule.length > 0 ? parsedSchedule : [{ title: 'Ngày 1: Chưa có thông tin', description: '', meals: { breakfast: '', lunch: '', dinner: '' } }],
+          services: [], // Inherit services if they were stored in detail
+          greenActions: [], // Inherit green actions if they were stored in detail
+        }));
+      } catch (err) {
+        alert('Lỗi lấy chi tiết tour mẫu');
+      }
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isCompleted) {
+    if (isFormDisabled) {
       onClose();
       return;
     }
@@ -117,7 +163,6 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     if (!formData.templateId && mode === 'create') newErrors.templateId = 'Vui lòng chọn Tour Mẫu';
     if (!formData.startDate) newErrors.startDate = 'Ngày khởi hành không được để trống';
     if (!formData.endDate) newErrors.endDate = 'Ngày về không được để trống';
-    if (!formData.vehicle) newErrors.vehicle = 'Phương tiện không được để trống';
     
     if ((formData.currentPrice || 0) < (formData.basePrice || 0)) {
       newErrors.currentPrice = `Giá bán phải lớn hơn hoặc bằng giá sàn (${formData.basePrice?.toLocaleString('vi-VN')} đ)`;
@@ -130,6 +175,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     }
 
     formData.departureDate = formData.startDate;
+
+
     onSubmit(formData as TourInstance);
   };
 
@@ -156,32 +203,28 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
       >
         Thông tin chung & Lịch trình
       </button>
-      {mode !== 'create' && (
-        <>
-          <button
-            type="button"
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === 'green'
-                ? 'border-b-2 border-[#00668A] text-[#00668A]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('green')}
-          >
-            Hành động xanh
-          </button>
-          <button
-            type="button"
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === 'services'
-                ? 'border-b-2 border-[#00668A] text-[#00668A]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('services')}
-          >
-            Dịch vụ bổ sung
-          </button>
-        </>
-      )}
+      <button
+        type="button"
+        className={`px-4 py-2 font-medium text-sm transition-colors ${
+          activeTab === 'green'
+            ? 'border-b-2 border-[#00668A] text-[#00668A]'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+        onClick={() => setActiveTab('green')}
+      >
+        Hành động xanh
+      </button>
+      <button
+        type="button"
+        className={`px-4 py-2 font-medium text-sm transition-colors ${
+          activeTab === 'services'
+            ? 'border-b-2 border-[#00668A] text-[#00668A]'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+        onClick={() => setActiveTab('services')}
+      >
+        Dịch vụ bổ sung
+      </button>
     </div>
   );
 
@@ -204,7 +247,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                     <div>
                       <Select
                         label="Chọn Tour Mẫu *"
-                        options={mockTemplates.map(t => ({ value: t.id, label: t.name }))}
+                        options={templates.map(t => ({ value: t.maTourMau || '', label: t.tieuDe || '' }))}
                         value={formData.templateId}
                         onChange={handleTemplateSelect}
                         placeholder="-- Chọn bản mẫu --"
@@ -213,15 +256,15 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${mode === 'create' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày khởi hành <span className="text-red-500">*</span></label>
                       <input
                         type="date"
-                        className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#89D4FF] focus:ring-[#89D4FF]/20 ${errors.startDate ? 'border-red-500' : 'border-[#C5EAFF]'} ${isStartDateVehicleDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#89D4FF] focus:ring-[#89D4FF]/20 ${errors.startDate ? 'border-red-500' : 'border-[#C5EAFF]'} ${isStartDateDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         value={formData.startDate || ''}
                         onChange={(e) => handleChange('startDate', e.target.value)}
-                        disabled={isStartDateVehicleDisabled}
+                        disabled={isStartDateDisabled}
                       />
                       {errors.startDate && <span className="text-xs text-red-500 mt-1 block">{errors.startDate}</span>}
                     </div>
@@ -236,20 +279,23 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                       />
                       {errors.endDate && <span className="text-xs text-red-500 mt-1 block">{errors.endDate}</span>}
                     </div>
+                    {mode === 'create' && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Trạng thái <span className="text-red-500">*</span></label>
+                        <Select
+                          options={[
+                            { label: 'Chờ kích hoạt', value: 'CHO_KICH_HOAT' },
+                            { label: 'Mở bán', value: 'MO_BAN' },
+                            { label: 'Sắp diễn ra', value: 'SAP_DIEN_RA' },
+                          ]}
+                          value={formData.status}
+                          onChange={(value) => handleChange('status', value)}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Phương tiện <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#89D4FF] focus:ring-[#89D4FF]/20 ${errors.vehicle ? 'border-red-500' : 'border-[#C5EAFF]'} ${isStartDateVehicleDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        value={formData.vehicle || ''}
-                        onChange={(e) => handleChange('vehicle', e.target.value)}
-                        disabled={isStartDateVehicleDisabled}
-                        placeholder="VD: Xe khách 45 chỗ"
-                      />
-                    </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Số chỗ tối đa</label>
                       <input
@@ -278,32 +324,56 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                     </div>
                   </div>
 
-                  {formData.schedule && formData.schedule.length > 0 && (
+                  {formData.schedule && formData.schedule.length > 0 ? (
                     <div className="mt-2">
-                      <h3 className="text-[18px] font-bold text-[#00668A] border-b border-[#E1F1FF] pb-2 mb-4">Lịch trình kế thừa</h3>
-                      <div className="flex flex-col gap-3">
+                      <h3 className="text-[18px] font-bold text-[#00668A] border-b border-[#E1F1FF] pb-2 mb-4">Lịch trình chi tiết</h3>
+                      <div className="flex flex-col gap-4">
                         {formData.schedule.map((day, index) => (
-                          <div key={index} className="flex items-center justify-between bg-[#F9F9FF] border border-[#E1F1FF] p-4 rounded-lg">
-                            <div>
-                              <h4 className="font-semibold text-gray-800">{day.title}</h4>
-                              <p className="text-sm text-gray-500 line-clamp-1">{day.description}</p>
-                            </div>
+                          <div key={index} className="bg-[#F9F9FF] border border-[#E1F1FF] p-4 rounded-lg flex flex-col gap-3 relative">
                             {!isFormDisabled && (
-                              <Button 
-                                type="button" 
-                                variant="secondary" 
-                                size="sm" 
-                                icon={<Pencil size={16} />}
-                                onClick={() => {
-                                  setEditingDayIndex(index);
-                                  setEditingDayData({ ...day });
-                                }}
-                              >
-                                Chỉnh sửa
-                              </Button>
+                              <div className="absolute top-4 right-4">
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  icon={<Pencil size={16} />}
+                                  onClick={() => {
+                                    setEditingDayIndex(index);
+                                    setEditingDayData({ ...day });
+                                  }}
+                                  className="text-gray-500 hover:text-[#00668A] bg-white border border-gray-200"
+                                >
+                                  Sửa
+                                </Button>
+                              </div>
                             )}
+                            <div className={!isFormDisabled ? 'pr-20' : ''}>
+                              <h4 className="font-bold text-[#00668A] text-base">{day.title}</h4>
+                              {day.description && <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{day.description}</p>}
+                            </div>
+                            <div className="grid grid-cols-3 gap-4 text-xs mt-1">
+                              <div className="bg-white p-2 rounded border border-gray-100 shadow-sm">
+                                <span className="font-semibold text-gray-500 block mb-1">Sáng</span>
+                                <span className="text-gray-800">{day.meals?.breakfast || 'Tự túc'}</span>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-gray-100 shadow-sm">
+                                <span className="font-semibold text-gray-500 block mb-1">Trưa</span>
+                                <span className="text-gray-800">{day.meals?.lunch || 'Tự túc'}</span>
+                              </div>
+                              <div className="bg-white p-2 rounded border border-gray-100 shadow-sm">
+                                <span className="font-semibold text-gray-500 block mb-1">Tối</span>
+                                <span className="text-gray-800">{day.meals?.dinner || 'Tự túc'}</span>
+                              </div>
+                            </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <h3 className="text-[18px] font-bold text-[#00668A] border-b border-[#E1F1FF] pb-2 mb-4">Lịch trình chi tiết</h3>
+                      <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500 text-sm">
+                        Chưa có lịch trình
                       </div>
                     </div>
                   )}
@@ -312,13 +382,23 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
 
               {activeTab === 'green' && (
                 <div className="min-h-[400px]">
-                  <GreenActionList />
+                  <div className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mb-4 text-sm">
+                    <strong>Lưu ý:</strong> Tính năng đang phát triển. Dữ liệu chưa được lưu vào database.
+                  </div>
+                  <TourInstanceGreenActionTab 
+                    selectedActions={formData.greenActions || []} 
+                    onChange={(actions) => handleChange('greenActions', actions)} 
+                    isEditing={!isFormDisabled}
+                  />
                 </div>
               )}
 
               {activeTab === 'services' && (
                 <div className="min-h-[400px]">
-                  <ServiceList />
+                  <TourInstanceServiceTab 
+                    services={formData.services || []} 
+                    isEditing={!isFormDisabled} 
+                  />
                 </div>
               )}
             </div>
@@ -327,7 +407,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
               <Button type="button" variant="secondary" onClick={onClose}>
                 {isFormDisabled ? 'Đóng' : 'Hủy'}
               </Button>
-              {!isFormDisabled && activeTab === 'info' && (
+              {!isFormDisabled && (
                 <Button type="submit" variant="primary">
                   {mode === 'create' ? 'Khởi tạo Tour' : 'Cập nhật Tour'}
                 </Button>

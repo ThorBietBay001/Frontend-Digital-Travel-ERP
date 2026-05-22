@@ -189,7 +189,7 @@ const SettlementList: React.FC = () => {
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-[32px] font-bold text-[#121C2C]">Quyết toán Tài chính Tour</h1>
-          <p className="text-sm text-gray-500 mt-1">Tổng hợp doanh thu, chi phí và chốt quyết toán cho từng tour.</p>
+          {/* <p className="text-sm text-gray-500 mt-1">Tổng hợp doanh thu, chi phí và chốt quyết toán cho từng tour.</p> */}
         </div>
 
         <div className="bg-white p-6 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">

@@ -161,7 +161,7 @@ const GreenActionList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-[#121C2C]">Danh mục Hành động Xanh</h2>
-            <p className="text-gray-500 text-sm mt-1">Thiết lập kho điểm thưởng gốc để áp dụng cho các tour.</p>
+            {/* <p className="text-gray-500 text-sm mt-1">Thiết lập kho điểm thưởng gốc để áp dụng cho các tour.</p> */}
           </div>
           <Button variant="primary" icon={<Plus size={18} />} onClick={() => openModal('create')}>
             Thêm Hành động Mới

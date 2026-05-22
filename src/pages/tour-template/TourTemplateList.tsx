@@ -15,6 +15,7 @@ import TourTemplateDetailModal from './TourTemplateDetailModal';
 import { tourTemplateService } from '../../services/tour-template';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { mapTourTemplateStatus } from '../../utils/statusMapping';
 
 const TourTemplateList: React.FC = () => {
   const [data, setData] = useState<TourTemplate[]>([]);
@@ -22,7 +23,6 @@ const TourTemplateList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
@@ -42,17 +42,13 @@ const TourTemplateList: React.FC = () => {
       nights: Math.max(0, (apiData.thoiLuong || 1) - 1),
     },
     basePrice: apiData.giaSan || 0,
-    status: apiData.trangThai === 'HOAT_DONG' ? 'active' : 'inactive',
+    status: 'HOAT_DONG',
     image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500&q=80',
     tags: 'Tour Mẫu',
     schedule: [],
   });
 
   const { user } = useAuth();
-
-  const mapStatusToApi = (status: TourTemplate['status']) => (
-    status === 'active' ? 'HOAT_DONG' : 'KHOA'
-  );
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'tour-template')) return;
@@ -61,6 +57,7 @@ const TourTemplateList: React.FC = () => {
     try {
       const res = await tourTemplateService.danhSach();
       if (res && res.content) {
+        // Need to load without schedule first, schedule will be loaded on demand
         setData(res.content.map(mapToUI));
       } else {
         setData([]);
@@ -76,9 +73,51 @@ const TourTemplateList: React.FC = () => {
     getAll();
   }, [user]);
 
+  const parseThucDon = (thucDonStr?: string) => {
+    if (!thucDonStr) return { breakfast: '', lunch: '', dinner: '' };
+    try {
+      const parsed = JSON.parse(thucDonStr);
+      return {
+        breakfast: parsed.breakfast || '',
+        lunch: parsed.lunch || '',
+        dinner: parsed.dinner || '',
+      };
+    } catch {
+      return { breakfast: '', lunch: '', dinner: '' };
+    }
+  };
+
   // Xử lý đóng/mở Modal
-  const openModal = (mode: typeof modalState.mode, tour?: TourTemplate) => {
-    setModalState({ isOpen: true, mode, selectedTour: tour });
+  const openModal = async (mode: typeof modalState.mode, tour?: TourTemplate) => {
+    if ((mode === 'edit' || mode === 'copy') && tour?.id) {
+      setLoading(true);
+      try {
+        const detail = await tourTemplateService.chiTiet(tour.id);
+        const fullTour: TourTemplate = {
+          ...tour,
+          description: detail.moTa || tour.description,
+          schedule: Array.from({ length: tour.duration.days }).map((_, index) => {
+            const lt = (detail.lichTrinh || []).find((l: any) => l.ngayThu === index + 1);
+            if (lt) {
+              return {
+                title: lt.hoatDong || `Ngày ${lt.ngayThu}`,
+                description: lt.moTa || '',
+                meals: parseThucDon(lt.thucDon),
+              };
+            }
+            return { title: `Ngày ${index + 1}: `, description: '', meals: { breakfast: '', lunch: '', dinner: '' } };
+          }),
+          services: detail.dichVu || [],
+        };
+        setModalState({ isOpen: true, mode, selectedTour: fullTour });
+      } catch (err: any) {
+        alert('Lỗi tải chi tiết tour: ' + (err.message || ''));
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setModalState({ isOpen: true, mode, selectedTour: tour });
+    }
   };
   const closeModal = () => {
     setModalState({ isOpen: false, mode: null, selectedTour: undefined });
@@ -92,7 +131,14 @@ const TourTemplateList: React.FC = () => {
            tieuDe: tourData.title,
            moTa: tourData.description,
            thoiLuong: tourData.duration.days,
-           giaSan: tourData.basePrice
+           giaSan: tourData.basePrice,
+           lichTrinh: tourData.schedule.map((day, index) => ({
+             ngayThu: index + 1,
+             hoatDong: day.title,
+             moTa: day.description,
+             thucDon: JSON.stringify(day.meals)
+           })),
+           dichVu: tourData.services
         };
         await tourTemplateService.taoMoi(payload);
       } else if (modalState.mode === 'edit') {
@@ -101,15 +147,23 @@ const TourTemplateList: React.FC = () => {
            moTa: tourData.description,
            thoiLuong: tourData.duration.days,
            giaSan: tourData.basePrice,
-           trangThai: mapStatusToApi(tourData.status)
+           lichTrinh: tourData.schedule.map((day, index) => ({
+             ngayThu: index + 1,
+             hoatDong: day.title,
+             moTa: day.description,
+             thucDon: JSON.stringify(day.meals)
+           })),
+           dichVu: tourData.services
         };
         await tourTemplateService.capNhat(tourData.id, payload);
       } else if (modalState.mode === 'copy') {
         // form may have modified some data for copy, but the API only takes the ID for copy.
-        await tourTemplateService.saoChep(tourData.id);
+        if (modalState.selectedTour?.id) {
+          await tourTemplateService.saoChep(modalState.selectedTour.id);
+        }
       }
       closeModal();
-      getAll();
+      await getAll();
     } catch (err: any) {
       alert('Lỗi: ' + (err.message || 'Xảy ra lỗi'));
     }
@@ -121,7 +175,7 @@ const TourTemplateList: React.FC = () => {
       try {
         await tourTemplateService.xoa(modalState.selectedTour.id);
         closeModal();
-        getAll();
+        await getAll();
       } catch (err: any) {
          alert('Lỗi: ' + (err.message || 'Xảy ra lỗi khi xóa'));
       }
@@ -132,8 +186,7 @@ const TourTemplateList: React.FC = () => {
   const filteredData = data.filter((tour) => {
     const matchesSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           tour.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === '' || statusFilter === 'all' || tour.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   // Tính toán phân trang
@@ -176,16 +229,7 @@ const TourTemplateList: React.FC = () => {
         <span className="font-medium">{record.basePrice.toLocaleString('vi-VN')} đ</span>
       ),
     },
-    {
-      key: 'status',
-      title: 'Trạng Thái',
-      render: (record) => (
-        <Badge 
-          label={record.status === 'active' ? 'Đang mở' : 'Đã đóng'} 
-          variant={record.status === 'active' ? 'success' : 'neutral'} 
-        />
-      ),
-    },
+
     {
       key: 'actions',
       title: 'Hành Động',
@@ -216,7 +260,7 @@ const TourTemplateList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[32px] font-bold text-[#121C2C]">Tour Mẫu</h1>
-            <p className="text-gray-500 text-sm mt-1">Quản lý và cấu trúc các khung chương trình du lịch sinh thái tiêu chuẩn</p>
+            {/* <p className="text-gray-500 text-sm mt-1">Quản lý và cấu trúc các khung chương trình du lịch sinh thái tiêu chuẩn</p> */}
           </div>
           <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => openModal('create')}>
             Thêm Tour Mẫu mới
@@ -232,18 +276,7 @@ const TourTemplateList: React.FC = () => {
               onChange={setSearchTerm}
             />
           </div>
-          <div className="w-[200px]">
-            <Select 
-              options={[
-                { label: 'Tất cả', value: 'all' },
-                { label: 'Đang mở', value: 'active' },
-                { label: 'Đã đóng', value: 'inactive' },
-              ]}
-              value={statusFilter}
-              onChange={setStatusFilter}
-              placeholder="Chọn trạng thái"
-            />
-          </div>
+
           <div className="w-[200px]">
             <Select 
               options={[

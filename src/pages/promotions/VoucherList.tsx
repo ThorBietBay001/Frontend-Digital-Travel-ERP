@@ -74,7 +74,10 @@ const VoucherList: React.FC = () => {
       setIsCreateModalOpen(false);
       getAll();
     } catch (err: unknown) {
-      const msg = formatApiError(err, 'Lỗi khi tạo voucher');
+      let msg = formatApiError(err, 'Lỗi khi tạo voucher');
+      if (msg.includes('MaCode da ton tai')) msg = 'Mã Code đã tồn tại';
+      if (msg.includes('Giam PHAN_TRAM khong duoc vuot qua 100%')) msg = 'Giảm phần trăm không được vượt quá 100%';
+      if (msg.includes('NgayHieuLuc phai truoc NgayHetHan')) msg = 'Ngày hiệu lực phải trước ngày hết hạn';
       alert('Lỗi: ' + msg);
       throw err;
     }
@@ -86,7 +89,8 @@ const VoucherList: React.FC = () => {
         await promotionsService.voHieuVoucher(voucher.id);
         getAll();
       } catch (err: unknown) {
-        const msg = formatApiError(err, 'Lỗi khi vô hiệu hóa');
+        let msg = formatApiError(err, 'Lỗi khi vô hiệu hóa');
+        if (msg.includes('Khong tim thay voucher')) msg = 'Không tìm thấy voucher';
         alert('Lỗi: ' + msg);
       }
     }
@@ -176,7 +180,7 @@ const VoucherList: React.FC = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-[#00668A]">Quản lý Khuyến mãi</h1>
-          <p className="text-gray-500 mt-1">Theo dõi và quản lý các chương trình ưu đãi, voucher cho khách hàng.</p>
+          {/* <p className="text-gray-500 mt-1">Theo dõi và quản lý các chương trình ưu đãi, voucher cho khách hàng.</p> */}
         </div>
 
         <div className="bg-white rounded-[16px] p-6 shadow-[0px_4px_20px_rgba(137,212,255,0.08)]">

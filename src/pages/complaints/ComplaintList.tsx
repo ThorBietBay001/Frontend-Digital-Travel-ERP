@@ -199,7 +199,7 @@ const ComplaintList: React.FC = () => {
     <MainLayout activeMenu="Quản lý Khiếu nại" breadcrumb={[{ label: 'Quản lý Khiếu nại' }]}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#121C2C]">Danh sách Khiếu nại & Phản hồi</h1>
-        <p className="text-gray-500 mt-1">Quản lý và theo dõi tiến độ xử lý khiếu nại từ khách hàng.</p>
+        {/* <p className="text-gray-500 mt-1">Quản lý và theo dõi tiến độ xử lý khiếu nại từ khách hàng.</p> */}
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-[#E1F1FF] mb-6 flex flex-wrap gap-4 items-center">

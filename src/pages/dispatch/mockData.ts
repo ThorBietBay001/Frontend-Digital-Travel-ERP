@@ -82,7 +82,7 @@ export interface Guide {
   languages: string[];
   skills: string[];
   rating: number;
-  status: 'available' | 'busy' | 'resting';
+  status: string;
   completedTours: number;
   matchPercent?: number;
   biography?: string;
@@ -141,7 +141,7 @@ export const mockGuides: Guide[] = [
     languages: ['Tiếng Việt', 'Tiếng Anh C1'],
     skills: ['Sơ cứu', 'Trekking'],
     rating: 4.9,
-    status: 'available',
+    status: 'AVAILABLE',
     completedTours: 145,
     biography: 'Anh Lê Văn Phát là một HDV chuyên nghiệp với hơn 7 năm kinh nghiệm dẫn các tour mạo hiểm và trekking tại miền núi phía Bắc.',
     certificates: ['Thẻ HDV Quốc tế', 'Chứng nhận Sơ cấp cứu Chữ thập đỏ', 'Chứng chỉ leo núi mạo hiểm'],
@@ -156,7 +156,7 @@ export const mockGuides: Guide[] = [
     languages: ['Tiếng Việt', 'Tiếng Anh B2'],
     skills: ['Văn hóa', 'Ẩm thực'],
     rating: 4.7,
-    status: 'available',
+    status: 'AVAILABLE',
     completedTours: 89,
     biography: 'Chị Mai am hiểu sâu sắc về văn hóa miền Trung, đặc biệt là Huế và Hội An. Rất được lòng các vị khách lớn tuổi.',
     certificates: ['Thẻ HDV Nội địa', 'Khóa học Thuyết minh viên Di tích'],
@@ -171,7 +171,7 @@ export const mockGuides: Guide[] = [
     languages: ['Tiếng Việt', 'Tiếng Anh'],
     skills: ['Chụp ảnh'],
     rating: 4.5,
-    status: 'resting',
+    status: 'NGHI',
     completedTours: 210,
     biography: 'Bạn Nam là HDV năng động, có thế mạnh về nhiếp ảnh chuyên nghiệp, phù hợp với các khách hàng gen Z thích lưu giữ khoảnh khắc.',
     certificates: ['Thẻ HDV Nội địa', 'Thợ chụp ảnh chuyên nghiệp'],
@@ -186,7 +186,7 @@ export const mockGuides: Guide[] = [
     languages: ['Tiếng Việt', 'Tiếng Trung'],
     skills: ['Sơ cứu', 'Lặn biển'],
     rating: 4.8,
-    status: 'busy',
+    status: 'BAN',
     completedTours: 176,
     biography: 'Chị Mai là chuyên gia dẫn các đoàn khách Trung Quốc, thành thạo tiếng Trung và có bằng lặn biển Scuba.',
     certificates: ['Thẻ HDV Quốc tế', 'PADI Open Water Diver', 'Chứng chỉ HSK 6'],
@@ -201,7 +201,7 @@ export const mockGuides: Guide[] = [
     languages: ['Tiếng Việt', 'Tiếng Anh'],
     skills: ['Trekking'],
     rating: 4.6,
-    status: 'available',
+    status: 'AVAILABLE',
     completedTours: 54,
     biography: 'Hoàng Anh là HDV trẻ, đầy nhiệt huyết, thể lực tốt. Đã chinh phục fanxipan hơn 20 lần.',
     certificates: ['Thẻ HDV Nội địa'],

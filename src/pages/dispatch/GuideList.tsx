@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
 import type { NangLucResponse } from '../../services/system/hr';
+import { mapEmployeeStatus } from '../../utils/statusMapping';
 
 const parseCommaList = (value?: string): string[] => {
   if (!value) return [];
@@ -32,12 +33,7 @@ const mapNhanVienToGuide = (g: NhanVienResponse, nangLuc?: NangLucResponse): Gui
   languages: parseCommaList(nangLuc?.ngonNgu).length > 0 ? parseCommaList(nangLuc?.ngonNgu) : ['Tiếng Việt'],
   skills: [...parseCommaList(nangLuc?.chuyenMon), ...parseCommaList(nangLuc?.chungChi)],
   rating: nangLuc?.danhGia ?? 0,
-  status:
-    g.trangThaiLamViec === 'AVAILABLE' || g.trangThaiLamViec === 'SAN_SANG'
-      ? 'available'
-      : g.trangThaiLamViec === 'BUSY' || g.trangThaiLamViec === 'BAN'
-        ? 'busy'
-        : 'resting',
+  status: g.trangThaiLamViec || 'Không xác định',
   completedTours: nangLuc?.soDanhGia ?? 0,
 });
 
@@ -173,9 +169,8 @@ const GuideList: React.FC = () => {
       title: 'Trạng thái',
       align: 'center',
       render: (record) => {
-        if (record.status === 'available') return <Badge label="Sẵn sàng" variant="success" />;
-        if (record.status === 'busy') return <Badge label="Đang đi tour" variant="warning" />;
-        return <Badge label="Đang nghỉ" variant="neutral" />;
+        const { label, variant } = mapEmployeeStatus(record.status);
+        return <Badge label={label} variant={variant} />;
       },
     },
     {

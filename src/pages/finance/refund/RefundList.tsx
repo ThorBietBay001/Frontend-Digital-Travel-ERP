@@ -203,14 +203,14 @@ const RefundList: React.FC = () => {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-[32px] font-bold text-[#121C2C]">Quản Lý Yêu Cầu Hoàn Tiền</h1>
-            <p className="text-sm text-gray-500 mt-1">Theo dõi trạng thái và xử lý các yêu cầu hoàn tiền từ khách hàng.</p>
+            {/* <p className="text-sm text-gray-500 mt-1">Theo dõi trạng thái và xử lý các yêu cầu hoàn tiền từ khách hàng.</p> */}
           </div>
-          <Button variant="secondary" icon={<Download size={18} />}>
+          {/*<Button variant="secondary" icon={<Download size={18} />}>
             Xuất file
-          </Button>
+          </Button>*/}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/*<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
             <div className="text-sm text-gray-500">Yêu cầu chờ xử lý</div>
             <div className="text-2xl font-bold text-[#00668A] mt-2">5</div>
@@ -223,7 +223,7 @@ const RefundList: React.FC = () => {
             <div className="text-sm text-gray-500">Đã hoàn trong tháng</div>
             <div className="text-2xl font-bold text-emerald-600 mt-2">120.000.000 VND</div>
           </div>
-        </div>
+        </div>*/}
 
         <div className="bg-white p-6 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[260px]">

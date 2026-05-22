@@ -14,7 +14,6 @@ interface CreateVoucherModalProps {
 }
 
 const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose, mode = 'create', initialData, onSubmit }) => {
-  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
   const [startDate, setStartDate] = useState('');
@@ -28,7 +27,6 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
   useEffect(() => {
     if (!isOpen) return;
-    setCode(initialData?.code || '');
     setName(initialData?.name || '');
     setQuantity(initialData?.quantity || '');
     setStartDate('');
@@ -59,7 +57,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     if (!validate()) return;
 
     const payload = {
-      maCode: code.trim() || `VC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      maCode: initialData?.code || `VC-${Date.now()}`,
       loaiUuDai: discountType === 'percent' ? 'PHAN_TRAM' : 'SO_TIEN',
       giaTriGiam: Number(discountValue),
       dieuKienApDung: name,
@@ -70,7 +68,6 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
     try {
       await onSubmit(payload);
-      setCode('');
       setName('');
       setQuantity('');
       setStartDate('');
@@ -102,17 +99,6 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
       <div className="grid grid-cols-2 gap-6 pb-6">
         {/* Cột trái */}
         <div className="space-y-4">
-          <div>
-            <label className="block text-[#00668A] text-sm font-semibold mb-2">Mã voucher</label>
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="w-full px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent"
-              placeholder="Tự sinh nếu để trống"
-            />
-          </div>
-
           <div>
             <label className="block text-[#00668A] text-sm font-semibold mb-2">Tên chương trình <span className="text-red-500">*</span></label>
             <input

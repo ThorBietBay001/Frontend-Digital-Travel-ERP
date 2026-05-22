@@ -13,6 +13,9 @@ export interface CapNhatTourThucTeRequest {
   soKhachToiDa?: number;
   soKhachToiThieu?: number;
   trangThai?: string;
+  lichTrinh?: any[];
+  dichVu?: any[];
+  hanhDongXanh?: any[];
 }
 
 export interface ApiResponseVoid {
@@ -32,11 +35,15 @@ export interface ApiResponsePageTourThucTeResponse {
 }
 
 export interface TaoTourThucTeRequest {
-  maTourMau: string;
-  ngayKhoiHanh: string;
-  soKhachToiDa: number;
+  maTourMau?: string;
+  ngayKhoiHanh?: string;
+  soKhachToiDa?: number;
   soKhachToiThieu?: number;
-  giaHienHanh: number;
+  giaHienHanh?: number;
+  lichTrinh?: any[];
+  dichVu?: any[];
+  hanhDongXanh?: any[];
+  trangThai?: string;
 }
 
 export interface TourThucTeResponse {
@@ -102,6 +109,8 @@ export interface TourInstance {
   status: string;
   templateId: string;
   schedule: DaySchedule[];
+  services?: any[];
+  greenActions?: any[];
 }
 
 export const mockTourInstances: TourInstance[] = [
