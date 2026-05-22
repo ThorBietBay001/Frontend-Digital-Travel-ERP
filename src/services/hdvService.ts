@@ -1,7 +1,7 @@
 import api from './api';
 
 export const hdvService = {
-  // 1. Auth & Profile
+  // 1. Auth & HoSoCaNhan
   dangNhap: async (tenDangNhap: string, matKhau: string) => {
     const res = await api.post('/auth/dang-nhap', { tenDangNhap, matKhau });
     return res.data;

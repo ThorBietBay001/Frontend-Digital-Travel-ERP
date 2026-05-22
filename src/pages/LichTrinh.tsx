@@ -119,7 +119,7 @@ export default function LichTrinh({ maTourThucTe }: LichTrinhProps) {
       {itinerary.filter(day => day.day === selectedDayNum).map((day) => (
         <div key={day.day} className="space-y-5 animate-slide-up pb-4">
 
-          {/* Schedule */}
+          {/* LichTrinh */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-[12px] font-black uppercase tracking-wider text-slate-700">
