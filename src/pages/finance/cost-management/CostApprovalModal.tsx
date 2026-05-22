@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { MapPin, Calendar, Phone, AlertTriangle, RefreshCw, Ban, CheckCircle } from 'lucide-react';
+import { MapPin, Calendar, Phone, AlertTriangle, Ban, CheckCircle } from 'lucide-react';
 import type { CostItem } from './mockData';
 
 export interface CostApprovalModalProps {
@@ -25,20 +25,14 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
 
   if (!cost) return null;
 
+  // Check if this cost is already approved or rejected (readonly mode)
+  const isReadonly = cost.status === 'approved' || cost.status === 'rejected';
+
   const warningBadge = cost.status === 'warning'
     ? { label: cost.warningMessage || 'Cảnh báo vượt định mức', variant: 'warning' as const }
     : cost.status === 'error'
       ? { label: cost.warningMessage || 'Thiếu chứng từ', variant: 'error' as const }
       : null;
-
-  const handleRequireMore = () => {
-    if (!note.trim()) {
-      setNoteError('Vui lòng nhập nội dung yêu cầu bổ sung');
-      return;
-    }
-    onUpdateStatus?.(cost.id, 'pending_info', note.trim());
-    onClose();
-  };
 
   const handleReject = () => {
     if (!note.trim()) {
@@ -54,40 +48,44 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
+  const renderFooter = () => {
+    if (isReadonly) {
+      return (
+        <div className="w-full flex justify-end">
+          <Button variant="secondary" onClick={onClose}>Đóng</Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <Button
+          variant="ghost"
+          className="border border-red-500 text-red-600 hover:bg-red-50"
+          icon={<Ban size={16} />}
+          onClick={handleReject}
+        >
+          Từ chối
+        </Button>
+        <Button
+          variant="primary"
+          className="bg-emerald-600 hover:bg-emerald-700"
+          icon={<CheckCircle size={16} />}
+          onClick={handleApprove}
+        >
+          Phê duyệt
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Phê duyệt chi phí"
+      title={isReadonly ? 'Chi tiết chi phí' : 'Phê duyệt chi phí'}
       size="2xl"
-      footer={(
-        <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <Button
-            variant="secondary"
-            className="border-amber-400 text-amber-700 hover:bg-amber-50"
-            icon={<RefreshCw size={16} />}
-            onClick={handleRequireMore}
-          >
-            Yêu cầu bổ sung
-          </Button>
-          <Button
-            variant="ghost"
-            className="border border-red-500 text-red-600 hover:bg-red-50"
-            icon={<Ban size={16} />}
-            onClick={handleReject}
-          >
-            Từ chối
-          </Button>
-          <Button
-            variant="primary"
-            className="bg-emerald-600 hover:bg-emerald-700"
-            icon={<CheckCircle size={16} />}
-            onClick={handleApprove}
-          >
-            Phê duyệt
-          </Button>
-        </div>
-      )}
+      footer={renderFooter()}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
         <div className="flex flex-col gap-4">
@@ -153,6 +151,15 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
                 <span className="text-gray-500">Số tiền</span>
                 <span className="font-semibold text-[#00668A]">{cost.amount.toLocaleString('vi-VN')} VND</span>
               </div>
+              {isReadonly && (
+                <div className="flex items-center justify-between pt-2 border-t border-[#E1F1FF]">
+                  <span className="text-gray-500">Trạng thái</span>
+                  <Badge
+                    label={cost.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
+                    variant={cost.status === 'approved' ? 'success' : 'error'}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -166,23 +173,25 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
             </div>
           )}
 
-          <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-            <label className="text-sm font-semibold text-gray-700">Ghi chú duyệt</label>
-            <textarea
-              value={note}
-              onChange={(event) => {
-                setNote(event.target.value);
-                if (noteError) setNoteError('');
-              }}
-              placeholder="Nhập ghi chú duyệt..."
-              className={`mt-2 w-full min-h-[110px] rounded-[12px] border px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 ${
-                noteError
-                  ? 'border-red-300 focus:border-red-300 focus:ring-red-200'
-                  : 'border-[#C5EAFF] focus:border-[#89D4FF] focus:ring-[#89D4FF]/20'
-              }`}
-            />
-            {noteError && <p className="mt-2 text-xs text-red-600">{noteError}</p>}
-          </div>
+          {!isReadonly && (
+            <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
+              <label className="text-sm font-semibold text-gray-700">Ghi chú duyệt</label>
+              <textarea
+                value={note}
+                onChange={(event) => {
+                  setNote(event.target.value);
+                  if (noteError) setNoteError('');
+                }}
+                placeholder="Nhập ghi chú duyệt..."
+                className={`mt-2 w-full min-h-[110px] rounded-[12px] border px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 ${
+                  noteError
+                    ? 'border-red-300 focus:border-red-300 focus:ring-red-200'
+                    : 'border-[#C5EAFF] focus:border-[#89D4FF] focus:ring-[#89D4FF]/20'
+                }`}
+              />
+              {noteError && <p className="mt-2 text-xs text-red-600">{noteError}</p>}
+            </div>
+          )}
         </div>
       </div>
     </Modal>

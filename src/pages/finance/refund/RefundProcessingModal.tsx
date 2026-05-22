@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { FileText, Ban, CheckCircle, Upload } from 'lucide-react';
+import { FileText, Ban, CheckCircle, Upload, AlertTriangle } from 'lucide-react';
 import type { RefundRequest } from './mockData';
+import { ordersService } from '../../../services/orders';
 
 export interface RefundProcessingModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
   const [transactionCode, setTransactionCode] = useState('');
   const [bankAccountError, setBankAccountError] = useState('');
   const [transactionError, setTransactionError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (refund?.refundMethod) {
@@ -43,6 +46,8 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
       setTransactionCode(refund?.transactionCode || '');
       setBankAccountError('');
       setTransactionError('');
+      setErrorMessage('');
+      setProcessing(false);
     }
   }, [refund, isOpen]);
 
@@ -56,7 +61,22 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
     onClose();
   };
 
-  const handleConfirmRefund = () => {
+  const handleConfirmRefund = async () => {
+    setErrorMessage('');
+    setProcessing(true);
+    try {
+      const order = await ordersService.chiTietDatTour(refund.orderCode);
+      if (order.trangThai !== 'CHO_HUY') {
+        setErrorMessage('Chỉ có thể hoàn tiền cho đơn hàng ở trạng thái Chờ Hủy.');
+        setProcessing(false);
+        return;
+      }
+    } catch (e) {
+      setErrorMessage('Không thể kiểm tra trạng thái đơn hàng: ' + (e instanceof Error ? e.message : 'Lỗi không xác định'));
+      setProcessing(false);
+      return;
+    }
+
     if (method === 'manual') {
       let hasError = false;
       if (!bankAccount.trim()) {
@@ -67,7 +87,10 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
         setTransactionError('Vui lòng nhập mã giao dịch');
         hasError = true;
       }
-      if (hasError) return;
+      if (hasError) {
+        setProcessing(false);
+        return;
+      }
 
       onProcessRefund?.(refund.id, 'complete', {
         method: 'manual',
@@ -86,7 +109,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Xử lý hoàn tiền"
+      title={readonly ? 'Chi tiết hoàn tiền' : 'Xử lý hoàn tiền'}
       size="2xl"
       footer={(
         readonly ? (
@@ -101,8 +124,9 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
               className="bg-emerald-600 hover:bg-emerald-700"
               icon={<CheckCircle size={16} />}
               onClick={handleConfirmRefund}
+              disabled={processing}
             >
-              Xác nhận Hoàn Tiền
+              {processing ? 'Đang kiểm tra...' : 'Xác nhận Hoàn Tiền'}
             </Button>
           </div>
         )
@@ -141,6 +165,13 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
         </div>
 
         <div className="flex flex-col gap-4">
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 rounded-[16px] p-4 text-sm text-red-700 flex gap-2">
+              <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+              <div>{errorMessage}</div>
+            </div>
+          )}
+
           <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
             <div className="text-sm font-semibold text-gray-700">Phương thức hoàn tiền</div>
             <div className="mt-3 space-y-3 text-sm text-gray-600">

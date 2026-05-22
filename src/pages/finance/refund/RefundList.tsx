@@ -15,6 +15,7 @@ import { financeService } from '../../../services/finance';
 import type { ThanhToanResponse } from '../../../services/finance';
 import { useAuth } from '../../../context/AuthContext';
 import { hasAccess } from '../../../config/rolePermissions';
+import { mapTransactionStatus } from '../../../utils/statusMapping';
 
 const RefundList: React.FC = () => {
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
@@ -46,9 +47,7 @@ const RefundList: React.FC = () => {
     try {
       const res = await financeService.danhSachChoHoanTien();
       const mapped = (res?.content || []).map((t: ThanhToanResponse): RefundRequest => {
-        let status: RefundRequest['status'] = 'pending';
-        if (t.trangThai === 'DA_HOAN_TIEN') status = 'completed';
-        else if (t.trangThai === 'TU_CHOI') status = 'rejected';
+        let status: any = t.trangThai || 'CHO_THANH_TOAN';
 
         return {
           id: t.maGiaoDich || '',
@@ -74,6 +73,8 @@ const RefundList: React.FC = () => {
     try {
       if (action === 'complete') {
         await financeService.xacNhanHoanTien(id);
+      } else if (action === 'reject') {
+        await financeService.tuChoiHoanTien(id);
       }
       setRefunds((prev) =>
         prev.map((refund) => {
@@ -81,13 +82,13 @@ const RefundList: React.FC = () => {
           if (action === 'complete') {
             return {
               ...refund,
-              status: 'completed',
+              status: 'DA_HOAN_TIEN' as any,
               refundMethod: data?.method,
               bankAccount: data?.bankAccount,
               transactionCode: data?.transactionCode,
             };
           }
-          return { ...refund, status: 'rejected' };
+          return { ...refund, status: 'TU_CHOI' as any };
         })
       );
     } catch (e) {
@@ -156,13 +157,8 @@ const RefundList: React.FC = () => {
       key: 'status',
       title: 'Trạng thái',
       render: (record) => {
-        if (record.status === 'pending') {
-          return <Badge label="Chờ xử lý" variant="warning" />;
-        }
-        if (record.status === 'completed') {
-          return <Badge label="Đã hoàn" variant="success" />;
-        }
-        return <Badge label="Đã từ chối" variant="error" />;
+        const mappedStatus = mapTransactionStatus(record.status as string);
+        return <Badge label={mappedStatus.label} variant={mappedStatus.variant} />;
       },
     },
     {
@@ -170,7 +166,7 @@ const RefundList: React.FC = () => {
       title: 'Hành động',
       align: 'center',
       render: (record) => {
-        if (record.status === 'pending') {
+        if (record.status === 'CHO_THANH_TOAN' || record.status === 'CHO_HOAN_TIEN' || record.status === 'pending' || record.status === 'THANH_CONG') {
           return (
             <Button variant="primary" size="sm" onClick={() => handleOpenModal(record)}>
               Xử lý ngay
@@ -237,9 +233,10 @@ const RefundList: React.FC = () => {
             <Select
               options={[
                 { label: 'Tất cả trạng thái', value: 'all' },
-                { label: 'Chờ xử lý', value: 'pending' },
-                { label: 'Đã hoàn', value: 'completed' },
-                { label: 'Đã từ chối', value: 'rejected' }
+                { label: 'Chờ thanh toán', value: 'CHO_THANH_TOAN' },
+                { label: 'Thành công', value: 'THANH_CONG' },
+                { label: 'Thất bại', value: 'THAT_BAI' },
+                { label: 'Đã hoàn tiền', value: 'DA_HOAN_TIEN' }
               ]}
               value={statusFilter}
               onChange={setStatusFilter}

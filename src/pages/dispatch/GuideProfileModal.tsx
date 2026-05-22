@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import type { Guide } from './mockData';
-import { Star, Mail, Phone, FileText } from 'lucide-react';
+import { Star, Mail, Phone, FileText, CreditCard, Cake, MapPin, Calendar } from 'lucide-react';
 import { hrService } from '../../services/system/hr';
+import { accountsService } from '../../services/system/accounts';
+import type { NhanVienResponse } from '../../services/system/accounts';
 import type { NangLucResponse } from '../../services/system/hr';
 import { formatApiError } from '../../utils/apiHelpers';
 
@@ -20,6 +22,7 @@ const parseList = (value?: string): string[] => {
 
 const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, guide }) => {
   const [nangLuc, setNangLuc] = useState<NangLucResponse | null>(null);
+  const [nhanVien, setNhanVien] = useState<NhanVienResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +37,14 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
       setLoading(true);
       setError(null);
       try {
-        const res = await hrService.layNangLuc(guide.id);
-        setNangLuc(res ?? null);
+        const [nangLucRes, nhanVienRes] = await Promise.all([
+          hrService.layNangLuc(guide.id).catch(() => null),
+          accountsService.chiTietNhanVien(guide.id).catch(() => null),
+        ]);
+        setNangLuc(nangLucRes ?? null);
+        setNhanVien(nhanVienRes ?? null);
       } catch (err: unknown) {
-        setError(formatApiError(err, 'Không tải được năng lực HDV'));
+        setError(formatApiError(err, 'Không tải được hồ sơ HDV'));
       } finally {
         setLoading(false);
       }
@@ -52,7 +59,7 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
   const skills = [...parseList(nangLuc?.chuyenMon), ...parseList(nangLuc?.chungChi)];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Hồ sơ chi tiết Hướng dẫn viên" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Hồ sơ Hướng dẫn viên - ${guide.code} - ${guide.name}`} size="lg">
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
@@ -71,20 +78,38 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
               {guide.status === 'available' && <Badge label="Sẵn sàng" variant="success" />}
               {guide.status === 'busy' && <Badge label="Đang đi tour" variant="warning" />}
               {guide.status === 'resting' && <Badge label="Đang nghỉ" variant="info" />}
-              <div className="flex flex-wrap gap-x-6 gap-y-2 mt-3 text-sm text-gray-600">
-                <div className="flex items-center gap-1.5">
+              
+              <div className="mt-4 grid grid-cols-2 gap-y-3 gap-x-6 text-sm text-gray-700">
+                <div className="flex items-center gap-2">
                   <Star size={16} className="text-amber-400" fill="currentColor" />
-                  <span>
-                    {nangLuc?.danhGia != null ? nangLuc.danhGia.toFixed(1) : '—'} ({nangLuc?.soDanhGia ?? 0} đánh giá)
+                  <span className="font-semibold text-gray-900">
+                    {nangLuc?.danhGia != null ? nangLuc.danhGia.toFixed(1) : '—'} 
+                    <span className="text-gray-500 font-normal"> ({nangLuc?.soDanhGia ?? 0} đánh giá)</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Phone size={16} />
-                  <span>—</span>
+                <div className="flex items-center gap-2">
+                  <CreditCard size={16} className="text-gray-400" />
+                  <span>CCCD: <span className="font-medium text-gray-900">{nhanVien?.cccd || '—'}</span></span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Mail size={16} />
-                  <span>{guide.code}@vietnamtravel.com</span>
+                <div className="flex items-center gap-2">
+                  <Phone size={16} className="text-gray-400" />
+                  <span className="font-medium text-gray-900">{nhanVien?.soDienThoai || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail size={16} className="text-gray-400" />
+                  <span className="font-medium text-gray-900 truncate" title={nhanVien?.email}>{nhanVien?.email || `${guide.code}@vietnamtravel.com`}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Cake size={16} className="text-gray-400" />
+                  <span>Ngày sinh: <span className="font-medium text-gray-900">{nhanVien?.ngaySinh || '—'}</span></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span>Ngày vào làm: <span className="font-medium text-gray-900">{nhanVien?.ngayVaoLam || '—'}</span></span>
+                </div>
+                <div className="col-span-2 flex items-start gap-2">
+                  <MapPin size={16} className="text-gray-400 mt-0.5" />
+                  <span className="font-medium text-gray-900 line-clamp-2" title={nhanVien?.diaChi}>{nhanVien?.diaChi || '—'}</span>
                 </div>
               </div>
             </div>
@@ -93,7 +118,7 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
           <div>
             <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
               <FileText size={18} className="text-gray-400" />
-              Năng lực (GET /api/dieu-hanh/nhan-vien/{'{id}'}/nang-luc)
+              Năng lực
             </h3>
             <div className="bg-[#F9F9FF] p-4 rounded-xl border border-[#E1F1FF] text-sm space-y-3">
               <div>

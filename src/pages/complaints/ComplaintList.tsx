@@ -17,12 +17,11 @@ import { hasAccess } from '../../config/rolePermissions';
 
 const mapStatus = (s?: string): Complaint['status'] => {
   switch (s?.toUpperCase()) {
-    case 'PROCESSING': return 'processing';
-    case 'PENDING_INFO': return 'pending_info';
-    case 'PENDING_GUIDE': return 'pending_guide';
-    case 'RESOLVED': return 'resolved';
-    case 'REJECTED': return 'rejected';
-    case 'CANCELLED': return 'cancelled';
+    case 'DA_XU_LY': return 'resolved';
+    case 'TU_CHOI': return 'rejected';
+    case 'CHO_BO_SUNG': return 'pending_info';
+    case 'CHO_GIAI_TRINH': return 'pending_guide';
+    case 'CHUA_XU_LY': return 'pending';
     default: return 'pending';
   }
 };
@@ -182,8 +181,18 @@ const ComplaintList: React.FC = () => {
 
   const handleComplaintUpdate = async (updatedComplaint: Complaint) => {
     try {
+      let apiStatus = '';
+      switch (updatedComplaint.status) {
+        case 'resolved': apiStatus = 'DA_XU_LY'; break;
+        case 'rejected': apiStatus = 'TU_CHOI'; break;
+        case 'pending_info': apiStatus = 'CHO_BO_SUNG'; break;
+        case 'pending_guide': apiStatus = 'CHO_GIAI_TRINH'; break;
+        case 'pending': apiStatus = 'CHUA_XU_LY'; break;
+        default: apiStatus = 'CHUA_XU_LY';
+      }
+      
       const payload: XuLyHoTroRequest = {
-        trangThai: updatedComplaint.status.toUpperCase(),
+        trangThai: apiStatus,
         ghiChu: updatedComplaint.resolution,
       };
       await complaintsService.xuLyYeuCauHoTro(updatedComplaint.id, payload);

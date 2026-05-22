@@ -37,19 +37,23 @@ export type {
 
 export const financeService = {
     chotQuyetToan: async (maQuyetToan: string) => {
-        const response = await api.put<ApiResponseQuyetToanResponse>(`/api/ke-toan/quyet-toan/${maQuyetToan}/chot`, {});
+        const response = await api.put<ApiResponseQuyetToanResponse>(`/api/ke-toan/quyet-toan/${maQuyetToan}/chot`);
         return response.data.data;
     },
     xacNhanHoanTien: async (maGiaoDich: string) => {
-        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/xac-nhan`, {});
+        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/xac-nhan`);
+        return response.data.data;
+    },
+    tuChoiHoanTien: async (maGiaoDich: string) => {
+        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/tu-choi`);
         return response.data.data;
     },
     tuChoiChiPhi: async (maChiPhi: string) => {
-        const response = await api.put<ApiResponseChiPhiThucTeResponse>(`/api/ke-toan/chi-phi/${maChiPhi}/tu-choi`, {});
+        const response = await api.put<ApiResponseChiPhiThucTeResponse>(`/api/ke-toan/chi-phi/${maChiPhi}/tu-choi`);
         return response.data.data;
     },
     duyetChiPhi: async (maChiPhi: string) => {
-        const response = await api.put<ApiResponseChiPhiThucTeResponse>(`/api/ke-toan/chi-phi/${maChiPhi}/duyet`, {});
+        const response = await api.put<ApiResponseChiPhiThucTeResponse>(`/api/ke-toan/chi-phi/${maChiPhi}/duyet`);
         return response.data.data;
     },
     taoQuyetToan: async (maTour: string, data: QuyetToanRequest) => {

@@ -111,7 +111,12 @@ const TourInstanceList: React.FC = () => {
           hanhDongXanh: tourData.greenActions,
           trangThai: tourData.status
         };
-        await tourInstanceService.taoMoi(payload);
+        const createdTour = await tourInstanceService.taoMoi(payload);
+        if (createdTour && tourData.status && tourData.status !== 'MO_BAN') {
+          await tourInstanceService.capNhat(createdTour.maTourThucTe as string, {
+            trangThai: tourData.status
+          } as CapNhatTourThucTeRequest);
+        }
       } else if (modalState.mode === 'edit') {
         const payload: CapNhatTourThucTeRequest = {
           giaHienHanh: tourData.currentPrice,
@@ -124,7 +129,8 @@ const TourInstanceList: React.FC = () => {
         await tourInstanceService.capNhat(tourData.id, payload);
       }
       closeModal();
-      getAll();
+      await getAll();
+      alert(modalState.mode === 'create' ? 'Khởi tạo tour thành công' : 'Cập nhật tour thành công');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Xảy ra lỗi';
       alert('Lỗi: ' + msg);
@@ -145,6 +151,7 @@ const TourInstanceList: React.FC = () => {
         await tourInstanceService.capNhat(modalState.selectedTour.id, payload);
         closeModal();
         await getAll();
+        alert('Hủy tour thành công');
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Xảy ra lỗi khi hủy tour';
         alert('Lỗi: ' + msg);

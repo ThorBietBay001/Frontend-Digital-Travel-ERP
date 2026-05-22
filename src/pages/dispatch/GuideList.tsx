@@ -132,35 +132,27 @@ const GuideList: React.FC = () => {
         </div>
       ),
     },
-    {
-      key: 'languages',
-      title: 'Ngôn ngữ',
-      render: (record) => <span className="text-sm text-gray-700">{record.languages.join(', ') || '—'}</span>,
-    },
-    {
-      key: 'skills',
-      title: 'Thế mạnh',
-      render: (record) => (
-        <div className="flex flex-wrap gap-1 max-w-[200px]">
-          {record.skills.length > 0 ? (
-            record.skills.slice(0, 3).map((s, idx) => (
-              <span key={idx} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[11px] border border-gray-200">
-                {s}
-              </span>
-            ))
-          ) : (
-            <span className="text-gray-400 text-xs">—</span>
-          )}
-        </div>
-      ),
-    },
+
     {
       key: 'rating',
       title: 'Đánh giá',
       render: (record) => (
         <div className="flex items-center gap-1.5 text-sm">
-          <Star size={14} className="text-amber-400" fill="currentColor" />
-          <span className="font-bold text-gray-800">{record.rating > 0 ? record.rating.toFixed(1) : '—'}</span>
+          {record.rating > 0 ? (
+            <>
+              {Array.from({ length: 5 }, (_, i) => (
+                <Star
+                  key={i}
+                  size={14}
+                  className={i < Math.round(record.rating) ? 'text-amber-400' : 'text-gray-200'}
+                  fill={i < Math.round(record.rating) ? 'currentColor' : 'none'}
+                />
+              ))}
+              <span className="font-bold text-gray-800 ml-1">{record.rating.toFixed(1)}</span>
+            </>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
         </div>
       ),
     },
@@ -203,9 +195,7 @@ const GuideList: React.FC = () => {
         <div className="flex flex-col gap-1">
           <h1 className="text-[32px] font-bold text-[#121C2C]">Danh sách Hướng dẫn viên</h1>
           <p className="text-gray-500 text-sm">
-            {isAdmin
-              ? 'Nguồn: GET /api/quan-tri/nhan-vien?maVaiTro=HDV'
-              : `Nguồn: GET /api/dieu-hanh/hdv-kha-dung${refTourCode ? ` (tour ${refTourCode})` : ''}`}
+            Quản lý và theo dõi đội ngũ hướng dẫn viên
           </p>
         </div>
 

@@ -52,7 +52,7 @@ export const mapTransactionStatus = (status?: string): StatusMapping => {
     case 'CHO_THANH_TOAN': return { label: 'Chờ thanh toán', variant: 'warning' };
     case 'THANH_CONG': return { label: 'Thành công', variant: 'success' };
     case 'THAT_BAI': return { label: 'Thất bại', variant: 'error' };
-    case 'DA_HOAN_TIEN': return { label: 'Đã hoàn tiền', variant: 'info' };
+    case 'DA_HOAN_TIEN': return { label: 'Đã hoàn tiền', variant: 'success' };
     default: return { label: status || 'Không xác định', variant: 'neutral' };
   }
 };
@@ -96,9 +96,9 @@ export const mapSettlementStatus = (status?: string): StatusMapping => {
 
 export const mapEmployeeStatus = (status?: string): StatusMapping => {
   switch (status) {
-    case 'HOAT_DONG': return { label: 'Hoạt động', variant: 'success' };
-    case 'BAN': return { label: 'Bận', variant: 'warning' };
-    case 'NGHI': return { label: 'Nghỉ', variant: 'error' };
+    case 'HOAT_DONG': return { label: 'Sẵn sàng', variant: 'success' };
+    case 'BAN': return { label: 'Đang đi tour', variant: 'warning' };
+    case 'NGHI': return { label: 'Đang nghỉ', variant: 'neutral' };
     default: return { label: status || 'Không xác định', variant: 'neutral' };
   }
 };

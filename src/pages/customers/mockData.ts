@@ -36,13 +36,13 @@ export interface HoChieuSoResponse {
   tenDangNhap?: string;
   hoTen?: string;
   email?: string;
+  cccd?: string;
+  ngaySinh?: string;
   soDienThoai?: string;
   diUng?: string;
   ghiChuYTe?: string;
   hangThanhVien?: string;
   diemXanh?: number;
-  thoiDiemTao?: string;
-  capNhatVao?: string;
 }
 
 export interface PageableObject {
