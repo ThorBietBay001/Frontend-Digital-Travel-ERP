@@ -134,6 +134,8 @@ export const mapTourDetail = (item: ApiRecord, greenActions: ApiRecord[] = []): 
       day: toNumber(lt.ngayThu, 1),
       title: lt.tieuDe || `Ngày ${lt.ngayThu || 1}`,
       description: lt.hoatDong || '',
+      meals: lt.thucDon || '',
+      menu: lt.thucDon || '',
       activities: (lt.hoatDong || '').split(/[.;]/).map((s: string) => s.trim()).filter(Boolean)
     })),
     greenActions: greenActions.map(mapGreenAction)
@@ -165,11 +167,24 @@ export const mapBooking = (b: ApiRecord): Booking => {
     bookingDate: b.ngayDat || b.ngayThamGia || '',
     departureDate: b.ngayKhoiHanh || '',
     totalAmount: toNumber(b.tongTien, 0),
-    status: b.trangThai || 'DA_XAC_NHAN',
+    status: b.trangThai || b.trangThaiTour || 'DA_XAC_NHAN',
     guests: Array.isArray(b.chiTietKhach) ? b.chiTietKhach.length : 1,
     passengers: Array.isArray(b.chiTietKhach) ? b.chiTietKhach.length : 1,
     qrCode: id,
-    tourImage: b.hinhAnh || b.image || tourImage(tourId)
+    tourImage: b.hinhAnh || b.image || tourImage(tourId),
+    note: b.ghiChu || '',
+    adultCount: toNumber(b.soNguoiLon, 0),
+    childCount: toNumber(b.soTreEm, 0),
+    customerName: b.tenKhachHang || '',
+    details: Array.isArray(b.chiTietKhach) ? b.chiTietKhach : [],
+    services: Array.isArray(b.chiTietDichVu) ? b.chiTietDichVu : [],
+    guideName: b.tenHuongDanVien || '',
+    guidePhone: b.soDienThoaiHuongDanVien || '',
+    guideRating: toNumber(b.danhGiaHuongDanVien, 0),
+    guideReviewCount: toNumber(b.soDanhGiaHuongDanVien, 0),
+    hasReviewed: Boolean(b.daDanhGia),
+    hasComplaint: Boolean(b.daKhieuNai),
+    complaintStatus: b.trangThaiKhieuNai || ''
   };
 };
 

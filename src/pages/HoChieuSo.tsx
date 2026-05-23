@@ -86,7 +86,7 @@ export default function HoChieuSo() {
 
         const activeBks = unwrapPageContent(bookingsRes).map(mapBooking);
         const pastBks = unwrapPageContent(pastToursRes).map((b: any) => ({
-          id: b.maLichSuTour,
+          id: b.maDatTour || b.maLichSuTour,
           tourId: b.maTourThucTe,
           tourName: b.tieuDeTour,
           bookingDate: b.ngayThamGia,
@@ -96,7 +96,10 @@ export default function HoChieuSo() {
           guests: 1,
           passengers: 1,
           tourImage: `https://picsum.photos/seed/${b.maTourThucTe}/900/650`,
-          qrCode: `QR-${b.maLichSuTour}`
+          qrCode: `QR-${b.maDatTour || b.maLichSuTour}`,
+          hasReviewed: Boolean(b.daDanhGia),
+          hasComplaint: Boolean(b.daKhieuNai),
+          complaintStatus: b.trangThaiKhieuNai || ''
         }));
 
         setBookings([...activeBks, ...pastBks]);
@@ -133,6 +136,7 @@ export default function HoChieuSo() {
 
   // Booking detail modal (UC22)
   const [selectedBookingForDetail, setSelectedBookingForDetail] = useState<Booking | null>(null);
+  const [selectedTicketTour, setSelectedTicketTour] = useState<any>(null);
 
   // Tour cancellation flow (UC32)
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<Booking | null>(null);
@@ -142,6 +146,7 @@ export default function HoChieuSo() {
   // Tour review flow (UC35)
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
   const [reviewStars, setReviewStars] = useState(5);
+  const [reviewGuideStars, setReviewGuideStars] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [selectedReviewTags, setSelectedReviewTags] = useState<string[]>([]);
 
@@ -153,6 +158,14 @@ export default function HoChieuSo() {
   const [complaintFileName, setComplaintFileName] = useState('');
   const [showAddInfoForTicket, setShowAddInfoForTicket] = useState<string | null>(null);
   const [addInfoContent, setAddInfoContent] = useState('');
+
+  const ratingLabels: Record<number, string> = {
+    1: 'Rất tệ',
+    2: 'Chưa hài lòng',
+    3: 'Tạm ổn',
+    4: 'Rất tốt',
+    5: 'Tuyệt vời'
+  };
 
   // UC60: Change password flow
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -374,6 +387,37 @@ export default function HoChieuSo() {
     }
   };
 
+  const layTenTrangThaiDon = (status: string) => {
+    switch (status) {
+      case 'DA_XAC_NHAN': return 'Đã xác nhận';
+      case 'KET_THUC': return 'Đã hoàn thành';
+      case 'DA_QUYET_TOAN': return 'Đã quyết toán';
+      case 'DA_HUY': return 'Đã hủy';
+      case 'CHO_XAC_NHAN': return 'Chờ xác nhận';
+      case 'CHO_HUY': return 'Chờ hủy';
+      case 'TU_CHOI_HOAN_TIEN': return 'Từ chối hoàn tiền';
+      case 'HET_HAN_GIU_CHO': return 'Hết hạn giữ chỗ';
+      case 'THANH_TOAN_THAT_BAI': return 'Thanh toán thất bại';
+      default: return status || 'Chưa cập nhật';
+    }
+  };
+
+  const layTenLoaiKhach = (value?: string) => {
+    switch (value) {
+      case 'NGUOI_DAT': return 'Người đặt';
+      case 'NGUOI_DONG_HANH': return 'Người đồng hành';
+      default: return value || 'Hành khách';
+    }
+  };
+
+  const layTenNhomTuoi = (value?: string) => {
+    switch (value) {
+      case 'NGUOI_LON': return 'Người lớn';
+      case 'TRE_EM': return 'Trẻ em';
+      default: return value || 'Chưa phân loại';
+    }
+  };
+
   // UC30: Redeem Green Points for Voucher
   const tinhDiemCanDoiVoucher = (voucher: Voucher) => {
     return voucher.discountType === 'fixed'
@@ -462,12 +506,57 @@ export default function HoChieuSo() {
     }
   };
 
+  const isComplaintResolved = (status?: string) => ['DA_XU_LY', 'TU_CHOI'].includes(status || '');
+  const hasPendingComplaint = (booking: Booking) => Boolean(booking.hasComplaint && !isComplaintResolved(booking.complaintStatus));
+
   // UC35: Open review modal
   const handleOpenReviewModal = (booking: Booking) => {
+    if (booking.hasReviewed) {
+      setToast({ message: 'Bạn đã đánh giá chuyến đi này rồi. Mỗi tour chỉ được đánh giá một lần.', type: 'info' });
+      return;
+    }
+    if (hasPendingComplaint(booking)) {
+      setToast({ message: 'Khiếu nại của chuyến đi này chưa được giải quyết. Bạn có thể đánh giá sau khi trạng thái chuyển sang Đã giải quyết.', type: 'info' });
+      return;
+    }
     setSelectedBookingForReview(booking);
     setReviewStars(5);
+    setReviewGuideStars(5);
     setReviewComment('');
     setSelectedReviewTags([]);
+  };
+
+  const handleOpenBookingDetail = async (booking: Booking) => {
+    setSelectedBookingForDetail(booking);
+    setSelectedTicketTour(null);
+
+    try {
+      const [tourRes, detailRes] = await Promise.all([
+        khService.layChiTietTour(booking.tourId).catch(() => null),
+        booking.id?.startsWith('DDT') ? khService.layChiTietDatTour(booking.id).catch(() => null) : Promise.resolve(null)
+      ]);
+
+      const tourDetail = tourRes ? unwrapData<any>(tourRes) : null;
+      if (tourDetail) {
+        setSelectedTicketTour(mapPublicTour(tourDetail));
+        setSelectedTicketTour((prev: any) => ({
+          ...prev,
+          itinerary: (tourDetail.lichTrinh || []).map((lt: any) => ({
+            day: lt.ngayThu || 1,
+            title: lt.tieuDe || `Ngày ${lt.ngayThu || 1}`,
+            description: lt.hoatDong || '',
+            meals: lt.thucDon || ''
+          }))
+        }));
+      }
+
+      if (detailRes) {
+        const detail = mapBooking(unwrapData<any>(detailRes));
+        setSelectedBookingForDetail({ ...booking, ...detail, qrCode: booking.qrCode || detail.qrCode });
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Toggle review tag selection
@@ -491,10 +580,14 @@ export default function HoChieuSo() {
       await khService.taoDanhGia({
         maTourThucTe: selectedBookingForReview.tourId,
         soSao: reviewStars,
+        soSaoHdv: reviewGuideStars,
         nhanXet
       });
 
       setToast({ message: 'Đánh giá thành công! Cảm ơn đóng góp của bạn. Bạn được cộng +50 Điểm Xanh.', type: 'success' });
+      setBookings(prev => prev.map(b =>
+        b.tourId === selectedBookingForReview.tourId ? { ...b, hasReviewed: true } : b
+      ));
       setSelectedBookingForReview(null);
       await taiLaiHoSo();
     } catch (err: any) {
@@ -504,6 +597,10 @@ export default function HoChieuSo() {
 
   // UC36: Open complaint modal
   const handleOpenComplaintModal = (booking: Booking) => {
+    if (booking.hasComplaint) {
+      setToast({ message: 'Bạn đã gửi khiếu nại cho chuyến đi này. Màn hình Khiếu nại sẽ cập nhật trạng thái xử lý.', type: 'info' });
+      return;
+    }
     setSelectedBookingForComplaint(booking);
     setComplaintCategory('Hướng dẫn viên');
     setComplaintSubject('');
@@ -546,6 +643,11 @@ export default function HoChieuSo() {
       };
 
       setComplaints([newTicket, ...complaints]);
+      setBookings(prev => prev.map(b =>
+        b.id === selectedBookingForComplaint.id
+          ? { ...b, hasComplaint: true, complaintStatus: newTicket.status }
+          : b
+      ));
       setToast({ message: 'Khiếu nại đã được gửi thành công! Ban điều hành sẽ tiếp nhận và xử lý trong vòng 24h làm việc.', type: 'success' });
       setSelectedBookingForComplaint(null);
       setActiveTab('complaints');
@@ -1017,7 +1119,7 @@ export default function HoChieuSo() {
 
                           <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-50">
                             <button
-                              onClick={() => setSelectedBookingForDetail(booking)}
+                              onClick={() => handleOpenBookingDetail(booking)}
                               className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1"
                             >
                               <FileText className="w-3.5 h-3.5" />
@@ -1040,17 +1142,27 @@ export default function HoChieuSo() {
                               <>
                                 <button
                                   onClick={() => handleOpenReviewModal(booking)}
-                                  className="px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1"
+                                  aria-disabled={booking.hasReviewed || hasPendingComplaint(booking)}
+                                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${
+                                    booking.hasReviewed || hasPendingComplaint(booking)
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                  }`}
                                 >
-                                  <Star className="w-3.5 h-3.5" />
-                                  <span>Đánh giá chuyến đi</span>
+                                  <Star className={`w-3.5 h-3.5 ${booking.hasReviewed ? 'fill-current' : ''}`} />
+                                  <span>{booking.hasReviewed ? 'Đã đánh giá' : hasPendingComplaint(booking) ? 'Chờ xử lý khiếu nại' : 'Đánh giá chuyến đi'}</span>
                                 </button>
                                 <button
                                   onClick={() => handleOpenComplaintModal(booking)}
-                                  className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1"
+                                  aria-disabled={booking.hasComplaint}
+                                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${
+                                    booking.hasComplaint
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
                                 >
                                   <ShieldAlert className="w-3.5 h-3.5" />
-                                  <span>Gửi khiếu nại</span>
+                                  <span>{booking.hasComplaint ? 'Đã khiếu nại' : 'Gửi khiếu nại'}</span>
                                 </button>
                               </>
                             )}
@@ -1468,12 +1580,15 @@ export default function HoChieuSo() {
 
       {/* UC22: Custom Detailed Booking Modal */}
       {selectedBookingForDetail && (() => {
-        const fullTour = allTours.find(t => t.id === selectedBookingForDetail.tourId);
+        const fullTour = selectedTicketTour || allTours.find(t => t.id === selectedBookingForDetail.tourId);
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
             <div className="bg-white rounded-3xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl relative">
               <button
-                onClick={() => setSelectedBookingForDetail(null)}
+                onClick={() => {
+                  setSelectedBookingForDetail(null);
+                  setSelectedTicketTour(null);
+                }}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-50 transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -1513,7 +1628,7 @@ export default function HoChieuSo() {
                       <Calendar className="w-4 h-4 mr-1.5 text-blue-500" />
                       Tóm tắt lịch trình chi tiết
                     </h4>
-                    {fullTour ? (
+                    {fullTour?.itinerary?.length ? (
                       <div className="relative pl-6 border-l border-slate-200 ml-3 space-y-5">
                         {fullTour.itinerary.map((day: any) => (
                           <div key={day.day} className="relative">
@@ -1523,6 +1638,7 @@ export default function HoChieuSo() {
                             </div>
                             <h5 className="font-extrabold text-xs text-gray-800">Ngày {day.day}: {day.title}</h5>
                             <p className="text-xs text-gray-500 mt-0.5">{day.description}</p>
+                            {day.meals && <p className="text-xs text-blue-600 font-bold mt-1">Thực đơn: {day.meals}</p>}
                           </div>
                         ))}
                       </div>
@@ -1533,18 +1649,22 @@ export default function HoChieuSo() {
 
                   {/* Guide info */}
                   <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                    <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2">Hướng dẫn viên phụ trách (UC37/UC40)</h4>
+                    <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2">Hướng dẫn viên phụ trách</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg">👨‍💼</div>
                         <div>
-                          <p className="font-extrabold text-sm text-gray-900">Lê Văn Tám</p>
+                          <p className="font-extrabold text-sm text-gray-900">{selectedBookingForDetail.guideName || 'Chưa phân công'}</p>
                           <p className="text-[10px] text-gray-500 font-bold flex items-center">
                             <Star className="w-3 h-3 text-yellow-500 fill-current mr-0.5" />
-                            Được đánh giá 4.9★ • Nhiều kinh nghiệm
+                            {selectedBookingForDetail.guideRating ? `Được đánh giá ${selectedBookingForDetail.guideRating}★ • ${selectedBookingForDetail.guideReviewCount || 0} lượt` : 'Chưa có đánh giá'}
                           </p>
                           <p className="text-[10px] text-blue-600 font-bold mt-1">
-                            <a href="tel:0987654321" className="hover:underline">SĐT: 0987.654.321</a>
+                            {selectedBookingForDetail.guidePhone ? (
+                              <a href={`tel:${selectedBookingForDetail.guidePhone}`} className="hover:underline">SĐT: {selectedBookingForDetail.guidePhone}</a>
+                            ) : (
+                              <span>SĐT: Chưa cập nhật</span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -1552,46 +1672,36 @@ export default function HoChieuSo() {
                   </div>
                 </div>
 
-                {/* Right side: Boarding ticket QR code & actions */}
+                {/* Right side: verified ticket and payment details */}
                 <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
-                  {/* QR Boarding pass card */}
-                  <div className="bg-gradient-to-b from-blue-50/80 via-indigo-50/60 to-white rounded-2xl p-6 text-center shadow-xl relative overflow-hidden flex-1 flex flex-col justify-center border border-blue-100/80">
-                    <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500/30 via-indigo-500/40 to-blue-500/30"></div>
-                    <div className="absolute top-0 right-0 w-36 h-36 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl pointer-events-none"></div>
-
-                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-600/80 relative z-10">Digital Boarding Ticket</p>
-                    <h4 className="text-base font-extrabold mt-1.5 leading-tight text-slate-900 relative z-10">{selectedBookingForDetail.tourName}</h4>
-
-                    {/* Simulated Boarding pass QR code - Soft luxury bg to reduce glare */}
-                    <div className="my-6 relative bg-white p-4.5 rounded-2xl w-40 h-40 mx-auto border border-blue-100 shadow-md overflow-hidden relative z-10">
-                      <div className="absolute inset-x-0 top-0 h-1 bg-blue-500/80 animate-scan z-10"></div>
-                      <svg className="w-full h-full text-slate-900" viewBox="0 0 100 100" fill="currentColor">
-                        <rect x="10" y="10" width="20" height="20" />
-                        <rect x="15" y="15" width="10" height="10" fill="white" />
-                        <rect x="70" y="10" width="20" height="20" />
-                        <rect x="75" y="15" width="10" height="10" fill="white" />
-                        <rect x="10" y="70" width="20" height="20" />
-                        <rect x="15" y="75" width="10" height="10" fill="white" />
-                        {/* QR pattern */}
-                        <rect x="35" y="15" width="10" height="10" />
-                        <rect x="50" y="25" width="15" height="5" />
-                        <rect x="15" y="45" width="5" height="15" />
-                        <rect x="40" y="40" width="20" height="20" />
-                        <rect x="45" y="45" width="10" height="10" fill="white" />
-                        <rect x="70" y="40" width="15" height="15" />
-                        <rect x="35" y="70" width="15" height="10" />
-                        <rect x="65" y="65" width="20" height="20" />
-                      </svg>
+                  <div className="bg-white border border-blue-100 rounded-2xl p-4 text-xs text-slate-600 space-y-3 shadow-sm">
+                      <h5 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Thông tin xác thực vé</h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        <span>Mã đơn</span>
+                        <span className="font-bold text-right">{selectedBookingForDetail.id}</span>
+                        <span>Tour</span>
+                        <span className="font-bold text-right">{selectedBookingForDetail.tourName}</span>
+                        <span>Khởi hành</span>
+                        <span className="font-bold text-right">{formatDate(selectedBookingForDetail.departureDate)}</span>
+                        <span>Trạng thái</span>
+                        <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status)}</span>
+                        <span>Người đặt</span>
+                        <span className="font-bold text-right">{selectedBookingForDetail.customerName || profile.fullName}</span>
+                        <span>Số khách</span>
+                        <span className="font-bold text-right">{selectedBookingForDetail.passengers || selectedBookingForDetail.guests} người</span>
+                      </div>
+                      {!!selectedBookingForDetail.details?.length && (
+                        <div className="pt-2 border-t border-slate-100 space-y-2">
+                          <h6 className="font-bold text-slate-900">Chi tiết hành khách</h6>
+                          {selectedBookingForDetail.details.map((p: any, idx: number) => (
+                            <div key={p.maChiTietDat || idx} className="flex justify-between gap-3">
+                              <span>{idx + 1}. {p.hoTen}</span>
+                              <span className="font-semibold text-slate-500">{layTenLoaiKhach(p.loaiKhach)} - {layTenNhomTuoi(p.nhomTuoi)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-
-                    <span className="font-mono text-xs text-blue-700 font-extrabold uppercase bg-blue-50 px-3.5 py-1 rounded-full border border-blue-100 inline-block mx-auto mb-2 shadow-sm relative z-10">
-                      {selectedBookingForDetail.qrCode}
-                    </span>
-                    <p className="text-[10px] text-slate-500 font-semibold relative z-10">
-                      Mã QR vé điện tử dùng để xác thực thông tin đặt tour khi khởi hành.
-                    </p>
-                  </div>
 
                   {/* Payment / Cost summary */}
                   <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 space-y-2">
@@ -1634,7 +1744,7 @@ export default function HoChieuSo() {
                         {['cancelled', 'DA_HUY'].includes(selectedBookingForDetail.status) && (
                           <>
                             <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
-                            Đã hoàn tiền thành công (UC50)
+                            Đã hoàn tiền thành công
                           </>
                         )}
                       </h5>
@@ -1742,31 +1852,67 @@ export default function HoChieuSo() {
             </div>
 
             {/* Interactive Stars Selection */}
-            <div className="text-center mb-6">
-              <span className="text-xs font-bold text-gray-500 block uppercase tracking-wider mb-2">Đánh giá chung</span>
-              <div className="flex justify-center space-x-2">
+            <div className="mb-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Đánh giá chung</span>
+                <span className="text-sm font-black text-slate-900">{reviewStars}/5</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
                     onClick={() => setReviewStars(star)}
-                    className="p-1 focus:outline-none"
+                    className={`group rounded-2xl border p-2.5 transition-all ${
+                      star <= reviewStars
+                        ? 'border-amber-300 bg-amber-50 text-amber-500 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-300 hover:border-amber-200 hover:bg-amber-50/40'
+                    }`}
                   >
                     <Star
-                      className={`w-10 h-10 transition-colors ${star <= reviewStars
+                      className={`mx-auto w-7 h-7 transition-transform group-hover:scale-110 ${star <= reviewStars
                         ? 'text-yellow-400 fill-current'
                         : 'text-gray-300'
                         }`}
                     />
+                    <span className="mt-1 block text-[9px] font-black text-slate-500">{star}</span>
                   </button>
                 ))}
               </div>
-              <span className="text-xs font-bold text-gray-600 block mt-2">
-                {reviewStars === 5 && 'Tuyệt vời, vô cùng hài lòng!'}
-                {reviewStars === 4 && 'Rất tốt, dịch vụ chu đáo.'}
-                {reviewStars === 3 && 'Tạm ổn, có thể cải thiện thêm.'}
-                {reviewStars === 2 && 'Chưa hài lòng, nhiều thiếu sót.'}
-                {reviewStars === 1 && 'Rất tệ, cực kỳ thất vọng.'}
+              <span className="mt-3 block rounded-xl bg-white px-3 py-2 text-center text-xs font-bold text-gray-600 border border-slate-100">
+                {ratingLabels[reviewStars]}
+              </span>
+            </div>
+
+            <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Đánh giá hướng dẫn viên</span>
+                <span className="text-sm font-black text-blue-700">{reviewGuideStars}/5</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewGuideStars(star)}
+                    className={`group rounded-2xl border p-2.5 transition-all ${
+                      star <= reviewGuideStars
+                        ? 'border-blue-300 bg-white text-blue-600 shadow-sm'
+                        : 'border-blue-100 bg-white/70 text-slate-300 hover:border-blue-200'
+                    }`}
+                  >
+                    <Star
+                      className={`mx-auto w-6 h-6 transition-transform group-hover:scale-110 ${star <= reviewGuideStars
+                        ? 'text-yellow-400 fill-current'
+                        : 'text-gray-300'
+                        }`}
+                    />
+                    <span className="mt-1 block text-[9px] font-black text-slate-500">{star}</span>
+                  </button>
+                ))}
+              </div>
+              <span className="mt-3 block rounded-xl bg-white px-3 py-2 text-center text-xs font-bold text-blue-700 border border-blue-100">
+                {ratingLabels[reviewGuideStars]}
               </span>
             </div>
 
@@ -1824,7 +1970,7 @@ export default function HoChieuSo() {
               onClick={handleSubmitReview}
               className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md text-sm text-center"
             >
-              Gửi đánh giá chuyến đi (UC35)
+              Gửi đánh giá chuyến đi
             </button>
           </div>
         </div>

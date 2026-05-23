@@ -49,6 +49,11 @@ export const khService = {
     return res.data;
   },
 
+  layChiTietDatTour: async (maDatTour: string) => {
+    const res = await api.get(`/khach-hang/dat-tour/${maDatTour}`);
+    return res.data;
+  },
+
   huyDatTour: async (maDatTour: string) => {
     const res = await api.delete(`/khach-hang/dat-tour/${maDatTour}`);
     return res.data;

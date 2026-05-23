@@ -40,6 +40,19 @@ export interface Booking {
   paymentMethod?: string;
   tourImage?: string;
   passengers?: number;
+  note?: string;
+  adultCount?: number;
+  childCount?: number;
+  customerName?: string;
+  details?: any[];
+  services?: any[];
+  guideName?: string;
+  guidePhone?: string;
+  guideRating?: number;
+  guideReviewCount?: number;
+  hasReviewed?: boolean;
+  hasComplaint?: boolean;
+  complaintStatus?: string;
 }
 
 export interface Voucher {
