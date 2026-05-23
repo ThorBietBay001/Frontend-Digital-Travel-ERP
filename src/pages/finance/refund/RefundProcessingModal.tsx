@@ -5,6 +5,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { FileText, Ban, CheckCircle, Upload, AlertTriangle } from 'lucide-react';
 import type { RefundRequest } from './mockData';
 import { ordersService } from '../../../services/orders';
+import { useNotification } from '../../../context/NotificationContext';
 
 export interface RefundProcessingModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
   onProcessRefund,
   readonly = false,
 }) => {
+  const { confirm } = useNotification();
   const [method, setMethod] = useState<'gateway' | 'manual'>('gateway');
   const [bankAccount, setBankAccount] = useState('');
   const [bankName, setBankName] = useState('');
@@ -54,7 +56,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
   if (!refund) return null;
 
   const handleReject = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn từ chối yêu cầu hoàn tiền này?')) {
+    if (!(await confirm('Bạn có chắc chắn muốn từ chối yêu cầu hoàn tiền này?'))) {
       return;
     }
     setErrorMessage('');

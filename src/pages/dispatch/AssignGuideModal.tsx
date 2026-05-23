@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { UserCheck, MapPin, Calendar, Users, Target, ShieldCheck, AlertCircle, Star } from 'lucide-react';
 import type { NhanVienResponse } from '../../services/dispatch';
 import type { TourNeedGuide } from './mockData';
+import { useNotification } from '../../context/NotificationContext';
 
 interface AssignGuideModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
   availableGuides,
   guidesLoading = false,
 }) => {
+  const { confirm } = useNotification();
   const [conflictGuideId, setConflictGuideId] = useState<string | null>(null);
 
   if (!tour) return null;
@@ -50,7 +52,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
     };
   }).sort((a, b) => (b.matchPercent || 0) - (a.matchPercent || 0));
 
-  const handleSelectGuide = (guide: any) => {
+  const handleSelectGuide = async (guide: any) => {
     // Mock conflict check
     if (guide.status === 'busy') {
       setConflictGuideId(guide.maNhanVien || null);
@@ -58,7 +60,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
     }
     
     setConflictGuideId(null);
-    if (window.confirm(`Phân công HDV ${guide.hoTen} cho tour ${tour.name}?`)) {
+    if (await confirm(`Phân công HDV ${guide.hoTen} cho tour ${tour.name}?`)) {
       onAssign(tour.id, guide.maNhanVien || '');
     }
   };

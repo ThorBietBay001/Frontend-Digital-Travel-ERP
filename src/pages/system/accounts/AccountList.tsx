@@ -18,6 +18,7 @@ import { customersService, type HoChieuSoResponse } from '../../../services/cust
 import { useAuth } from '../../../context/AuthContext';
 import { hasAccess } from '../../../config/rolePermissions';
 import { mapAccountStatus } from '../../../utils/statusMapping';
+import { useNotification } from '../../../context/NotificationContext';
 
 export const ROLE_MAP: Record<string, string> = {
   'ADMIN': 'Quản trị viên',
@@ -39,6 +40,7 @@ export const ROLE_VALUE_MAP: Record<string, string> = {
 };
 
 const AccountList: React.FC = () => {
+  const { confirm } = useNotification();
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,7 +173,7 @@ const AccountList: React.FC = () => {
 
   const handleToggleStatus = async (account: Account) => {
     const nextStatus = account.status === 'HOAT_DONG' ? 'KHOA' : 'HOAT_DONG';
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
       `${nextStatus === 'KHOA' ? 'Khóa' : 'Mở khóa'} tài khoản ${account.code}?`
     );
     if (!confirmed) return;
@@ -189,14 +191,14 @@ const AccountList: React.FC = () => {
     }
   };
 
-  const handleDelete = (account: Account) => {
+  const handleDelete = async (account: Account) => {
     const canDelete = account.role === 'Khách hàng';
     if (!canDelete) {
       alert('Không thể xóa tài khoản nhân sự còn dữ liệu liên quan.');
       return;
     }
 
-    const confirmed = window.confirm(`Xóa tài khoản ${account.code}?`);
+    const confirmed = await confirm(`Xóa tài khoản ${account.code}?`);
     if (!confirmed) return;
 
     setAccounts((prev) => prev.filter((item) => item.id !== account.id));
@@ -284,7 +286,7 @@ const AccountList: React.FC = () => {
       title: 'Thao tác',
       align: 'center',
       render: (record) => (
-        <div className="flex items-center justify-center gap-2">
+        <div className="grid grid-cols-5 justify-items-center gap-1 min-w-[190px]">
           <Button
             variant="ghost"
             size="sm"
@@ -292,7 +294,8 @@ const AccountList: React.FC = () => {
             onClick={() => handleOpenPermissions(record)}
             disabled={record.status !== 'HOAT_DONG'}
             aria-label="Phân quyền"
-            className="px-2"
+            title={record.status === 'HOAT_DONG' ? 'Phân quyền' : 'Chỉ phân quyền tài khoản đang hoạt động'}
+            className="px-2 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
           />
           <Button
             variant="ghost"
@@ -300,37 +303,39 @@ const AccountList: React.FC = () => {
             icon={<Pencil size={18} />}
             onClick={() => handleOpenEdit(record)}
             aria-label="Chỉnh sửa"
+            title="Chỉnh sửa"
             className="px-2"
           />
-          {record.status === 'HOAT_DONG' ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Lock size={18} />}
-              onClick={() => handleToggleStatus(record)}
-              aria-label="Khóa"
-              className="px-2"
-            />
-          ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<LockOpen size={18} />}
-                onClick={() => handleToggleStatus(record)}
-                aria-label="Mở khóa"
-                className="px-2"
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Trash2 size={18} />}
-                onClick={() => handleDelete(record)}
-                aria-label="Xóa"
-                className="px-2 text-[#BA1A1A] hover:text-[#BA1A1A]"
-              />
-            </>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Lock size={18} />}
+            onClick={() => handleToggleStatus(record)}
+            disabled={record.status !== 'HOAT_DONG'}
+            aria-label="Khóa"
+            title={record.status === 'HOAT_DONG' ? 'Khóa' : 'Tài khoản đã bị khóa'}
+            className="px-2 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<LockOpen size={18} />}
+            onClick={() => handleToggleStatus(record)}
+            disabled={record.status === 'HOAT_DONG'}
+            aria-label="Mở khóa"
+            title={record.status !== 'HOAT_DONG' ? 'Mở khóa' : 'Tài khoản đang hoạt động'}
+            className="px-2 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Trash2 size={18} />}
+            onClick={() => handleDelete(record)}
+            disabled={record.status === 'HOAT_DONG' || record.role !== 'Khách hàng'}
+            aria-label="Xóa"
+            title={record.status !== 'HOAT_DONG' && record.role === 'Khách hàng' ? 'Xóa' : 'Chỉ xóa tài khoản khách hàng đã khóa'}
+            className="px-2 text-[#BA1A1A] hover:text-[#BA1A1A] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+          />
         </div>
       ),
     },

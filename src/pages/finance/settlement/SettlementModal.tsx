@@ -6,6 +6,7 @@ import { Table } from '../../../components/ui/Table';
 import { AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
 import type { Column } from '../../../components/ui/Table';
 import type { SettlementTour } from './mockData';
+import { useNotification } from '../../../context/NotificationContext';
 
 export interface SettlementModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export interface SettlementModalProps {
 }
 
 const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour, onSettle, readonly = false }) => {
+  const { confirm } = useNotification();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState('');
@@ -54,8 +56,8 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
     onClose();
   };
 
-  const handleOverBudgetApproval = () => {
-    if (!window.confirm('Trình duyệt vượt chi cho cấp quản lý?')) {
+  const handleOverBudgetApproval = async () => {
+    if (!(await confirm('Trình duyệt vượt chi cho cấp quản lý?'))) {
       return;
     }
     onSettle?.(tour.id, 'over_budget', note.trim() || undefined);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle, Send, Ban } from 'lucide-react';
+import { PlusCircle, Send, Ban, RotateCcw } from 'lucide-react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -17,10 +17,12 @@ import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError } from '../../utils/apiHelpers';
 import { mapVoucherStatus } from '../../utils/statusMapping';
+import { useNotification } from '../../context/NotificationContext';
 
 const statusOptions = [
   { value: 'all', label: 'Tất cả trạng thái' },
   { value: 'SAN_SANG', label: 'Sẵn sàng' },
+  { value: 'HET_HAN', label: 'Hết hạn' },
   { value: 'VO_HIEU_HOA', label: 'Vô hiệu hóa' },
 ];
 
@@ -46,9 +48,11 @@ const VoucherList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [distributeVoucher, setDistributeVoucher] = useState<Voucher | null>(null);
+  const [revokeVoucher, setRevokeVoucher] = useState<Voucher | null>(null);
   const itemsPerPage = 5;
 
   const { user } = useAuth();
+  const { confirm } = useNotification();
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'promotions')) return;
@@ -94,7 +98,7 @@ const VoucherList: React.FC = () => {
   };
 
   const handleBanVoucher = async (voucher: Voucher) => {
-    if (confirm(`Bạn có chắc chắn muốn vô hiệu hóa voucher ${voucher.code}?`)) {
+    if (await confirm(`Bạn có chắc chắn muốn vô hiệu hóa voucher ${voucher.code}?`)) {
       try {
         await promotionsService.voHieuVoucher(voucher.id);
         getAll();
@@ -166,24 +170,32 @@ const VoucherList: React.FC = () => {
       title: <span className="whitespace-nowrap">Hành Động</span>,
       align: 'center',
       render: (record) => (
-        record.status === 'SAN_SANG' ? (
-          <div className="flex justify-center gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); setDistributeVoucher(record); }}
-              className="p-2 text-gray-500 hover:text-[#00668A] hover:bg-[#E1F1FF] rounded-full transition-colors"
-              title="Phân phối"
-            >
-              <Send size={18} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleBanVoucher(record); }}
-              className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50 rounded-full transition-colors"
-              title="Vô hiệu hóa"
-            >
-              <Ban size={18} />
-            </button>
-          </div>
-        ) : null
+        <div className="grid grid-cols-3 justify-items-center gap-2 min-w-[104px]">
+          <button
+            onClick={(e) => { e.stopPropagation(); setDistributeVoucher(record); }}
+            disabled={record.status !== 'SAN_SANG'}
+            className="p-2 text-gray-500 hover:text-[#00668A] hover:bg-[#E1F1FF] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+            title={record.status === 'SAN_SANG' ? 'Phân phối' : 'Chỉ phân phối voucher sẵn sàng'}
+          >
+            <Send size={18} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleBanVoucher(record); }}
+            disabled={record.status !== 'SAN_SANG'}
+            className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+            title={record.status === 'SAN_SANG' ? 'Vô hiệu hóa' : 'Voucher không ở trạng thái sẵn sàng'}
+          >
+            <Ban size={18} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setRevokeVoucher(record); }}
+            disabled={record.distributed <= 0}
+            className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+            title={record.distributed > 0 ? 'Thu hồi voucher' : 'Chưa có khách hàng được phân phối'}
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
       )
     }
   ];
@@ -239,6 +251,16 @@ const VoucherList: React.FC = () => {
         isOpen={!!distributeVoucher}
         onClose={() => setDistributeVoucher(null)}
         voucher={distributeVoucher}
+        mode="distribute"
+        onSuccess={getAll}
+      />
+
+      <DistributeVoucherModal
+        isOpen={!!revokeVoucher}
+        onClose={() => setRevokeVoucher(null)}
+        voucher={revokeVoucher}
+        mode="revoke"
+        onSuccess={getAll}
       />
     </MainLayout>
   );

@@ -14,6 +14,7 @@ interface CreateVoucherModalProps {
 }
 
 const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose, mode = 'create', initialData, onSubmit }) => {
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
   const [startDate, setStartDate] = useState('');
@@ -27,6 +28,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
   useEffect(() => {
     if (!isOpen) return;
+    setCode(initialData?.code || '');
     setName(initialData?.name || '');
     setQuantity(initialData?.quantity || '');
     setStartDate('');
@@ -41,6 +43,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
+    if (!code.trim()) newErrors.code = 'Mã code không được để trống';
     if (!name.trim()) newErrors.name = 'Tên chương trình không được để trống';
     if (!discountValue || discountValue <= 0) newErrors.discountValue = 'Giá trị giảm phải > 0';
     if (!quantity || quantity <= 0) newErrors.quantity = 'Số lượng phát hành phải > 0';
@@ -57,7 +60,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     if (!validate()) return;
 
     const payload = {
-      maCode: initialData?.code || `VC-${Date.now()}`,
+      maCode: code.trim(),
       loaiUuDai: discountType === 'percent' ? 'PHAN_TRAM' : 'SO_TIEN',
       giaTriGiam: Number(discountValue),
       dieuKienApDung: name,
@@ -68,6 +71,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
     try {
       await onSubmit(payload);
+      setCode('');
       setName('');
       setQuantity('');
       setStartDate('');
@@ -96,10 +100,50 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
         </div>
       }
     >
-      <div className="grid grid-cols-2 gap-6 pb-6">
-        {/* Cột trái */}
-        <div className="space-y-4">
-          <div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 pb-6">
+        {/* Hàng 1 */}
+        <div>
+            <label className="block text-[#00668A] text-sm font-semibold mb-2">Mã code <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="VD: SUMMER10"
+              className={`w-full px-4 py-2 border ${errors.code ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
+            />
+            {errors.code && <p className="text-[#BA1A1A] text-xs mt-1">{errors.code}</p>}
+        </div>
+
+        <div>
+          <label className="block text-[#00668A] text-sm font-semibold mb-2">Loại giảm giá</label>
+          <div className="flex gap-4 h-[42px] items-center">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="discountType"
+                value="percent"
+                checked={discountType === 'percent'}
+                onChange={() => setDiscountType('percent')}
+                className="text-[#89D4FF] focus:ring-[#89D4FF]"
+              />
+              Theo phần trăm (%)
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="discountType"
+                value="amount"
+                checked={discountType === 'amount'}
+                onChange={() => setDiscountType('amount')}
+                className="text-[#89D4FF] focus:ring-[#89D4FF]"
+              />
+              Số tiền cố định
+            </label>
+          </div>
+        </div>
+
+        {/* Hàng 2 */}
+        <div>
             <label className="block text-[#00668A] text-sm font-semibold mb-2">Tên chương trình <span className="text-red-500">*</span></label>
             <input
               type="text"
@@ -108,9 +152,23 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
               className={`w-full px-4 py-2 border ${errors.name ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
             />
             {errors.name && <p className="text-[#BA1A1A] text-xs mt-1">{errors.name}</p>}
+        </div>
+        <div>
+          <label className="block text-[#00668A] text-sm font-semibold mb-2">Giá trị giảm <span className="text-red-500">*</span></label>
+          <div className="relative">
+            <input
+              type="number"
+              value={discountValue}
+              onChange={(e) => setDiscountValue(Number(e.target.value))}
+              className={`w-full px-4 py-2 border ${errors.discountValue ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-12`}
+            />
+            <span className="absolute right-3 top-2 text-gray-500">{discountType === 'percent' ? '%' : 'VNĐ'}</span>
           </div>
+          {errors.discountValue && <p className="text-[#BA1A1A] text-xs mt-1">{errors.discountValue}</p>}
+        </div>
 
-          <div>
+        {/* Hàng 3 */}
+        <div>
             <label className="block text-[#00668A] text-sm font-semibold mb-2">Số lượng phát hành</label>
             <div className="relative">
               <input
@@ -122,100 +180,9 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
               <span className="absolute right-3 top-2 text-gray-500">Voucher</span>
             </div>
             {errors.quantity && <p className="text-[#BA1A1A] text-xs mt-1">{errors.quantity}</p>}
-          </div>
-
-          <div>
-            <label className="block text-[#00668A] text-sm font-semibold mb-2">Hạn sử dụng</label>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className={`w-1/2 px-4 py-2 border ${errors.startDate ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className={`w-1/2 px-4 py-2 border ${errors.endDate ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
-              />
-            </div>
-            {errors.startDate && <p className="text-[#BA1A1A] text-xs mt-1">{errors.startDate}</p>}
-            {errors.endDate && <p className="text-[#BA1A1A] text-xs mt-1">{errors.endDate}</p>}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isActive"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 text-[#89D4FF] focus:ring-[#89D4FF] border-[#C5EAFF] rounded"
-            />
-            <label htmlFor="isActive" className="text-[#00668A] text-sm font-semibold">Kích hoạt ngay</label>
-          </div>
         </div>
 
-        {/* Cột phải */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[#00668A] text-sm font-semibold mb-2">Loại giảm giá</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="discountType"
-                  value="percent"
-                  checked={discountType === 'percent'}
-                  onChange={() => setDiscountType('percent')}
-                  className="text-[#89D4FF] focus:ring-[#89D4FF]"
-                />
-                Theo phần trăm (%)
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="discountType"
-                  value="amount"
-                  checked={discountType === 'amount'}
-                  onChange={() => setDiscountType('amount')}
-                  className="text-[#89D4FF] focus:ring-[#89D4FF]"
-                />
-                Số tiền cố định
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[#00668A] text-sm font-semibold mb-2">Giá trị giảm <span className="text-red-500">*</span></label>
-            <div className="relative">
-              <input
-                type="number"
-                value={discountValue}
-                onChange={(e) => setDiscountValue(Number(e.target.value))}
-                className={`w-full px-4 py-2 border ${errors.discountValue ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-12`}
-              />
-              <span className="absolute right-3 top-2 text-gray-500">{discountType === 'percent' ? '%' : 'VNĐ'}</span>
-            </div>
-            {errors.discountValue && <p className="text-[#BA1A1A] text-xs mt-1">{errors.discountValue}</p>}
-          </div>
-
-          {discountType === 'percent' && (
-            <div>
-              <label className="block text-[#00668A] text-sm font-semibold mb-2">Mức giảm tối đa</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={maxDiscount}
-                  onChange={(e) => setMaxDiscount(Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-12"
-                />
-                <span className="absolute right-3 top-2 text-gray-500">VNĐ</span>
-              </div>
-            </div>
-          )}
-
-          <div>
+        <div>
             <label className="block text-[#00668A] text-sm font-semibold mb-2">Giá trị đơn hàng tối thiểu</label>
             <div className="relative">
               <input
@@ -226,7 +193,56 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
               />
               <span className="absolute right-3 top-2 text-gray-500">VNĐ</span>
             </div>
+        </div>
+
+        {/* Hàng 4 */}
+        <div>
+          <label className="block text-[#00668A] text-sm font-semibold mb-2">Hạn sử dụng</label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={`w-1/2 px-4 py-2 border ${errors.startDate ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={`w-1/2 px-4 py-2 border ${errors.endDate ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent`}
+            />
           </div>
+          {errors.startDate && <p className="text-[#BA1A1A] text-xs mt-1">{errors.startDate}</p>}
+          {errors.endDate && <p className="text-[#BA1A1A] text-xs mt-1">{errors.endDate}</p>}
+        </div>
+
+        <div>
+          {discountType === 'percent' ? (
+            <>
+              <label className="block text-[#00668A] text-sm font-semibold mb-2">Mức giảm tối đa</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={maxDiscount}
+                  onChange={(e) => setMaxDiscount(Number(e.target.value))}
+                  className="w-full px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-12"
+                />
+                <span className="absolute right-3 top-2 text-gray-500">VNĐ</span>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {/* Hàng 5 */}
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="w-4 h-4 text-[#89D4FF] focus:ring-[#89D4FF] border-[#C5EAFF] rounded"
+          />
+          <label htmlFor="isActive" className="text-[#00668A] text-sm font-semibold">Kích hoạt ngay</label>
         </div>
       </div>
     </Modal>

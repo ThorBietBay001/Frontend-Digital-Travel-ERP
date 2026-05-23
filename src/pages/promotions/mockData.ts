@@ -68,6 +68,10 @@ export interface PageVoucherResponse {
 }
 
 export interface KhuyenMaiKhResponse {
+  maKhachHang?: string;
+  hoTenKhachHang?: string;
+  emailKhachHang?: string;
+  soDienThoaiKhachHang?: string;
   maVoucher?: string;
   maCode?: string;
   loaiUuDai?: string;
@@ -117,6 +121,7 @@ export interface CustomerTarget {
   email: string;
   tier: string;
   phone: string;
+  hasVoucher?: boolean;
 }
 
 export const mockVouchers: Voucher[] = [
