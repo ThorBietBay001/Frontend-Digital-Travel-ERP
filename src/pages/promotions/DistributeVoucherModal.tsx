@@ -55,29 +55,27 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     setError(null);
     setDistributedCount(voucher.distributed);
     setLoading(true);
-    customersService.timKiemKhachHang({ size: 1000 })
-      .then((res) => {
-        if (mode === 'revoke') {
-          setError('Chưa có API danh sách khách hàng đã được phân bổ voucher để thực hiện thu hồi.');
-          setCustomers([]);
-          return;
-        }
-
+    Promise.all([
+      customersService.timKiemKhachHang({ size: 1000 }),
+      promotionsService.danhSachKhachHangDaPhanBo(voucher.id),
+    ])
+      .then(([res, distributedCustomers]) => {
+        const distributedIds = new Set(distributedCustomers.map((item) => item.maKhachHang).filter(Boolean));
         setCustomers((res?.content || []).map((customer) => ({
           id: customer.maKhachHang || '',
           name: customer.hoTen || '',
           email: customer.email || '',
           tier: customer.hangThanhVien || '',
           phone: customer.soDienThoai || '',
-          hasVoucher: false,
+          hasVoucher: distributedIds.has(customer.maKhachHang || ''),
         })).filter((customer) => customer.id));
       })
       .catch((err: unknown) => {
-        const message = formatApiError(err, 'Lỗi tải danh sách khách hàng');
+        const message = err instanceof Error ? err.message : 'Lỗi tải danh sách khách hàng';
         setError(message);
       })
       .finally(() => setLoading(false));
-  }, [isOpen, voucher, mode]);
+  }, [isOpen, voucher]);
 
   if (!voucher) return null;
 

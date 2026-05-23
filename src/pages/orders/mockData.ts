@@ -27,22 +27,6 @@ export interface DonDatTourResponse {
   tenKhachHang?: string;
   ngayDat?: string;
   tongTien?: number;
-<<<<<<< Updated upstream
-=======
-  maVoucher?: string;
-  tenVoucher?: string;
-  giaTriVoucher?: number;
-  soTienGiam?: number;
-  tienGiam?: number;
-  soLuongVeTreEm?: number;
-  tienVeTreEm?: number;
-  diemXanh?: number;
-  soDiemXanh?: number;
-  ghiChuDiemXanh?: string;
-  hanhDongXanh?: HanhDongXanhDatTourResponse[];
-  hanhDongXanhDaChon?: HanhDongXanhDatTourResponse[];
-  danhSachHanhDongXanh?: HanhDongXanhDatTourResponse[];
->>>>>>> Stashed changes
   trangThai?: string;
   thoiGianHetHan?: string;
   ghiChu?: string;
@@ -50,16 +34,6 @@ export interface DonDatTourResponse {
   capNhatVao?: string;
   chiTietKhach?: ChiTietDatTourResponse[];
   chiTietDichVu?: ChiTietDichVuResponse[];
-}
-
-export interface HanhDongXanhDatTourResponse {
-  maHanhDongXanh?: string;
-  tenHanhDong?: string;
-  ten?: string;
-  moTa?: string;
-  diemThuong?: number;
-  diemMacDinh?: number;
-  soDiem?: number;
 }
 
 export interface PageDonDatTourResponse {
@@ -128,19 +102,6 @@ export interface Order {
   departureDate: string;
   bookingDate: string;
   totalAmount: number;
-<<<<<<< Updated upstream
-=======
-  voucherCode?: string;
-  voucherName?: string;
-  voucherDiscount?: number;
-  childTicketCount?: number;
-  childTicketAmount?: number;
-  greenPoints?: number;
-  greenNote?: string;
-  greenActionNames?: string[];
-  roomType?: string;
-  roomSurcharge?: number;
->>>>>>> Stashed changes
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   paymentStatus: 'paid' | 'unpaid' | 'partial' | 'refunded';
   passengerCount: number;
