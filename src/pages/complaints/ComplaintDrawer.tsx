@@ -85,7 +85,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
@@ -93,11 +93,14 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
       />
       
       {/* Panel */}
-      <div className="relative w-full max-w-[800px] h-full bg-white shadow-2xl flex flex-col transform transition-transform duration-300">
+      <div className="relative w-full max-w-[900px] max-h-[90vh] bg-white shadow-2xl rounded-2xl flex flex-col transform transition-transform duration-300 overflow-hidden">
         
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-[#E1F1FF]">
-          <h2 className="text-xl font-bold text-[#121C2C]">Chi tiết khiếu nại - {complaint.code}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-[#121C2C]">Chi tiết khiếu nại - {complaint.code}</h2>
+            <span className="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 text-gray-700">Trạng thái: {complaint.status}</span>
+          </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
             <X size={20} />
           </button>

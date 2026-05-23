@@ -68,36 +68,51 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
           setLoading(false);
         });
 
-      // Fetch tour history
+      // Fetch tour history and complaints
       setTourHistoryLoading(true);
       setTourHistoryError(false);
-      api.get<{ data: { content?: LichSuTourItem[] } }>('/api/khach-hang/lich-su-tour', { params: { maKhachHang: customer.id, size: 50 } })
+      setComplaintsLoading(true);
+      setComplaintsError(false);
+      
+      api.get<{ data: { content?: any[] } }>('/api/kinh-doanh/don-dat-tour', { params: { size: 100 } })
         .then((res) => {
-          const items = res.data?.data?.content ?? [];
-          setTourHistory(items);
+          const allOrders = res.data?.data?.content ?? [];
+          const customerOrders = allOrders.filter(o => o.maKhachHang === customer.id);
+          const mappedHistory: LichSuTourItem[] = customerOrders.map(o => ({
+            maLichSuTour: o.maDatTour,
+            maTourThucTe: o.maTourThucTe,
+            tieuDeTour: o.tieuDeTour,
+            ngayKhoiHanh: o.ngayKhoiHanh,
+            thoiLuong: o.thoiLuong,
+            ngayThamGia: o.ngayDat,
+            trangThai: o.trangThai
+          }));
+          setTourHistory(mappedHistory);
+          
+          const customerOrderCodes = customerOrders.map(o => o.maDatTour);
+          api.get<{ data: { content?: YeuCauHoTroItem[] } }>('/api/kinh-doanh/yeu-cau-ho-tro', { params: { size: 100 } })
+            .then((res2) => {
+              const allComplaints = res2.data?.data?.content ?? [];
+              const customerComplaints = allComplaints.filter(c => customerOrderCodes.includes(c.maDatTour));
+              setComplaints(customerComplaints);
+            })
+            .catch(() => {
+              setComplaints([]);
+              setComplaintsError(true);
+            })
+            .finally(() => {
+              setComplaintsLoading(false);
+            });
         })
         .catch(() => {
           setTourHistory([]);
           setTourHistoryError(true);
+          setComplaints([]);
+          setComplaintsError(true);
+          setComplaintsLoading(false);
         })
         .finally(() => {
           setTourHistoryLoading(false);
-        });
-
-      // Fetch complaints
-      setComplaintsLoading(true);
-      setComplaintsError(false);
-      api.get<{ data: { content?: YeuCauHoTroItem[] } }>('/api/khach-hang/yeu-cau-ho-tro', { params: { maKhachHang: customer.id, size: 50 } })
-        .then((res) => {
-          const items = res.data?.data?.content ?? [];
-          setComplaints(items);
-        })
-        .catch(() => {
-          setComplaints([]);
-          setComplaintsError(true);
-        })
-        .finally(() => {
-          setComplaintsLoading(false);
         });
     } else {
       setDetailData(null);
@@ -248,20 +263,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
               <div>
                 <p className="text-xs text-gray-500">Ngày sinh</p>
                 <p className="text-sm font-medium text-gray-800">{displayData.birthday || '—'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <User size={16} className="text-gray-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500">Giới tính</p>
-                <p className="text-sm font-medium text-gray-800">{displayData.gender || '—'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <MapPin size={16} className="text-gray-400 mt-0.5" />
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-500">Địa chỉ</span>
-                <span className="font-medium text-gray-800 line-clamp-2" title={displayData.address}>{displayData.address || '—'}</span>
               </div>
             </div>
           </div>

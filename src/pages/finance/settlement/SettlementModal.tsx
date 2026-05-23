@@ -41,36 +41,6 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
   const totalActualOverBudget = localActual > localAllotment;
   const isLoss = grossProfit < 0;
 
-  const costColumns: Column<SettlementTour['actualCostItems'][number]>[] = [
-    {
-      key: 'category',
-      title: 'Hạng mục chi',
-      dataIndex: 'category',
-    },
-    {
-      key: 'amount',
-      title: 'Số tiền',
-      align: 'right',
-      render: (record) => <span className="font-semibold text-gray-800">{record.amount.toLocaleString('vi-VN')}</span>,
-    },
-    {
-      key: 'status',
-      title: 'Trạng thái duyệt',
-      render: (record) => (
-        record.status === 'approved'
-          ? <Badge label="Đã duyệt" variant="success" />
-          : <Badge label="Chờ duyệt" variant="warning" />
-      ),
-    },
-    {
-      key: 'warning',
-      title: 'Cảnh báo',
-      render: (record) => (
-        record.warning ? <span className="text-xs text-red-600 font-medium">{record.warning}</span> : '-'
-      ),
-    },
-  ];
-
   const handleRecalculate = () => {
     setGrossProfit(localRevenue - localAllotment - localActual);
   };
@@ -234,15 +204,23 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={18} className="text-amber-500" />
-              <h3 className="text-[20px] font-semibold text-gray-900">Danh sách chi phí thực tế</h3>
+            <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
+              <h3 className="text-[20px] font-semibold text-gray-900 mb-4">Đánh giá & Thưởng/Phạt HDV</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border border-[#E1F1FF] rounded-lg bg-[#F9F9FF]">
+                  <div>
+                    <p className="font-bold text-[#121C2C]">{tour.guideName}</p>
+                    <p className="text-xs text-gray-500">{tour.guideCode}</p>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <Badge label={isLoss ? 'Phạt (Vượt chi)' : 'Thưởng (Tiết kiệm)'} variant={isLoss ? 'error' : 'success'} />
+                    <span className={`text-sm font-semibold mt-1 ${isLoss ? 'text-red-600' : 'text-emerald-700'}`}>
+                      {isLoss ? '- 500.000 VND' : '+ 1.000.000 VND'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <Table
-              columns={costColumns}
-              dataSource={tour.actualCostItems}
-              rowKey={(record) => record.category}
-            />
           </div>
         </div>
       </Modal>
