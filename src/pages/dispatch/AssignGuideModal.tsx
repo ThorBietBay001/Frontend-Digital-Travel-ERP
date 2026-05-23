@@ -32,7 +32,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
   // Tính match point (Mock)
   const suggestedGuides = availableGuides.map(g => {
     let match = 50; // default base point
-    const status = g.trangThaiLamViec === 'AVAILABLE' ? 'available' : g.trangThaiLamViec === 'BUSY' ? 'busy' : 'resting';
+    const status = g.trangThaiLamViec === 'HOAT_DONG' ? 'available' : g.trangThaiLamViec === 'BAN' ? 'busy' : 'resting';
     if (status === 'available') match += 20;
     if (status === 'resting') match -= 10;
     if (status === 'busy') match -= 40;

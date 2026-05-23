@@ -134,20 +134,26 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
             {/* Lịch sử điều tra (Timeline) */}
             <div>
               <h3 className="font-bold text-[#121C2C] mb-4 text-sm">Lịch sử điều tra</h3>
-              <div className="relative border-l border-gray-200 ml-3 space-y-6">
-                {complaint.timeline.map((item, index) => {
-                  const isLast = index === complaint.timeline.length - 1;
-                  return (
-                    <div key={index} className="relative pl-6">
-                      <div className={`absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white ${isLast ? 'bg-[#00668A]' : 'bg-gray-300'}`}></div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-800">{item.action}</span>
-                        <span className="text-xs text-gray-500 mt-0.5">{item.timestamp}</span>
+              {complaint.timeline && complaint.timeline.length > 0 ? (
+                <div className="relative border-l border-gray-200 ml-3 space-y-6">
+                  {complaint.timeline.map((item, index) => {
+                    const isLast = index === complaint.timeline.length - 1;
+                    return (
+                      <div key={index} className="relative pl-6">
+                        <div className={`absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white ${isLast ? 'bg-[#00668A]' : 'bg-gray-300'}`}></div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-800">{item.action}</span>
+                          <span className="text-xs text-gray-500 mt-0.5">{item.timestamp}</span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-500 italic border border-dashed border-gray-300 rounded-lg bg-gray-50">
+                  Tính năng đang phát triển (Backend chưa hỗ trợ lưu Lịch sử)
+                </div>
+              )}
             </div>
 
           </div>

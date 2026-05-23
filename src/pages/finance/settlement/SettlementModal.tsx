@@ -12,9 +12,10 @@ export interface SettlementModalProps {
   onClose: () => void;
   tour: SettlementTour | null;
   onSettle?: (id: string, status: 'completed' | 'pending_info' | 'over_budget', note?: string) => void;
+  readonly?: boolean;
 }
 
-const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour, onSettle }) => {
+const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour, onSettle, readonly = false }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState('');
@@ -97,43 +98,55 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
     onClose();
   };
 
+  const renderFooter = () => {
+    if (readonly) {
+      return (
+        <div className="w-full flex justify-end">
+          <Button variant="secondary" onClick={onClose}>Đóng</Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm text-amber-700">
+          {totalActualOverBudget && 'Cảnh báo: Tổng chi phí thực tế vượt ngân sách cam kết.'}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button variant="secondary" icon={<FileText size={16} />} onClick={handleRequireInfo}>
+            Yêu cầu bổ sung
+          </Button>
+          {totalActualOverBudget && (
+            <Button
+              variant="secondary"
+              className="border-amber-400 text-amber-700 hover:bg-amber-50"
+              icon={<AlertTriangle size={16} />}
+              onClick={handleOverBudgetApproval}
+            >
+              Trình duyệt vượt chi
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            className="bg-[#00668A] hover:bg-[#005173]"
+            onClick={() => setConfirmOpen(true)}
+            icon={<CheckCircle size={16} />}
+          >
+            Hoàn tất quyết toán
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Quyết toán tour"
+        title={readonly ? 'Chi tiết quyết toán' : 'Quyết toán tour'}
         size="3xl"
-        footer={(
-          <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-amber-700">
-              {totalActualOverBudget && 'Cảnh báo: Tổng chi phí thực tế vượt ngân sách cam kết.'}
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button variant="secondary" icon={<FileText size={16} />} onClick={handleRequireInfo}>
-                Yêu cầu bổ sung
-              </Button>
-              {totalActualOverBudget && (
-                <Button
-                  variant="secondary"
-                  className="border-amber-400 text-amber-700 hover:bg-amber-50"
-                  icon={<AlertTriangle size={16} />}
-                  onClick={handleOverBudgetApproval}
-                >
-                  Trình duyệt vượt chi
-                </Button>
-              )}
-              <Button
-                variant="primary"
-                className="bg-[#00668A] hover:bg-[#005173]"
-                onClick={() => setConfirmOpen(true)}
-                icon={<CheckCircle size={16} />}
-              >
-                Hoàn tất quyết toán
-              </Button>
-            </div>
-          </div>
-        )}
+        footer={renderFooter()}
       >
         <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6">
           <div className="flex flex-col gap-4">
@@ -152,15 +165,23 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
                   <span className="text-gray-500">HDV</span>
                   <span className="font-medium text-gray-800">{tour.guideName} ({tour.guideCode})</span>
                 </div>
+                {readonly && (
+                  <div className="flex justify-between pt-2 border-t border-[#E1F1FF]">
+                    <span className="text-gray-500">Trạng thái</span>
+                    <Badge label="Đã quyết toán" variant="success" />
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-[20px] font-semibold text-gray-900">Tổng hợp tài chính</h3>
-                <Button variant="ghost" size="sm" icon={<RefreshCw size={16} />} onClick={handleRecalculate}>
-                  Tính toán lại
-                </Button>
+                {!readonly && (
+                  <Button variant="ghost" size="sm" icon={<RefreshCw size={16} />} onClick={handleRecalculate}>
+                    Tính toán lại
+                  </Button>
+                )}
               </div>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
@@ -184,23 +205,32 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
               </div>
             </div>
 
-            <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-              <label className="text-sm font-semibold text-gray-700">Ghi chú</label>
-              <textarea
-                value={note}
-                onChange={(event) => {
-                  setNote(event.target.value);
-                  if (noteError) setNoteError('');
-                }}
-                placeholder="Nhập ghi chú..."
-                className={`mt-2 w-full min-h-[110px] rounded-[12px] border px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 ${
-                  noteError
-                    ? 'border-red-300 focus:border-red-300 focus:ring-red-200'
-                    : 'border-[#C5EAFF] focus:border-[#89D4FF] focus:ring-[#89D4FF]/20'
-                }`}
-              />
-              {noteError && <p className="mt-2 text-xs text-red-600">{noteError}</p>}
-            </div>
+            {!readonly && (
+              <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
+                <label className="text-sm font-semibold text-gray-700">Ghi chú</label>
+                <textarea
+                  value={note}
+                  onChange={(event) => {
+                    setNote(event.target.value);
+                    if (noteError) setNoteError('');
+                  }}
+                  placeholder="Nhập ghi chú..."
+                  className={`mt-2 w-full min-h-[110px] rounded-[12px] border px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 ${
+                    noteError
+                      ? 'border-red-300 focus:border-red-300 focus:ring-red-200'
+                      : 'border-[#C5EAFF] focus:border-[#89D4FF] focus:ring-[#89D4FF]/20'
+                  }`}
+                />
+                {noteError && <p className="mt-2 text-xs text-red-600">{noteError}</p>}
+              </div>
+            )}
+
+            {readonly && tour.settlementNote && (
+              <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
+                <label className="text-sm font-semibold text-gray-700">Ghi chú quyết toán</label>
+                <p className="mt-2 text-sm text-gray-700">{tour.settlementNote}</p>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-4">

@@ -11,6 +11,7 @@ import TourInstanceGreenActionTab from './TourInstanceGreenActionTab';
 import TourInstanceServiceTab from './TourInstanceServiceTab';
 import { tourTemplateService } from '../../services/tour-template';
 import type { TourMauResponse } from '../../services/tour-template';
+import { tourInstanceService } from '../../services/tour-instance';
 
 export interface TourInstanceDetailModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
   const [editingDayData, setEditingDayData] = useState<DaySchedule | null>(null);
   const [templates, setTemplates] = useState<TourMauResponse[]>([]);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   useEffect(() => {
     tourTemplateService.danhSach().then(res => {
@@ -67,7 +69,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     }
     if (initialData && mode === 'edit') {
       setFormData({ ...initialData });
-      tourInstanceService.chiTiet(initialData.id).then(res => {
+      setIsLoadingDetail(true);
+      tourInstanceService.chiTietCongKhai(initialData.id).then(res => {
         if (res) {
            const rawSchedule = (res as any).lichTrinh;
            if (rawSchedule && Array.isArray(rawSchedule) && rawSchedule.length > 0) {
@@ -90,7 +93,9 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
              }));
            }
         }
-      }).catch(console.error);
+      }).catch(console.error).finally(() => {
+        setIsLoadingDetail(false);
+      });
     } else {
       setFormData({
         name: '',
@@ -241,7 +246,14 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
             {renderTabs()}
 
             <div className="flex-1 overflow-y-auto pr-2 pb-4">
-              {activeTab === 'info' && (
+              {isLoadingDetail ? (
+                <div className="flex items-center justify-center h-full text-[#00668A]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A] mr-3"></div>
+                  Đang tải dữ liệu...
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'info' && (
                 <div className="flex flex-col gap-5">
                   {mode === 'create' && (
                     <div>
@@ -279,7 +291,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                       />
                       {errors.endDate && <span className="text-xs text-red-500 mt-1 block">{errors.endDate}</span>}
                     </div>
-                    {mode === 'create' && (
+                    {(mode === 'create' || mode === 'edit') && (
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Trạng thái <span className="text-red-500">*</span></label>
                         <Select
@@ -290,6 +302,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                           ]}
                           value={formData.status}
                           onChange={(value) => handleChange('status', value)}
+                          disabled={isStatusDisabled}
                         />
                       </div>
                     )}
@@ -401,6 +414,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                   />
                 </div>
               )}
+                </>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-[#E1F1FF] mt-4">
@@ -455,8 +470,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                 <input
                   type="text"
                   className="w-full px-3 py-1.5 border border-[#C5EAFF] rounded text-xs focus:outline-none focus:border-[#89D4FF]"
-                  value={editingDayData.meals.breakfast}
-                  onChange={(e) => setEditingDayData({ ...editingDayData, meals: { ...editingDayData.meals, breakfast: e.target.value } })}
+                  value={editingDayData.meals?.breakfast || ''}
+                  onChange={(e) => setEditingDayData({ ...editingDayData, meals: { ...(editingDayData.meals || {}), breakfast: e.target.value } })}
                 />
               </div>
               <div>
@@ -464,8 +479,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                 <input
                   type="text"
                   className="w-full px-3 py-1.5 border border-[#C5EAFF] rounded text-xs focus:outline-none focus:border-[#89D4FF]"
-                  value={editingDayData.meals.lunch}
-                  onChange={(e) => setEditingDayData({ ...editingDayData, meals: { ...editingDayData.meals, lunch: e.target.value } })}
+                  value={editingDayData.meals?.lunch || ''}
+                  onChange={(e) => setEditingDayData({ ...editingDayData, meals: { ...(editingDayData.meals || {}), lunch: e.target.value } })}
                 />
               </div>
               <div>
@@ -473,8 +488,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                 <input
                   type="text"
                   className="w-full px-3 py-1.5 border border-[#C5EAFF] rounded text-xs focus:outline-none focus:border-[#89D4FF]"
-                  value={editingDayData.meals.dinner}
-                  onChange={(e) => setEditingDayData({ ...editingDayData, meals: { ...editingDayData.meals, dinner: e.target.value } })}
+                  value={editingDayData.meals?.dinner || ''}
+                  onChange={(e) => setEditingDayData({ ...editingDayData, meals: { ...(editingDayData.meals || {}), dinner: e.target.value } })}
                 />
               </div>
             </div>

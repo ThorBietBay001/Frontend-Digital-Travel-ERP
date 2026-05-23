@@ -53,6 +53,7 @@ const AssignGuide: React.FC = () => {
   const [selectedTour, setSelectedTour] = useState<TourNeedGuide | null>(null);
   const [availableGuides, setAvailableGuides] = useState<NhanVienResponse[]>([]);
   const [guidesLoading, setGuidesLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const { user } = useAuth();
 
@@ -83,11 +84,19 @@ const AssignGuide: React.FC = () => {
     setGuidesLoading(true);
     setAvailableGuides([]);
     try {
+      if (!tour.id) {
+        setToastMessage('Không thể tải danh sách HDV khả dụng: Mã tour không hợp lệ.');
+        setTimeout(() => setToastMessage(null), 4000);
+        setGuidesLoading(false);
+        return;
+      }
       const res = await dispatchService.hdvKhaDung({ maTourThucTe: tour.id });
       setAvailableGuides(res);
     } catch (err: unknown) {
       console.error(formatApiError(err));
       setAvailableGuides([]);
+      setToastMessage('Không thể tải danh sách HDV khả dụng. Vui lòng thử lại sau.');
+      setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setGuidesLoading(false);
     }
@@ -97,9 +106,11 @@ const AssignGuide: React.FC = () => {
     try {
       await dispatchService.phanCong({ maTourThucTe: tourId, maNhanVien: guideId });
       setModalOpen(false);
+      setToastMessage(null);
       await fetchTours();
     } catch (err: unknown) {
-      alert('Lỗi phân công: ' + formatApiError(err));
+      setToastMessage('Lỗi phân công: ' + formatApiError(err));
+      setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
@@ -210,6 +221,12 @@ const AssignGuide: React.FC = () => {
         availableGuides={availableGuides}
         guidesLoading={guidesLoading}
       />
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-up flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          {toastMessage}
+        </div>
+      )}
     </MainLayout>
   );
 };

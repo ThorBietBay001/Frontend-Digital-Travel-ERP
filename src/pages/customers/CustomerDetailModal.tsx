@@ -1,9 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { User, Phone, Mail, MapPin, CreditCard, Leaf, Cake, AlertCircle } from 'lucide-react';
+import { Table } from '../../components/ui/Table';
+import type { Column } from '../../components/ui/Table';
+import { User, Phone, Mail, MapPin, CreditCard, Leaf, Cake, AlertCircle, MapPinned } from 'lucide-react';
 import type { Customer } from './mockData';
+import { customersService } from '../../services/customers';
+import api from '../../services/api';
+import { mapSupportRequestStatus } from '../../utils/statusMapping';
+
+interface LichSuTourItem {
+  maLichSuTour: string;
+  maTourThucTe: string;
+  tieuDeTour: string;
+  ngayKhoiHanh: string;
+  thoiLuong: number;
+  ngayThamGia: string;
+}
+
+interface YeuCauHoTroItem {
+  maYeuCau: string;
+  loaiYeuCau: string;
+  noiDung: string;
+  trangThai: string;
+  maDatTour: string;
+}
 
 interface CustomerDetailModalProps {
   isOpen: boolean;
@@ -12,7 +34,72 @@ interface CustomerDetailModalProps {
 }
 
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClose, customer }) => {
-  if (!customer) return null;
+  const [detailData, setDetailData] = useState<Customer | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [tourHistory, setTourHistory] = useState<LichSuTourItem[]>([]);
+  const [tourHistoryLoading, setTourHistoryLoading] = useState(false);
+  const [complaints, setComplaints] = useState<YeuCauHoTroItem[]>([]);
+  const [complaintsLoading, setComplaintsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && customer?.id) {
+      setLoading(true);
+      customersService.chiTietKhachHang(customer.id)
+        .then((res) => {
+          if (res) {
+            setDetailData({
+              ...customer,
+              idCard: res.cccd || customer.idCard,
+              birthday: res.ngaySinh ? res.ngaySinh.toString() : customer.birthday,
+              greenPoints: res.diemXanh || customer.greenPoints,
+            });
+          } else {
+            setDetailData(customer);
+          }
+        })
+        .catch(() => {
+          setDetailData(customer);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+
+      // Fetch tour history
+      setTourHistoryLoading(true);
+      api.get<{ data: { content?: LichSuTourItem[] } }>('/api/khach-hang/lich-su-tour', { params: { size: 50 } })
+        .then((res) => {
+          const items = res.data?.data?.content ?? [];
+          setTourHistory(items);
+        })
+        .catch(() => {
+          setTourHistory([]);
+        })
+        .finally(() => {
+          setTourHistoryLoading(false);
+        });
+
+      // Fetch complaints
+      setComplaintsLoading(true);
+      api.get<{ data: { content?: YeuCauHoTroItem[] } }>('/api/kinh-doanh/yeu-cau-ho-tro', { params: { size: 50 } })
+        .then((res) => {
+          const items = res.data?.data?.content ?? [];
+          setComplaints(items);
+        })
+        .catch(() => {
+          setComplaints([]);
+        })
+        .finally(() => {
+          setComplaintsLoading(false);
+        });
+    } else {
+      setDetailData(null);
+      setTourHistory([]);
+      setComplaints([]);
+    }
+  }, [isOpen, customer]);
+
+  if (!customer && !detailData) return null;
+  const displayData = detailData || customer!;
 
   const renderTierBadge = (tier: string) => {
     switch (tier) {
@@ -24,24 +111,73 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
     }
   };
 
-  const renderComplaintStatus = (status: string) => {
-    switch (status) {
-      case 'pending': return <Badge label="Chờ tiếp nhận" variant="warning" />;
-      case 'processing': return <Badge label="Đang xử lý" variant="info" />;
-      case 'resolved': return <Badge label="Đã giải quyết" variant="success" />;
-      case 'rejected': return <Badge label="Từ chối" variant="error" />;
-      default: return <Badge label="Không rõ" variant="neutral" />;
-    }
-  };
+  const tourColumns: Column<LichSuTourItem>[] = [
+    {
+      key: 'tieuDeTour',
+      title: 'Tên tour',
+      render: (record) => (
+        <span className="font-medium text-gray-800">{record.tieuDeTour || record.maTourThucTe}</span>
+      ),
+    },
+    {
+      key: 'ngayKhoiHanh',
+      title: 'Ngày khởi hành',
+      render: (record) => <span className="text-sm text-gray-600">{record.ngayKhoiHanh || '—'}</span>,
+    },
+    {
+      key: 'thoiLuong',
+      title: 'Thời lượng',
+      render: (record) => <span className="text-sm text-gray-600">{record.thoiLuong ? `${record.thoiLuong} ngày` : '—'}</span>,
+    },
+    {
+      key: 'ngayThamGia',
+      title: 'Ngày tham gia',
+      render: (record) => <span className="text-sm text-gray-600">{record.ngayThamGia || '—'}</span>,
+    },
+  ];
+
+  const complaintColumns: Column<YeuCauHoTroItem>[] = [
+    {
+      key: 'maYeuCau',
+      title: 'Mã KN',
+      render: (record) => <span className="font-semibold text-[#00668A]">{record.maYeuCau}</span>,
+    },
+    {
+      key: 'noiDung',
+      title: 'Nội dung',
+      render: (record) => (
+        <span className="text-sm text-gray-700 line-clamp-2" title={record.noiDung}>{record.noiDung || '—'}</span>
+      ),
+    },
+    {
+      key: 'trangThai',
+      title: 'Trạng thái',
+      align: 'center',
+      render: (record) => {
+        const mapped = mapSupportRequestStatus(record.trangThai);
+        return <Badge label={mapped.label} variant={mapped.variant} />;
+      },
+    },
+    {
+      key: 'loaiYeuCau',
+      title: 'Loại yêu cầu',
+      render: (record) => <span className="text-sm text-gray-600">{record.loaiYeuCau || '—'}</span>,
+    },
+  ];
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Hồ Sơ Khách Hàng - ${customer.code} - ${customer.name}`}
+      title={`Hồ Sơ Khách Hàng - ${displayData.code} - ${displayData.name}`}
       size={'3xl' as any}
       footer={<Button variant="primary" onClick={onClose}>Đóng</Button>}
     >
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-700 font-sans">
         
         {/* Left Column - 1/3 */}
@@ -49,14 +185,14 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
           {/* Avatar and Basic info */}
           <div className="flex flex-col items-center text-center p-4 bg-[#F9F9FF] border border-[#E1F1FF] rounded-[16px]">
             <div className="w-24 h-24 bg-[#E8F6FF] text-[#00668A] flex items-center justify-center rounded-full mb-3 shadow-sm border-2 border-white text-3xl font-bold">
-              {customer.avatar ? (
-                <img src={customer.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+              {displayData.avatar ? (
+                <img src={displayData.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
-                customer.name.charAt(0).toUpperCase()
+                displayData.name.charAt(0).toUpperCase()
               )}
             </div>
-            <h3 className="text-lg font-bold text-[#121C2C] mb-2">{customer.name}</h3>
-            {renderTierBadge(customer.membershipTier)}
+            <h3 className="text-lg font-bold text-[#121C2C] mb-2">{displayData.name}</h3>
+            {renderTierBadge(displayData.membershipTier)}
           </div>
 
 
@@ -67,42 +203,42 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
               <Phone size={16} className="text-gray-400 mt-0.5" />
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">Điện thoại</span>
-                <span className="font-medium text-gray-800">{customer.phone}</span>
+                <span className="font-medium text-gray-800">{displayData.phone}</span>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <Mail size={16} className="text-gray-400 mt-0.5" />
               <div className="flex flex-col flex-1 overflow-hidden">
                 <span className="text-xs text-gray-500">Email</span>
-                <span className="font-medium text-gray-800 truncate" title={customer.email}>{customer.email}</span>
+                <span className="font-medium text-gray-800 truncate" title={displayData.email}>{displayData.email}</span>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <CreditCard size={16} className="text-gray-400 mt-0.5" />
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">CCCD/Passport</span>
-                <span className="font-medium text-gray-800">{customer.idCard || '—'}</span>
+                <span className="font-medium text-gray-800">{displayData.idCard || '—'}</span>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Cake size={16} className="text-gray-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Ngày sinh</p>
-                <p className="text-sm font-medium text-gray-800">{customer.birthday || '—'}</p>
+                <p className="text-sm font-medium text-gray-800">{displayData.birthday || '—'}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <User size={16} className="text-gray-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Giới tính</p>
-                <p className="text-sm font-medium text-gray-800">{customer.gender || '—'}</p>
+                <p className="text-sm font-medium text-gray-800">{displayData.gender || '—'}</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <MapPin size={16} className="text-gray-400 mt-0.5" />
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">Địa chỉ</span>
-                <span className="font-medium text-gray-800 line-clamp-2" title={customer.address}>{customer.address || '—'}</span>
+                <span className="font-medium text-gray-800 line-clamp-2" title={displayData.address}>{displayData.address || '—'}</span>
               </div>
             </div>
           </div>
@@ -114,7 +250,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
             </div>
             <div>
               <p className="text-xs font-medium text-gray-600 mb-0.5">Điểm Xanh (Green Points)</p>
-              <p className="text-base font-bold text-[#16A34A]">🍃 + {customer.greenPoints.toLocaleString('vi-VN')} điểm</p>
+              <p className="text-base font-bold text-[#16A34A]">🍃 + {displayData.greenPoints?.toLocaleString('vi-VN')} điểm</p>
             </div>
           </div>
 
@@ -122,47 +258,29 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
 
         {/* Right Column - 2/3 */}
         <div className="md:col-span-2 flex flex-col gap-6">
+          {/* Lịch sử đi tour */}
           <div className="bg-white border border-[#E1F1FF] rounded-[16px] shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-[#E1F1FF] bg-[#F9F9FF]">
+            <div className="p-4 border-b border-[#E1F1FF] bg-[#F9F9FF] flex items-center gap-2">
+              <MapPinned size={18} className="text-[#00668A]" />
               <h3 className="font-bold text-[#121C2C] text-base">Lịch sử đi tour</h3>
             </div>
-            <div className="flex-1 p-0 overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 text-gray-600 font-medium">
-                  <tr>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF]">Mã Tour</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF]">Tên Tour</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF]">Ngày đi</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF] text-center">Trạng thái</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF] text-right">Tổng tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customer.tourHistory && customer.tourHistory.length > 0 ? (
-                    customer.tourHistory.map((tour, idx) => (
-                      <tr key={idx} className="hover:bg-[#F4F9FF] transition-colors border-b border-[#E1F1FF] last:border-b-0">
-                        <td className="px-4 py-3 font-semibold text-[#00668A]">{tour.tourCode}</td>
-                        <td className="px-4 py-3 text-gray-800 max-w-[200px] truncate" title={tour.tourName}>{tour.tourName}</td>
-                        <td className="px-4 py-3 text-gray-600">{tour.startDate}</td>
-                        <td className="px-4 py-3 text-center">
-                          <Badge 
-                            label={tour.status === 'completed' ? 'Đã đi' : 'Đã hủy'} 
-                            variant={tour.status === 'completed' ? 'success' : 'error'} 
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-gray-800">{tour.amount.toLocaleString('vi-VN')} đ</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500 italic">
-                        Khách hàng này chưa có lịch sử đi tour.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {tourHistoryLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00668A]"></div>
+                <span className="ml-3 text-sm text-gray-500">Đang tải...</span>
+              </div>
+            ) : tourHistory.length > 0 ? (
+              <Table<LichSuTourItem>
+                columns={tourColumns}
+                dataSource={tourHistory}
+                rowKey="maLichSuTour"
+                emptyText="Không có lịch sử tour"
+              />
+            ) : (
+              <div className="flex-1 p-8 text-center text-gray-500 italic">
+                Chưa có lịch sử đi tour
+              </div>
+            )}
           </div>
 
           {/* Lịch sử khiếu nại */}
@@ -171,43 +289,29 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
               <AlertCircle size={18} className="text-orange-500" />
               <h3 className="font-bold text-[#121C2C] text-base">Lịch sử khiếu nại</h3>
             </div>
-            <div className="flex-1 p-0 overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 text-gray-600 font-medium">
-                  <tr>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF]">Mã KN</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF]">Ngày gửi</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF]">Nội dung</th>
-                    <th className="px-4 py-3 border-b border-[#E1F1FF] text-center">Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customer.complaints && customer.complaints.length > 0 ? (
-                    customer.complaints.map((complaint, idx) => (
-                      <tr key={idx} className="hover:bg-[#F4F9FF] transition-colors border-b border-[#E1F1FF] last:border-b-0">
-                        <td className="px-4 py-3 font-semibold text-[#00668A]">{complaint.code}</td>
-                        <td className="px-4 py-3 text-gray-600">{complaint.date}</td>
-                        <td className="px-4 py-3 text-gray-800 max-w-[250px] truncate" title={complaint.description}>{complaint.description}</td>
-                        <td className="px-4 py-3 text-center">
-                          {renderComplaintStatus(complaint.status)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-gray-500 italic">
-                        Khách hàng này chưa có khiếu nại nào.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {complaintsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00668A]"></div>
+                <span className="ml-3 text-sm text-gray-500">Đang tải...</span>
+              </div>
+            ) : complaints.length > 0 ? (
+              <Table<YeuCauHoTroItem>
+                columns={complaintColumns}
+                dataSource={complaints}
+                rowKey="maYeuCau"
+                emptyText="Không có khiếu nại"
+              />
+            ) : (
+              <div className="flex-1 p-8 text-center text-gray-500 italic">
+                Chưa có khiếu nại
+              </div>
+            )}
           </div>
 
         </div>
 
       </div>
+      )}
     </Modal>
   );
 };

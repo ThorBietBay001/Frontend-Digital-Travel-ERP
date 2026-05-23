@@ -17,9 +17,11 @@ import { hasAccess } from '../../config/rolePermissions';
 
 const mapTier = (s?: string): Customer['membershipTier'] => {
   switch (s?.toUpperCase()) {
-    case 'DIAMOND': return 'diamond';
-    case 'GOLD': return 'gold';
-    case 'SILVER': return 'silver';
+    case 'KIM_CUONG': return 'diamond';
+    case 'VANG': return 'gold';
+    case 'BAC': return 'silver';
+    case 'DONG': return 'bronze';
+    case 'THANH_VIEN': return 'bronze';
     default: return 'bronze';
   }
 };
@@ -48,6 +50,8 @@ const CustomerList: React.FC = () => {
     status: 'active',
     tourHistory: [],
     complaints: [],
+    idCard: api.cccd || '',
+    birthday: api.ngaySinh ? api.ngaySinh.toString() : '',
   });
 
   const { user } = useAuth();

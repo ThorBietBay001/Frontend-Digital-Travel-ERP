@@ -44,6 +44,11 @@ export const tourInstanceService = {
     return unwrapApiData(response);
   },
 
+  chiTietCongKhai: async (id: string): Promise<any | undefined> => {
+    const response = await api.get<any>(`/api/public/tour/${id}`);
+    return unwrapApiData(response);
+  },
+
   capNhat: async (id: string, data: CapNhatTourThucTeRequest): Promise<TourThucTeResponse | undefined> => {
     const response = await api.put<ApiResponseTourThucTeResponse>(`/api/dieu-hanh/tour-thuc-te/${id}`, data);
     return unwrapApiData(response);

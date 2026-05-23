@@ -7,6 +7,7 @@ import { Select } from '../../../components/ui/Select';
 import { Pagination } from '../../../components/ui/Pagination';
 import { Table } from '../../../components/ui/Table';
 import CostApprovalModal from './CostApprovalModal';
+import { Eye } from 'lucide-react';
 import type { Column } from '../../../components/ui/Table';
 import type { CostItem } from './mockData';
 import { financeService } from '../../../services/finance';
@@ -43,9 +44,9 @@ const CostList: React.FC = () => {
     try {
       const res = await financeService.danhSachChiPhi();
       const mapped = (res?.content || []).map((c: ChiPhiThucTeResponse): CostItem => {
-        let status: CostItem['status'] = 'pending';
-        if (c.trangThaiDuyet === 'DUYET') status = 'approved';
+        if (c.trangThaiDuyet === 'DA_DUYET') status = 'approved';
         else if (c.trangThaiDuyet === 'TU_CHOI') status = 'rejected';
+        else if (c.trangThaiDuyet === 'CHO_DUYET') status = 'pending';
         
         return {
           id: c.maChiPhi || '',
@@ -100,20 +101,9 @@ const CostList: React.FC = () => {
 
       const matchesStatus = statusFilter === '' || statusFilter === 'all' || cost.status === statusFilter;
 
-      let matchesMonth = true;
-      if (monthFilter) {
-        const parts = cost.submittedDate.split('/');
-        if (parts.length === 3) {
-          const monthKey = `${parts[2]}-${parts[1]}`;
-          matchesMonth = monthKey === monthFilter;
-        }
-      }
-
-      const matchesWarning = !warningOnly || cost.status === 'warning' || cost.status === 'error';
-
-      return matchesSearch && matchesStatus && matchesMonth && matchesWarning;
+      return matchesSearch && matchesStatus;
     });
-  }, [costs, monthFilter, searchTerm, statusFilter, warningOnly]);
+  }, [costs, searchTerm, statusFilter]);
 
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
 
@@ -177,11 +167,24 @@ const CostList: React.FC = () => {
       key: 'actions',
       title: 'Hành động',
       align: 'center',
-      render: (record) => (
-        <Button size="sm" variant="secondary" onClick={() => handleOpenModal(record)}>
-          Xử lý
-        </Button>
-      ),
+      render: (record) => {
+        if (record.status === 'approved' || record.status === 'rejected') {
+          return (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Eye size={18} />}
+              onClick={() => handleOpenModal(record)}
+              title="Xem chi tiết"
+            />
+          );
+        }
+        return (
+          <Button size="sm" variant="secondary" onClick={() => handleOpenModal(record)}>
+            Xử lý
+          </Button>
+        );
+      },
     },
   ];
 
@@ -212,9 +215,6 @@ const CostList: React.FC = () => {
               options={[
                 { label: 'Tất cả trạng thái', value: 'all' },
                 { label: 'Chờ duyệt', value: 'pending' },
-                { label: 'Chờ bổ sung', value: 'pending_info' },
-                { label: 'Có cảnh báo', value: 'warning' },
-                { label: 'Thiếu chứng từ', value: 'error' },
                 { label: 'Đã duyệt', value: 'approved' },
                 { label: 'Đã từ chối', value: 'rejected' }
               ]}
@@ -223,24 +223,6 @@ const CostList: React.FC = () => {
               placeholder="Trạng thái"
             />
           </div>
-          <div className="w-[180px]">
-            <label className="text-[14px] font-semibold text-gray-700">Tháng</label>
-            <input
-              type="month"
-              value={monthFilter}
-              onChange={(event) => setMonthFilter(event.target.value)}
-              className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
-            />
-          </div>
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={warningOnly}
-              onChange={(event) => setWarningOnly(event.target.checked)}
-              className="w-4 h-4 text-[#00668A] border-[#C5EAFF] rounded"
-            />
-            Chỉ hiển thị các khoản chi có CẢNH BÁO
-          </label>
         </div>
 
         <Table

@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import MainLayout from '../../../components/layouts/MainLayout';
 import { Button } from '../../../components/ui/Button';
+import { Badge } from '../../../components/ui/Badge';
 import { SearchInput } from '../../../components/ui/SearchInput';
 import { Select } from '../../../components/ui/Select';
 import { Pagination } from '../../../components/ui/Pagination';
 import { Table } from '../../../components/ui/Table';
 import SettlementModal from './SettlementModal';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Eye } from 'lucide-react';
 import type { Column } from '../../../components/ui/Table';
 import type { SettlementTour } from './mockData';
 import { financeService } from '../../../services/finance';
@@ -17,22 +18,24 @@ import { hasAccess } from '../../../config/rolePermissions';
 const SettlementList: React.FC = () => {
   const [tours, setTours] = useState<SettlementTour[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
   const [selectedTour, setSelectedTour] = useState<SettlementTour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalReadonly, setModalReadonly] = useState(false);
 
-  const handleOpenModal = (tour: SettlementTour) => {
+  const handleOpenModal = (tour: SettlementTour, readonly = false) => {
     setSelectedTour(tour);
+    setModalReadonly(readonly);
     setModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setSelectedTour(null);
     setModalOpen(false);
+    setModalReadonly(false);
   };
 
   const { user } = useAuth();
@@ -43,7 +46,8 @@ const SettlementList: React.FC = () => {
       const res = await financeService.danhSach_6();
       const mapped = (res?.content || []).map((q: QuyetToanResponse): SettlementTour => {
         let status: SettlementTour['status'] = 'pending';
-        if (q.trangThai === 'DA_CHOT') status = 'completed';
+        if (q.trangThai === 'DA_QUYET_TOAN') status = 'completed';
+        else if (q.trangThai === 'CHUA_QUYET_TOAN') status = 'pending';
         
         return {
           id: q.maQuyetToan || '',
@@ -96,20 +100,15 @@ const SettlementList: React.FC = () => {
     return tours.filter((tour) => {
       const keyword = searchTerm.toLowerCase();
       const matchesSearch = tour.code.toLowerCase().includes(keyword) || tour.name.toLowerCase().includes(keyword);
-      const matchesStatus = statusFilter === '' || statusFilter === 'all' || tour.status === statusFilter;
 
-      let matchesMonth = true;
-      if (monthFilter) {
-        const parts = tour.endDate.split('/');
-        if (parts.length === 3) {
-          const monthKey = `${parts[2]}-${parts[1]}`;
-          matchesMonth = monthKey === monthFilter;
-        }
+      let matchesStatus = true;
+      if (statusFilter && statusFilter !== 'all') {
+        matchesStatus = tour.status === statusFilter;
       }
 
-      return matchesSearch && matchesStatus && matchesMonth;
+      return matchesSearch && matchesStatus;
     });
-  }, [monthFilter, searchTerm, statusFilter, tours]);
+  }, [searchTerm, statusFilter, tours]);
 
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
 
@@ -167,14 +166,38 @@ const SettlementList: React.FC = () => {
       },
     },
     {
+      key: 'status',
+      title: 'Trạng thái',
+      align: 'center',
+      render: (record) => {
+        if (record.status === 'completed') {
+          return <Badge label="Đã quyết toán" variant="success" />;
+        }
+        return <Badge label="Chờ quyết toán" variant="warning" />;
+      },
+    },
+    {
       key: 'actions',
       title: 'Hành động',
       align: 'center',
-      render: (record) => (
-        <Button variant="primary" size="sm" onClick={() => handleOpenModal(record)}>
-          Quyết toán ngay
-        </Button>
-      ),
+      render: (record) => {
+        if (record.status === 'completed') {
+          return (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Eye size={18} />}
+              onClick={() => handleOpenModal(record, true)}
+              aria-label="Xem chi tiết"
+            />
+          );
+        }
+        return (
+          <Button variant="primary" size="sm" onClick={() => handleOpenModal(record)}>
+            Quyết toán
+          </Button>
+        );
+      },
     },
   ];
 
@@ -189,7 +212,6 @@ const SettlementList: React.FC = () => {
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-[32px] font-bold text-[#121C2C]">Quyết toán Tài chính Tour</h1>
-          {/* <p className="text-sm text-gray-500 mt-1">Tổng hợp doanh thu, chi phí và chốt quyết toán cho từng tour.</p> */}
         </div>
 
         <div className="bg-white p-6 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">
@@ -200,26 +222,16 @@ const SettlementList: React.FC = () => {
               onChange={setSearchTerm}
             />
           </div>
-          <div className="w-[180px]">
-            <label className="text-[14px] font-semibold text-gray-700">Tháng kết thúc</label>
-            <input
-              type="month"
-              value={monthFilter}
-              onChange={(event) => setMonthFilter(event.target.value)}
-              className="mt-1 w-full px-4 py-2.5 bg-white border border-[#C5EAFF] rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20"
-            />
-          </div>
           <div className="w-[200px]">
             <Select
               options={[
-                { label: 'Tất cả trạng thái', value: 'all' },
+                { label: 'Tất cả', value: 'all' },
                 { label: 'Chờ quyết toán', value: 'pending' },
-                { label: 'Đang trình vượt chi', value: 'pending_over_budget' },
-                { label: 'Đã hoàn tất', value: 'completed' }
+                { label: 'Đã quyết toán', value: 'completed' }
               ]}
               value={statusFilter}
               onChange={setStatusFilter}
-              placeholder="Trạng thái hóa đơn"
+              placeholder="Trạng thái"
             />
           </div>
         </div>
@@ -239,6 +251,7 @@ const SettlementList: React.FC = () => {
         onClose={handleCloseModal}
         tour={selectedTour}
         onSettle={handleSettle}
+        readonly={modalReadonly}
       />
     </MainLayout>
   );
