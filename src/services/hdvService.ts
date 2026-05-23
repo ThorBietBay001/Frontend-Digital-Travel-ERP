@@ -12,6 +12,26 @@ export const hdvService = {
     return res.data;
   },
 
+  quenMatKhau: async (email: string) => {
+    const res = await api.post('/auth/quen-mat-khau', { email });
+    return res.data;
+  },
+
+  datLaiMatKhau: async (data: any) => {
+    const res = await api.post('/auth/dat-lai-mat-khau', data);
+    return res.data;
+  },
+
+  doiMatKhau: async (data: any) => {
+    const res = await api.post('/auth/doi-mat-khau', data);
+    return res.data;
+  },
+
+  kiemTraMatKhau: async (matKhauCu: string) => {
+    const res = await api.post('/auth/kiem-tra-mat-khau', { matKhauCu });
+    return res.data;
+  },
+
   layNangLuc: async () => {
     const res = await api.get('/huong-dan-vien/nang-luc');
     return res.data;
@@ -85,8 +105,10 @@ export const hdvService = {
   },
 
   // 7. Danh mục hành động xanh
-  layDanhSachHanhDongXanh: async () => {
-    const res = await api.get('/huong-dan-vien/hanh-dong-xanh');
+  layDanhSachHanhDongXanh: async (maTourThucTe?: string) => {
+    const res = await api.get('/huong-dan-vien/hanh-dong-xanh', {
+      params: maTourThucTe ? { maTourThucTe } : undefined
+    });
     return res.data;
   },
 

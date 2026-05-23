@@ -40,6 +40,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incidents, setIncidents] = useState<IncidentType[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [guideProfile, setGuideProfile] = useState<any>(null);
 
   // UI States
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -52,18 +53,45 @@ export default function App() {
     if (isLoggedIn) {
       const fetchData = async () => {
         try {
+          const profileRes = await hdvService.layHoSo();
+          if (profileRes?.data) setGuideProfile(profileRes.data);
+
           const tours = await hdvService.layDanhSachTour();
           if (tours?.data?.length > 0) {
             const ongoingTour = tours.data.find((t: any) => t.trangThaiTour === 'DANG_DIEN_RA');
-            const upcoming = tours.data.filter((t: any) => t.trangThaiTour === 'SAP_DIEN_RA');
-            const past = tours.data.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
+            const upcoming = tours.data.filter((t: any) => ['MO_BAN', 'DA_CHOT', 'SAP_DIEN_RA'].includes(t.trangThaiTour));
+            const past = tours.data.filter((t: any) => ['KET_THUC', 'DA_QUYET_TOAN', 'DA_HUY', 'HUY'].includes(t.trangThaiTour));
             
+            // --- NOTIFICATION SYSTEM (Frontend Polling) ---
+            const currentAssignments = tours.data.map((t: any) => t.maPhanCong);
+            const savedAssignments = JSON.parse(localStorage.getItem('knownAssignments') || '[]');
+            
+            // Check for new assignments
+            const newAssignments = currentAssignments.filter((ma: string) => !savedAssignments.includes(ma));
+            if (newAssignments.length > 0) {
+              const newNotifs = newAssignments.map((ma: string) => {
+                const tourDetail = tours.data.find((t: any) => t.maPhanCong === ma);
+                return {
+                  id: Date.now() + Math.random(),
+                  text: `Bạn vừa được phân công dẫn tour mới: ${tourDetail?.tenTour || tourDetail?.maTourThucTe}`,
+                  time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                  read: false
+                };
+              });
+              setNotifications(prev => [...newNotifs, ...prev]);
+              // Update known assignments
+              localStorage.setItem('knownAssignments', JSON.stringify([...savedAssignments, ...newAssignments]));
+            } else if (savedAssignments.length === 0) {
+              // Initial load: just save current assignments without notifying
+              localStorage.setItem('knownAssignments', JSON.stringify(currentAssignments));
+            }
+
             setUpcomingTours(upcoming.map((t: any) => ({
               code: t.maTourThucTe,
               name: t.tenTour || t.maTourThucTe,
               departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
               destination: 'Chưa cập nhật',
-              guestsCount: 0,
+              guestsCount: t.soKhachToiDa && t.choConLai !== undefined ? t.soKhachToiDa - t.choConLai : 0,
               status: 'Sắp khởi hành'
             })));
 
@@ -71,8 +99,9 @@ export default function App() {
               code: t.maTourThucTe,
               name: t.tenTour || t.maTourThucTe, 
               departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
+              endDateIso: t.ngayKetThuc || t.ngayKhoiHanh,
               destination: 'Chưa cập nhật',
-              guestsCount: 0,
+              guestsCount: t.soKhachToiDa && t.choConLai !== undefined ? t.soKhachToiDa - t.choConLai : 0,
               status: t.trangThaiTour === 'DA_QUYET_TOAN' ? 'Đã quyết toán' : 'Kết thúc'
             })));
 
@@ -100,52 +129,70 @@ export default function App() {
                   name: p.hoTenKhachHang || p.hoTen,
                   phone: p.soDienThoai || 'N/A',
                   rank: p.hangThanhVien || 'THANH_VIEN',
-                  healthNotes: p.ghiChu || '',
+                  healthNotes: p.ghiChuYTe || p.ghiChu || '',
+                  bookingNotes: p.ghiChuDatTour || '',
                   status: p.trangThai || 'CHUA_DIEM_DANH',
                   greenPoints: p.diemXanh || 0
                 }));
                 setPassengers(mapped);
-                mappedTour.guestsCount = mapped.length;
-              }
-
-              // Fetch sự cố
-              const incRes = await hdvService.laySuCo(ongoingTour.maTourThucTe);
-              if (incRes?.data) {
-                const mappedInc = incRes.data.map((i: any) => ({
-                  id: i.maNhatKySuCo,
-                  type: i.loaiSuCo || 'Khác',
-                  severity: i.mucDo || 'Thấp',
-                  description: i.moTa,
-                  treatment: i.giaiPhap || '',
-                  result: i.giaiPhap || '',
-                  time: i.thoiGianBaoCao
-                }));
-                setIncidents(mappedInc);
-              }
-
-              // Fetch chi phí
-              const expRes = await hdvService.layChiPhi(ongoingTour.maTourThucTe);
-              if (expRes?.data) {
-                const mappedExp = expRes.data.map((e: any) => ({
-                  id: e.maChiPhi,
-                  category: e.danhMuc,
-                  amount: e.thanhTien,
-                  status: e.trangThaiDuyet,
-                  notes: e.danhMuc,
-                  date: e.ngayKhai,
-                  photoUrl: e.hoaDonAnh
-                }));
-                setExpenses(mappedExp);
+                setCurrentTour({ ...mappedTour, guestsCount: mapped.length });
               }
             } else {
               setCurrentTour(null);
             }
+
+            // --- TÍNH NĂNG MỚI: TỔNG HỢP CHI PHÍ VÀ SỰ CỐ CHO TẤT CẢ TOUR ---
+            const allTours = [...upcoming, ...past];
+            if (ongoingTour) allTours.push(ongoingTour);
+
+            let allExpenses: any[] = [];
+            let allIncidents: any[] = [];
+
+            await Promise.all(allTours.map(async (t) => {
+              try {
+                const expRes = await hdvService.layChiPhi(t.maTourThucTe);
+                if (expRes?.data) allExpenses = [...allExpenses, ...expRes.data];
+              } catch (e) {}
+              try {
+                const incRes = await hdvService.laySuCo(t.maTourThucTe);
+                if (incRes?.data) allIncidents = [...allIncidents, ...incRes.data];
+              } catch (e) {}
+            }));
+
+            setExpenses(allExpenses.map((e: any) => ({
+              id: e.maChiPhi,
+              category: e.danhMuc,
+              amount: e.thanhTien,
+              status: e.trangThaiDuyet,
+              notes: e.ghiChu || e.danhMuc,
+              date: e.ngayKhai || new Date().toLocaleDateString('vi-VN'),
+              photoUrl: e.hoaDonAnh
+            })));
+
+            setIncidents(allIncidents.map((sc: any) => ({
+              id: sc.maNhatKySuCo,
+              type: sc.loaiSuCo || 'Khác',
+              severity: sc.mucDo || 'Thấp',
+              status: sc.giaiPhap ? 'DA_XU_LY' : 'DANG_XU_LY',
+              time: sc.thoiGianBaoCao || new Date().toLocaleString('vi-VN'),
+              description: sc.moTa,
+              solution: sc.giaiPhap || '',
+              treatment: sc.giaiPhap || '',
+              result: sc.giaiPhap || ''
+            })));
           }
         } catch (e) {
           console.error("Failed to fetch tour data", e);
         }
       };
+      
+      // Initial fetch
       fetchData();
+
+      // Polling every 30 seconds for real-time notification
+      const intervalId = setInterval(fetchData, 30000);
+      
+      return () => clearInterval(intervalId);
     }
   }, [isLoggedIn]);
 
@@ -177,6 +224,8 @@ export default function App() {
   const unreadCount = useMemo(() => {
     return notifications.filter(n => !n.read).length;
   }, [notifications]);
+
+  const guideInitials = guideProfile?.hoTen ? guideProfile.hoTen.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase() : 'HD';
 
   // If not logged in, show the styled DangNhap component wrapped in a mobile layout
   if (!isLoggedIn) {
@@ -235,7 +284,7 @@ export default function App() {
                 className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-600 font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shrink-0"
                 title="Xem hồ sơ"
               >
-                AN
+                {guideInitials}
               </button>
               <div>
                 <h1 className="text-xs font-black text-slate-800 tracking-wider leading-none">DIGITAL TRAVEL</h1>
@@ -271,7 +320,7 @@ export default function App() {
 
         {/* --- GLOBAL POPUP: Notification Center List (Glassmorphism Modal) --- */}
         {notificationOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
+          <div className="absolute inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
             {/* Centered Modal Content */}
             <div className="glass-modal max-w-sm w-full mt-14 p-4 rounded-3xl animate-slide-up max-h-[50vh] overflow-y-auto space-y-4 shadow-2xl h-fit border border-sky-100">
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -383,6 +432,7 @@ export default function App() {
           {activeTab === 'expense' && (
             <QuanLyChiPhi 
               maTour={currentTour?.maTourThucTe}
+              allTours={[...(currentTour ? [currentTour] : []), ...pastTours]}
               expenses={expenses}
               setExpenses={setExpenses}
             />
@@ -391,6 +441,7 @@ export default function App() {
           {activeTab === 'incident' && (
             <BaoCaoSuCo 
               maTour={currentTour?.maTourThucTe}
+              allTours={[...(currentTour ? [currentTour] : []), ...pastTours]}
               passengers={passengers}
               incidents={incidents}
               setIncidents={setIncidents}

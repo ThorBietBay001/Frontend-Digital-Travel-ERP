@@ -8,6 +8,7 @@ export interface Tour {
   guestsCount: number;
   status: 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
   image: string;
+  endDateIso?: string;
 }
 
 export interface Passenger {
@@ -19,6 +20,7 @@ export interface Passenger {
   phone: string;
   rank: 'KIM_CUONG' | 'VANG' | 'BAC' | 'DONG' | 'THANH_VIEN';
   healthNotes: string;
+  bookingNotes?: string;
   status: 'CHUA_DIEM_DANH' | 'DA_DIEM_DANH' | 'VANG';
   absentReason?: string;
   greenPoints: number;
