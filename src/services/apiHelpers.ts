@@ -157,6 +157,25 @@ export const mapProfile = (p: ApiRecord) => ({
   allergies: p?.diUng || ''
 });
 
+export const mapCustomerBookingStatus = (b: ApiRecord): Booking['status'] => {
+  const orderStatus = b.trangThai || '';
+  const tourStatus = b.trangThaiTour || '';
+
+  if (orderStatus === 'DA_XAC_NHAN' && ['KET_THUC', 'DA_QUYET_TOAN'].includes(tourStatus)) {
+    return 'KET_THUC';
+  }
+
+  if (!orderStatus && tourStatus === 'DA_QUYET_TOAN') {
+    return 'KET_THUC';
+  }
+
+  if (orderStatus === 'DA_QUYET_TOAN') {
+    return 'KET_THUC';
+  }
+
+  return (orderStatus || tourStatus || 'DA_XAC_NHAN') as Booking['status'];
+};
+
 export const mapBooking = (b: ApiRecord): Booking => {
   const id = b.maDatTour || b.maLichSuTour || '';
   const tourId = b.maTourThucTe || '';
@@ -167,10 +186,20 @@ export const mapBooking = (b: ApiRecord): Booking => {
     bookingDate: b.ngayDat || b.ngayThamGia || '',
     departureDate: b.ngayKhoiHanh || '',
     totalAmount: toNumber(b.tongTien, 0),
-    status: b.trangThai || b.trangThaiTour || 'DA_XAC_NHAN',
+    status: mapCustomerBookingStatus(b),
     guests: Array.isArray(b.chiTietKhach) ? b.chiTietKhach.length : 1,
     passengers: Array.isArray(b.chiTietKhach) ? b.chiTietKhach.length : 1,
     qrCode: id,
+    paymentMethod: b.phuongThuc,
+    paymentStatus: b.trangThaiThanhToan,
+    paymentTransactionId: b.maGiaoDich,
+    paymentAmount: toNumber(b.soTienThanhToan, 0),
+    paymentPaidAt: b.ngayThanhToan || '',
+    originalAmount: toNumber(b.tongTienGoc, 0),
+    discountAmount: toNumber(b.soTienUuDai, 0),
+    voucherId: b.maVoucher || '',
+    voucherCode: b.maCodeVoucher || '',
+    expectedGreenPoints: toNumber(b.diemXanhDuKien, 0),
     tourImage: b.hinhAnh || b.image || tourImage(tourId),
     note: b.ghiChu || '',
     adultCount: toNumber(b.soNguoiLon, 0),

@@ -8,6 +8,7 @@ import {
 import { khService } from '../services/khService';
 import {
   mapBooking,
+  mapCustomerBookingStatus,
   mapProfile,
   mapPublicTour,
   mapVoucher,
@@ -36,6 +37,7 @@ interface ComplaintTicket {
 export default function HoChieuSo() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [bookingFilter, setBookingFilter] = useState<BookingFilter>('all');
+  const [bookingPage, setBookingPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -69,8 +71,8 @@ export default function HoChieuSo() {
       try {
         const [profileRes, bookingsRes, pastToursRes, vouchersRes, redeemableVouchersRes, toursRes, complaintsRes] = await Promise.all([
           khService.layHoChieuSo().catch(() => ({ data: null })),
-          khService.getMyBookings().catch(() => ({ data: { content: [] } })),
-          khService.getPastTours().catch(() => ({ data: { content: [] } })),
+          khService.getMyBookings({ size: 200 }).catch(() => ({ data: { content: [] } })),
+          khService.getPastTours({ size: 200 }).catch(() => ({ data: { content: [] } })),
           khService.getVouchers().catch(() => ({ data: { content: [] } })),
           khService.getRedeemableVouchers().catch(() => ({ data: { content: [] } })),
           khService.layDanhSachTour().catch(() => ({ data: [] })),
@@ -89,10 +91,10 @@ export default function HoChieuSo() {
           id: b.maDatTour || b.maLichSuTour,
           tourId: b.maTourThucTe,
           tourName: b.tieuDeTour,
-          bookingDate: b.ngayThamGia,
+          bookingDate: b.ngayDat || b.ngayThamGia,
           departureDate: b.ngayKhoiHanh,
-          totalAmount: 0,
-          status: b.trangThaiTour || 'KET_THUC',
+          totalAmount: Number(b.tongTien || 0),
+          status: mapCustomerBookingStatus(b),
           guests: 1,
           passengers: 1,
           tourImage: `https://picsum.photos/seed/${b.maTourThucTe}/900/650`,
@@ -220,11 +222,46 @@ export default function HoChieuSo() {
   };
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'Chưa cập nhật';
     return new Date(dateStr).toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const formatShortDate = (dateStr?: string) => {
+    if (!dateStr) return 'Chưa cập nhật';
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return 'Chưa cập nhật';
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  const formatDateTime = (dateStr?: string) => {
+    if (!dateStr) return 'Chưa cập nhật';
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return 'Chưa cập nhật';
+    const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const dateStrFormatted = date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return `${timeStr} - ${dateStrFormatted}`;
+  };
+
+  const layTenPhuongThucThanhToan = (value?: string) => {
+    switch (value) {
+      case 'MOMO_WALLET': return 'Ví MoMo';
+      case 'MOMO_ATM': return 'Thẻ ATM qua MoMo';
+      case 'CHUYEN_KHOAN': return 'Chuyển khoản';
+      default: return value || 'Chưa ghi nhận';
+    }
+  };
+
+  const layTenTrangThaiThanhToan = (value?: string) => {
+    switch (value) {
+      case 'THANH_CONG': return 'Thành công';
+      case 'CHO_THANH_TOAN': return 'Chờ thanh toán';
+      case 'THAT_BAI': return 'Thất bại';
+      default: return value || 'Chưa có giao dịch';
+    }
   };
 
   // UC23: Triggers OTP verification modal
@@ -360,6 +397,12 @@ export default function HoChieuSo() {
   };
 
   const getStatusBadge = (status: string) => {
+    if (status === 'DA_QUYET_TOAN') status = 'KET_THUC';
+    if (status === 'CHO_HOAN_TIEN') status = 'CHO_HUY';
+    if (status === 'TU_CHOI_HOAN_TIEN') status = 'Hủy thất bại';
+
+    if (status === 'Hủy thất bại') status = 'HUY_THAT_BAI';
+
     switch (status) {
       case 'DA_XAC_NHAN':
         return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200">Đã xác nhận</span>;
@@ -386,12 +429,18 @@ export default function HoChieuSo() {
         return <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold border border-slate-200">Hết hạn giữ chỗ</span>;
       case 'THANH_TOAN_THAT_BAI':
         return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200">Thanh toán thất bại</span>;
+      case 'HUY_THAT_BAI':
+        return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold border border-red-200">Hủy thất bại</span>;
       default:
         return <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold border border-gray-200">{status}</span>;
     }
   };
 
   const layTenTrangThaiDon = (status: string) => {
+    if (status === 'DA_QUYET_TOAN') status = 'KET_THUC';
+    if (status === 'CHO_HOAN_TIEN') status = 'CHO_HUY';
+    if (status === 'TU_CHOI_HOAN_TIEN') return 'Hủy thất bại';
+
     switch (status) {
       case 'DA_XAC_NHAN': return 'Đã xác nhận';
       case 'KET_THUC': return 'Đã hoàn thành';
@@ -404,14 +453,6 @@ export default function HoChieuSo() {
       case 'HET_HAN_GIU_CHO': return 'Hết hạn giữ chỗ';
       case 'THANH_TOAN_THAT_BAI': return 'Thanh toán thất bại';
       default: return status || 'Chưa cập nhật';
-    }
-  };
-
-  const layTenLoaiKhach = (value?: string) => {
-    switch (value) {
-      case 'NGUOI_DAT': return 'Người đặt';
-      case 'NGUOI_DONG_HANH': return 'Người đồng hành';
-      default: return value || 'Hành khách';
     }
   };
 
@@ -536,9 +577,10 @@ export default function HoChieuSo() {
     setSelectedTicketTour(null);
 
     try {
-      const [tourRes, detailRes] = await Promise.all([
+      const [tourRes, detailRes, paymentRes] = await Promise.all([
         khService.layChiTietTour(booking.tourId).catch(() => null),
-        booking.id?.startsWith('DDT') ? khService.layChiTietDatTour(booking.id).catch(() => null) : Promise.resolve(null)
+        booking.id?.startsWith('DDT') ? khService.layChiTietDatTour(booking.id).catch(() => null) : Promise.resolve(null),
+        booking.id?.startsWith('DDT') ? khService.ketQuaThanhToan(booking.id).catch(() => null) : Promise.resolve(null)
       ]);
 
       const tourDetail = tourRes ? unwrapData<any>(tourRes) : null;
@@ -558,6 +600,18 @@ export default function HoChieuSo() {
       if (detailRes) {
         const detail = mapBooking(unwrapData<any>(detailRes));
         setSelectedBookingForDetail({ ...booking, ...detail, qrCode: booking.qrCode || detail.qrCode });
+      }
+
+      if (paymentRes) {
+        const payment = unwrapData<any>(paymentRes);
+        setSelectedBookingForDetail(prev => prev ? ({
+          ...prev,
+          paymentMethod: payment.phuongThuc || prev.paymentMethod,
+          paymentStatus: payment.trangThai || prev.paymentStatus,
+          paymentTransactionId: payment.maGiaoDich || prev.paymentTransactionId,
+          paymentAmount: Number(payment.soTien) || prev.paymentAmount,
+          paymentPaidAt: payment.ngayThanhToan || prev.paymentPaidAt
+        }) : prev);
       }
     } catch (err) {
       console.error(err);
@@ -692,6 +746,23 @@ export default function HoChieuSo() {
 
     return true;
   });
+  const bookingsPerPage = 5;
+  const totalBookingPages = Math.ceil(filteredBookings.length / bookingsPerPage);
+  const currentBookingPage = Math.min(bookingPage, Math.max(totalBookingPages, 1));
+  const pagedBookings = filteredBookings.slice(
+    (currentBookingPage - 1) * bookingsPerPage,
+    currentBookingPage * bookingsPerPage
+  );
+
+  useEffect(() => {
+    setBookingPage(1);
+  }, [bookingFilter, searchQuery]);
+
+  useEffect(() => {
+    if (bookingPage > totalBookingPages && totalBookingPages > 0) {
+      setBookingPage(totalBookingPages);
+    }
+  }, [bookingPage, totalBookingPages]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -712,8 +783,8 @@ export default function HoChieuSo() {
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight">{profile.fullName}</h1>
                   <span
                     className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg border ${profile.accountStatus === 'HOAT_DONG'
-                        ? 'bg-emerald-100/90 text-emerald-700 border-emerald-200/60'
-                        : 'bg-red-100/90 text-red-700 border-red-200/60'
+                      ? 'bg-emerald-100/90 text-emerald-700 border-emerald-200/60'
+                      : 'bg-red-100/90 text-red-700 border-red-200/60'
                       }`}
                   >
                     {profile.accountStatus === 'HOAT_DONG' ? 'Đang hoạt động' : 'Đã khóa'}
@@ -1086,7 +1157,7 @@ export default function HoChieuSo() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {filteredBookings.map((booking) => (
+                    {pagedBookings.map((booking) => (
                       <div key={booking.id} className="bg-white hover:shadow-lg transition-all rounded-2xl p-6 border border-gray-100 flex flex-col md:flex-row gap-6">
                         <img
                           src={booking.tourImage}
@@ -1150,8 +1221,8 @@ export default function HoChieuSo() {
                                   onClick={() => handleOpenReviewModal(booking)}
                                   aria-disabled={booking.hasReviewed || hasPendingComplaint(booking)}
                                   className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${booking.hasReviewed || hasPendingComplaint(booking)
-                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-green-50 text-green-700 hover:bg-green-100'
                                     }`}
                                 >
                                   <Star className={`w-3.5 h-3.5 ${booking.hasReviewed ? 'fill-current' : ''}`} />
@@ -1161,8 +1232,8 @@ export default function HoChieuSo() {
                                   onClick={() => handleOpenComplaintModal(booking)}
                                   aria-disabled={booking.hasComplaint}
                                   className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${booking.hasComplaint
-                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                                 >
                                   <ShieldAlert className="w-3.5 h-3.5" />
@@ -1174,6 +1245,44 @@ export default function HoChieuSo() {
                         </div>
                       </div>
                     ))}
+                    {totalBookingPages >= 2 && (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+                        <span className="text-xs font-bold text-slate-500">
+                          Trang {currentBookingPage}/{totalBookingPages} • {filteredBookings.length} chuyến đi
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={currentBookingPage === 1}
+                            onClick={() => setBookingPage(prev => Math.max(1, prev - 1))}
+                            className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Trước
+                          </button>
+                          {Array.from({ length: totalBookingPages }, (_, idx) => idx + 1).map(page => (
+                            <button
+                              key={page}
+                              type="button"
+                              onClick={() => setBookingPage(page)}
+                              className={`w-9 h-9 rounded-lg text-xs font-black border transition-colors ${page === currentBookingPage
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            disabled={currentBookingPage === totalBookingPages}
+                            onClick={() => setBookingPage(prev => Math.min(totalBookingPages, prev + 1))}
+                            className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Sau
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1585,9 +1694,17 @@ export default function HoChieuSo() {
       {/* UC22: Custom Detailed Booking Modal */}
       {selectedBookingForDetail && (() => {
         const fullTour = selectedTicketTour || allTours.find(t => t.id === selectedBookingForDetail.tourId);
+        const passengerDetails = selectedBookingForDetail.details || [];
+        const serviceDetails = selectedBookingForDetail.services || [];
+        const passengerSubtotal = passengerDetails.reduce((sum: number, item: any) => sum + Number(item.giaTaiThoiDiemDat || 0), 0);
+        const serviceSubtotal = serviceDetails.reduce((sum: number, item: any) => sum + Number(item.thanhTien || 0), 0);
+        const displayedPassengerSubtotal = passengerSubtotal || Math.max(0, selectedBookingForDetail.totalAmount - serviceSubtotal);
+        const displayedOriginalAmount = selectedBookingForDetail.originalAmount || selectedBookingForDetail.totalAmount + (selectedBookingForDetail.discountAmount || 0);
+        const displayedDiscountAmount = selectedBookingForDetail.discountAmount || Math.max(0, displayedOriginalAmount - selectedBookingForDetail.totalAmount);
+        const displayedPaymentAmount = selectedBookingForDetail.paymentAmount || selectedBookingForDetail.totalAmount;
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <div className="bg-white rounded-3xl max-w-5xl w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl relative">
               <button
                 onClick={() => {
                   setSelectedBookingForDetail(null);
@@ -1659,9 +1776,8 @@ export default function HoChieuSo() {
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg">👨‍💼</div>
                         <div>
                           <p className="font-extrabold text-sm text-gray-900">{selectedBookingForDetail.guideName || 'Chưa phân công'}</p>
-                          <p className="text-[10px] text-gray-500 font-bold flex items-center">
-                            <Star className="w-3 h-3 text-yellow-500 fill-current mr-0.5" />
-                            {selectedBookingForDetail.guideRating ? `Được đánh giá ${selectedBookingForDetail.guideRating}★ • ${selectedBookingForDetail.guideReviewCount || 0} lượt` : 'Chưa có đánh giá'}
+                          <p className="text-[10px] text-gray-500 font-bold leading-snug">
+                            Thông tin đánh giá HDV sẽ hiển thị khi có đánh giá thực tế từ khách đi tour.
                           </p>
                           <p className="text-[10px] text-blue-600 font-bold mt-1">
                             {selectedBookingForDetail.guidePhone ? (
@@ -1680,11 +1796,11 @@ export default function HoChieuSo() {
                 <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
                   <div className="bg-white border border-blue-100 rounded-2xl p-4 text-xs text-slate-600 space-y-3 shadow-sm">
                     <h5 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Thông tin xác thực vé</h5>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-x-3 gap-y-2">
                       <span>Mã đơn</span>
                       <span className="font-bold text-right">{selectedBookingForDetail.id}</span>
                       <span>Tour</span>
-                      <span className="font-bold text-right">{selectedBookingForDetail.tourName}</span>
+                      <span className="font-bold text-right whitespace-nowrap text-[11px]">{selectedBookingForDetail.tourName}</span>
                       <span>Khởi hành</span>
                       <span className="font-bold text-right">{formatDate(selectedBookingForDetail.departureDate)}</span>
                       <span>Trạng thái</span>
@@ -1694,13 +1810,24 @@ export default function HoChieuSo() {
                       <span>Số khách</span>
                       <span className="font-bold text-right">{selectedBookingForDetail.passengers || selectedBookingForDetail.guests} người</span>
                     </div>
-                    {!!selectedBookingForDetail.details?.length && (
+                    {!!passengerDetails.length && (
                       <div className="pt-2 border-t border-slate-100 space-y-2">
                         <h6 className="font-bold text-slate-900">Chi tiết hành khách</h6>
-                        {selectedBookingForDetail.details.map((p: any, idx: number) => (
-                          <div key={p.maChiTietDat || idx} className="flex justify-between gap-3">
-                            <span>{idx + 1}. {p.hoTen}</span>
-                            <span className="font-semibold text-slate-500">{layTenLoaiKhach(p.loaiKhach)} - {layTenNhomTuoi(p.nhomTuoi)}</span>
+                        {passengerDetails.map((p: any, idx: number) => (
+                          <div key={p.maChiTietDat || idx} className="rounded-xl bg-slate-50/70 border border-slate-100 px-3 py-2">
+                            <div className="flex flex-col gap-1 text-[10px] font-semibold text-slate-500">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-slate-800 truncate pr-2">
+                                  {idx + 1}. {p.hoTen} <span className="text-slate-500 font-semibold">({formatShortDate(p.ngaySinh)})</span>
+                                </span>
+                                <span className="whitespace-nowrap">{layTenNhomTuoi(p.nhomTuoi)}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 pl-3">
+                                <span className="whitespace-nowrap">SĐT: {p.soDienThoai || 'Chưa cập nhật'}</span>
+                                <span className="text-slate-300">-</span>
+                                <span className="whitespace-nowrap">CCCD: {p.cccd || 'Chưa cập nhật'}</span>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1711,29 +1838,75 @@ export default function HoChieuSo() {
                   <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 space-y-2">
                     <h5 className="font-bold text-gray-900 mb-2 border-b pb-1.5 border-gray-200">Chi tiết chi phí đơn hàng</h5>
                     <div className="flex justify-between">
-                      <span>Giá tour gốc:</span>
-                      <span className="font-semibold text-gray-800">{formatPrice(selectedBookingForDetail.totalAmount)}</span>
+                      <span>Vé tour:</span>
+                      <span className="font-semibold text-gray-800">{formatPrice(displayedPassengerSubtotal)}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Cơ cấu hành khách:</span>
+                      <span className="font-semibold text-gray-800">
+                        {selectedBookingForDetail.adultCount || 0} người lớn, {selectedBookingForDetail.childCount || 0} trẻ em
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Dịch vụ bổ sung:</span>
+                      <span className="font-semibold text-gray-800">{formatPrice(serviceSubtotal)}</span>
+                    </div>
+                    {serviceDetails.length > 0 && (
+                      <div className="space-y-1 rounded-xl bg-white/70 border border-gray-200 px-3 py-2">
+                        {serviceDetails.map((service: any, idx: number) => (
+                          <div key={service.maChiTietDichVu || idx} className="flex justify-between gap-3">
+                            <span className="truncate">{service.tenDichVu} x{service.soLuong}</span>
+                            <span className="font-semibold text-gray-800 whitespace-nowrap">{formatPrice(Number(service.thanhTien || 0))}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span>Thuế & Phụ phí:</span>
                       <span className="font-semibold text-gray-850 text-green-600">Đã bao gồm</span>
                     </div>
+                    <div className="grid grid-cols-[128px_minmax(0,1fr)] gap-x-3 gap-y-1 border-t pt-2 mt-2">
+                      <span>Voucher áp dụng</span>
+                      <span className="font-semibold text-right">{selectedBookingForDetail.voucherCode || 'Không áp dụng'}</span>
+                      <span>Số tiền gốc</span>
+                      <span className="font-semibold text-right">{formatPrice(displayedOriginalAmount)}</span>
+                      <span>Ưu đãi voucher</span>
+                      <span className="font-semibold text-right text-green-600">-{formatPrice(displayedDiscountAmount)}</span>
+                      <span>Sau khi trừ</span>
+                      <span className="font-semibold text-right text-blue-600">{formatPrice(selectedBookingForDetail.totalAmount)}</span>
+                      <span>Điểm xanh dự kiến</span>
+                      <span className="font-semibold text-right text-green-600">+{selectedBookingForDetail.expectedGreenPoints || 0} điểm</span>
+                    </div>
+                    <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-x-3 gap-y-1 border-t pt-2 mt-2">
+                      <span>Mã giao dịch</span>
+                      <span className="font-semibold text-right break-all">{selectedBookingForDetail.paymentTransactionId || 'Chưa ghi nhận'}</span>
+                      <span>Phương thức</span>
+                      <span className="font-semibold text-right">{layTenPhuongThucThanhToan(selectedBookingForDetail.paymentMethod)}</span>
+                      <span>Thanh toán</span>
+                      <span className="font-semibold text-right">{layTenTrangThaiThanhToan(selectedBookingForDetail.paymentStatus)}</span>
+                      <span>Thời gian</span>
+                      <span className="font-semibold text-right">{formatDateTime(selectedBookingForDetail.paymentPaidAt)}</span>
+                    </div>
                     <div className="flex justify-between font-bold text-sm text-gray-900 border-t pt-2 mt-2">
-                      <span>Tổng cộng đã trả:</span>
+                      <span>Tổng cộng:</span>
                       <span className="text-blue-600">{formatPrice(selectedBookingForDetail.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-sm text-gray-900">
+                      <span>Số tiền giao dịch:</span>
+                      <span className="text-blue-600">{formatPrice(displayedPaymentAmount)}</span>
                     </div>
                   </div>
 
                   {/* UC33/UC50: Refund / Cancellation state display */}
-                  {['cancelled', 'DA_HUY', 'CHO_HUY', 'TU_CHOI_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
-                    <div className={`rounded-2xl p-4 space-y-2 border ${selectedBookingForDetail.status === 'CHO_HUY'
+                  {['cancelled', 'DA_HUY', 'CHO_HUY', 'CHO_HOAN_TIEN', 'TU_CHOI_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
+                    <div className={`rounded-2xl p-4 space-y-2 border ${['CHO_HUY', 'CHO_HOAN_TIEN'].includes(selectedBookingForDetail.status)
                       ? 'bg-amber-50 border-amber-200 text-amber-850'
                       : selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN'
                         ? 'bg-red-50 border-red-200 text-red-850'
                         : 'bg-green-50 border-green-200 text-green-850'
                       }`}>
                       <h5 className="font-extrabold text-xs flex items-center">
-                        {selectedBookingForDetail.status === 'CHO_HUY' && (
+                        {['CHO_HUY', 'CHO_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
                           <>
                             <Clock className="w-4 h-4 mr-1 text-amber-600 animate-pulse" />
                             Đang xử lý yêu cầu hủy & hoàn tiền
@@ -1742,7 +1915,7 @@ export default function HoChieuSo() {
                         {selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN' && (
                           <>
                             <AlertTriangle className="w-4 h-4 mr-1 text-red-650" />
-                            Yêu cầu hoàn tiền bị từ chối
+                            Hủy thất bại
                           </>
                         )}
                         {['cancelled', 'DA_HUY'].includes(selectedBookingForDetail.status) && (
@@ -1753,8 +1926,8 @@ export default function HoChieuSo() {
                         )}
                       </h5>
                       <p className="text-[10px] text-gray-650 font-medium">
-                        {selectedBookingForDetail.status === 'CHO_HUY' && `Yêu cầu hủy tour của bạn đã được tiếp nhận và chuyển sang phòng ban đối soát tài chính. Ban quản trị đang xử lý hoàn tiền dự kiến: ${formatPrice(selectedBookingForDetail.totalAmount)}.`}
-                        {selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN' && "Yêu cầu hoàn tiền của quý khách bị từ chối do vi phạm điều khoản hủy tour (ngày khởi hành còn dưới 2 ngày hoặc đã quá hạn quy định)."}
+                        {selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN' && "Yêu cầu hủy không được duyệt do không đáp ứng điều kiện hủy tour. Vui lòng liên hệ hỗ trợ nếu cần kiểm tra thêm."}
+                        {['CHO_HUY', 'CHO_HOAN_TIEN'].includes(selectedBookingForDetail.status) && `Yêu cầu hủy tour của bạn đã được tiếp nhận và chuyển sang phòng ban đối soát tài chính. Ban quản trị đang xử lý hoàn tiền dự kiến: ${formatPrice(selectedBookingForDetail.totalAmount)}.`}
                         {['cancelled', 'DA_HUY'].includes(selectedBookingForDetail.status) && `Số tiền hoàn trả đã được quyết toán và chuyển khoản thành công về ví/tài khoản của bạn. Trạng thái tour đã chính thức được đóng.`}
                       </p>
                     </div>
@@ -1868,8 +2041,8 @@ export default function HoChieuSo() {
                     type="button"
                     onClick={() => setReviewStars(star)}
                     className={`group rounded-2xl border p-2.5 transition-all ${star <= reviewStars
-                        ? 'border-amber-300 bg-amber-50 text-amber-500 shadow-sm'
-                        : 'border-slate-200 bg-white text-slate-300 hover:border-amber-200 hover:bg-amber-50/40'
+                      ? 'border-amber-300 bg-amber-50 text-amber-500 shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-300 hover:border-amber-200 hover:bg-amber-50/40'
                       }`}
                   >
                     <Star
@@ -1899,8 +2072,8 @@ export default function HoChieuSo() {
                     type="button"
                     onClick={() => setReviewGuideStars(star)}
                     className={`group rounded-2xl border p-2.5 transition-all ${star <= reviewGuideStars
-                        ? 'border-blue-300 bg-white text-blue-600 shadow-sm'
-                        : 'border-blue-100 bg-white/70 text-slate-300 hover:border-blue-200'
+                      ? 'border-blue-300 bg-white text-blue-600 shadow-sm'
+                      : 'border-blue-100 bg-white/70 text-slate-300 hover:border-blue-200'
                       }`}
                   >
                     <Star
