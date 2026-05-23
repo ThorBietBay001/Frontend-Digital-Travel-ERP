@@ -5,8 +5,6 @@ import { Select } from '../../components/ui/Select';
 import type { TourInstance } from './mockData';
 import type { DaySchedule } from '../tour-template/mockData';
 import { Pencil } from 'lucide-react';
-import GreenActionList from '../green-actions/GreenActionList';
-import ServiceList from '../services/ServiceList';
 import TourInstanceGreenActionTab from './TourInstanceGreenActionTab';
 import TourInstanceServiceTab from './TourInstanceServiceTab';
 import { tourTemplateService } from '../../services/tour-template';
@@ -129,6 +127,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
     if (template) {
       try {
         const detail = await tourTemplateService.chiTiet(templateId);
+        if (!detail) return;
         const parsedSchedule = (detail.lichTrinh || []).map((lt: any) => {
           let meals = { breakfast: '', lunch: '', dinner: '' };
           if (lt.thucDon) {
@@ -410,6 +409,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceDetailModalProps> = ({
                 <div className="min-h-[400px]">
                   <TourInstanceServiceTab 
                     services={formData.services || []} 
+                    onChange={(services) => handleChange('services', services)}
                     isEditing={!isFormDisabled} 
                   />
                 </div>

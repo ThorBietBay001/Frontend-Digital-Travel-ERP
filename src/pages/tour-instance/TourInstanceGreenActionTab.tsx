@@ -13,10 +13,6 @@ interface TourInstanceGreenActionTabProps {
 const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({ selectedActions, onChange, isEditing = true }) => {
   const [availableActions, setAvailableActions] = useState<GreenAction[]>([]);
   const [loading, setLoading] = useState(false);
-  const [customPoints, setCustomPoints] = useState<Record<string, number>>({});
-  const [isOtherChecked, setIsOtherChecked] = useState(false);
-  const [otherName, setOtherName] = useState('');
-  const [otherPoints, setOtherPoints] = useState(0);
 
   const fetchActions = async () => {
     setLoading(true);
@@ -46,30 +42,8 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
   const handleToggleAction = (action: GreenAction, checked: boolean) => {
     if (checked) {
       onChange([...selectedActions, action]);
-      setCustomPoints({ ...customPoints, [action.id]: action.defaultPoints });
     } else {
       onChange(selectedActions.filter(a => a.id !== action.id));
-    }
-  };
-
-  const handlePointChange = (actionId: string, points: number) => {
-    setCustomPoints({ ...customPoints, [actionId]: points });
-  };
-
-  const handleOtherToggle = (checked: boolean) => {
-    setIsOtherChecked(checked);
-    if (checked) {
-      onChange([...selectedActions, { id: 'custom_other', code: 'CUSTOM', name: otherName, description: '', defaultPoints: otherPoints, status: 'active' }]);
-    } else {
-      onChange(selectedActions.filter(a => a.id !== 'custom_other'));
-    }
-  };
-
-  const handleOtherChange = (name: string, points: number) => {
-    setOtherName(name);
-    setOtherPoints(points);
-    if (isOtherChecked) {
-      onChange(selectedActions.map(a => a.id === 'custom_other' ? { ...a, name, defaultPoints: points } : a));
     }
   };
 
@@ -103,56 +77,9 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
                         </div>
                       </div>
                     </div>
-                    {isSelected && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-600 font-medium">Điểm thưởng:</span>
-                        <input 
-                          type="number" 
-                          min={0}
-                          className="w-20 px-2 py-1 text-sm border border-[#C5EAFF] rounded focus:outline-none focus:ring-1 focus:ring-[#89D4FF]"
-                          value={customPoints[action.id] ?? action.defaultPoints}
-                          onChange={(e) => handlePointChange(action.id, parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                    )}
                   </div>
                 );
               })}
-              {/* Khác Checkbox */}
-              <div className={`flex flex-col gap-2 p-3 border rounded-lg ${isOtherChecked ? 'border-[#89D4FF] bg-blue-50/30' : 'border-gray-200 bg-white'}`}>
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 text-[#00668A] rounded border-gray-300 focus:ring-[#89D4FF]"
-                    checked={isOtherChecked}
-                    onChange={(e) => handleOtherToggle(e.target.checked)}
-                  />
-                  <div className="font-medium text-sm text-gray-800">Khác</div>
-                </div>
-                {isOtherChecked && (
-                  <div className="flex gap-4 ml-7 mt-2">
-                    <div className="flex-1">
-                      <input 
-                        type="text"
-                        className="w-full px-3 py-1.5 text-sm border border-[#C5EAFF] rounded focus:outline-none focus:ring-1 focus:ring-[#89D4FF]"
-                        placeholder="Tên hành động..."
-                        value={otherName}
-                        onChange={(e) => handleOtherChange(e.target.value, otherPoints)}
-                      />
-                    </div>
-                    <div className="w-32 flex items-center gap-2">
-                      <span className="text-xs text-gray-600 font-medium">Điểm:</span>
-                      <input 
-                        type="number" 
-                        min={0}
-                        className="w-full px-2 py-1.5 text-sm border border-[#C5EAFF] rounded focus:outline-none focus:ring-1 focus:ring-[#89D4FF]"
-                        value={otherPoints}
-                        onChange={(e) => handleOtherChange(otherName, parseInt(e.target.value) || 0)}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
@@ -170,7 +97,7 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
               <div key={action.id} className="flex justify-between items-center p-3 border border-gray-200 rounded-lg bg-white">
                 <span className="text-sm font-medium text-gray-800">{action.name}</span>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-green-600 font-bold flex items-center gap-1"><Leaf size={14}/> +{customPoints[action.id] ?? action.defaultPoints}</span>
+                  <span className="text-sm text-green-600 font-bold flex items-center gap-1"><Leaf size={14}/> +{action.defaultPoints}</span>
                   {isEditing && (
                     <Button 
                       type="button" 
