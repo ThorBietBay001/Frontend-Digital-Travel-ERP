@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { Pagination } from '../../components/ui/Pagination';
-import { Eye } from 'lucide-react';
+import { CheckCircle, Eye } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
@@ -13,6 +13,7 @@ import type { Order } from './mockData';
 import type { DonDatTourResponse } from '../../services/orders';
 import { ordersService } from '../../services/orders';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
 
@@ -35,6 +36,8 @@ const mapStatus = (s?: string): Order['status'] => {
 
 const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
   switch (s?.toUpperCase()) {
+    case 'CHO_XAC_NHAN':
+      return 'pending_confirmation';
     case 'DA_XAC_NHAN':
     case 'HOAN_THANH':
       return 'paid';
@@ -79,8 +82,10 @@ const OrderList: React.FC = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const { user } = useAuth();
+  const { confirm, notify } = useNotification();
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'orders')) return;
@@ -103,6 +108,27 @@ const OrderList: React.FC = () => {
   const handleOpenDetail = (order: Order) => {
     setSelectedOrderId(order.id);
     setModalOpen(true);
+  };
+
+  const canApprovePayment = (order: Order) => order.paymentStatus === 'pending_confirmation';
+
+  const handleApprovePayment = async (order: Order) => {
+    const confirmed = await confirm(`Duyệt thanh toán cho đơn ${order.orderCode}?`);
+    if (!confirmed) return;
+
+    setApprovingId(order.id);
+    setError(null);
+    try {
+      await ordersService.xacNhanDon(order.id);
+      await getAll();
+      notify(`Duyệt thanh toán đơn ${order.orderCode} thành công.`, { type: 'success' });
+    } catch (err: unknown) {
+      const message = formatApiError(err, 'Lỗi khi duyệt thanh toán');
+      setError(message);
+      notify(message, { type: 'error' });
+    } finally {
+      setApprovingId(null);
+    }
   };
 
   const filteredData = data.filter((order) => {
@@ -164,6 +190,8 @@ const OrderList: React.FC = () => {
             return <Badge label="Đã Thanh Toán" variant="success" />;
           case 'unpaid':
             return <Badge label="Chưa Thanh Toán" variant="warning" />;
+          case 'pending_confirmation':
+            return <Badge label="Chờ Xác Nhận" variant="info" />;
           case 'partial':
             return <Badge label="Thanh Toán 1 phần" variant="info" />;
           case 'refunded':
@@ -178,14 +206,25 @@ const OrderList: React.FC = () => {
       title: 'Hành động',
       align: 'center',
       render: (record) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Eye size={18} />}
-          onClick={() => handleOpenDetail(record)}
-          className="p-2"
-          aria-label="Xem chi tiết"
-        />
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<CheckCircle size={16} />}
+            onClick={() => handleApprovePayment(record)}
+            disabled={!canApprovePayment(record) || approvingId === record.id}
+            className="p-2"
+            aria-label="Duyệt thanh toán"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Eye size={18} />}
+            onClick={() => handleOpenDetail(record)}
+            className="p-2"
+            aria-label="Xem chi tiết"
+          />
+        </div>
       ),
     },
   ];
@@ -229,6 +268,7 @@ const OrderList: React.FC = () => {
               options={[
                 { label: 'Tất cả TT', value: 'all' },
                 { label: 'Đã thanh toán', value: 'paid' },
+                { label: 'Chờ xác nhận', value: 'pending_confirmation' },
                 { label: 'Chưa thanh toán', value: 'unpaid' },
                 { label: 'Hoàn tiền', value: 'refunded' },
               ]}
@@ -254,7 +294,7 @@ const OrderList: React.FC = () => {
         <Pagination current={page} pageSize={pageSize} total={filteredData.length} onChange={setPage} />
       </div>
 
-      <OrderDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} maDatTour={selectedOrderId} />
+      <OrderDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} maDatTour={selectedOrderId} onApproved={getAll} />
     </MainLayout>
   );
 };
