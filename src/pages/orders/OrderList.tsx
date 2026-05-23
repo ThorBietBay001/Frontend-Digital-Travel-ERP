@@ -36,6 +36,8 @@ const mapStatus = (s?: string): Order['status'] => {
 
 const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
   switch (s?.toUpperCase()) {
+    case 'CHO_XAC_NHAN':
+      return 'pending_confirmation';
     case 'DA_XAC_NHAN':
     case 'HOAN_THANH':
       return 'paid';
@@ -108,7 +110,7 @@ const OrderList: React.FC = () => {
     setModalOpen(true);
   };
 
-  const canApprovePayment = (order: Order) => order.status === 'pending' && order.paymentStatus === 'unpaid';
+  const canApprovePayment = (order: Order) => order.paymentStatus === 'pending_confirmation';
 
   const handleApprovePayment = async (order: Order) => {
     const confirmed = await confirm(`Duyệt thanh toán cho đơn ${order.orderCode}?`);
@@ -188,6 +190,8 @@ const OrderList: React.FC = () => {
             return <Badge label="Đã Thanh Toán" variant="success" />;
           case 'unpaid':
             return <Badge label="Chưa Thanh Toán" variant="warning" />;
+          case 'pending_confirmation':
+            return <Badge label="Chờ Xác Nhận" variant="info" />;
           case 'partial':
             return <Badge label="Thanh Toán 1 phần" variant="info" />;
           case 'refunded':
@@ -264,6 +268,7 @@ const OrderList: React.FC = () => {
               options={[
                 { label: 'Tất cả TT', value: 'all' },
                 { label: 'Đã thanh toán', value: 'paid' },
+                { label: 'Chờ xác nhận', value: 'pending_confirmation' },
                 { label: 'Chưa thanh toán', value: 'unpaid' },
                 { label: 'Hoàn tiền', value: 'refunded' },
               ]}
@@ -289,7 +294,7 @@ const OrderList: React.FC = () => {
         <Pagination current={page} pageSize={pageSize} total={filteredData.length} onChange={setPage} />
       </div>
 
-      <OrderDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} maDatTour={selectedOrderId} />
+      <OrderDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} maDatTour={selectedOrderId} onApproved={getAll} />
     </MainLayout>
   );
 };

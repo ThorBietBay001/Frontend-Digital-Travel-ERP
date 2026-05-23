@@ -27,6 +27,16 @@ export interface DonDatTourResponse {
   tenKhachHang?: string;
   ngayDat?: string;
   tongTien?: number;
+  maVoucher?: string;
+  tenVoucher?: string;
+  giaTriVoucher?: number;
+  soTienGiam?: number;
+  tienGiam?: number;
+  soLuongVeTreEm?: number;
+  tienVeTreEm?: number;
+  diemXanh?: number;
+  soDiemXanh?: number;
+  ghiChuDiemXanh?: string;
   trangThai?: string;
   thoiGianHetHan?: string;
   ghiChu?: string;
@@ -54,10 +64,16 @@ export interface ChiTietDatTourResponse {
   maChiTietDat?: string;
   maKhachHang?: string;
   hoTen?: string;
+  soDienThoai?: string;
+  cccd?: string;
+  soGiayTo?: string;
+  loaiKhach?: string;
+  doTuoi?: number;
   maLoaiPhong?: string;
   tenLoaiPhong?: string;
   mucPhuThu?: number;
   giaTaiThoiDiemDat?: number;
+  giaVeTreEm?: number;
 }
 
 export interface ChiTietDichVuResponse {
@@ -90,6 +106,12 @@ export interface Passenger {
   name: string;
   ageGroup: 'Người lớn' | 'Trẻ em' | 'Em bé';
   gender: 'Nam' | 'Nữ';
+  customerCode?: string;
+  phone?: string;
+  identityNumber?: string;
+  roomType?: string;
+  surcharge?: number;
+  price?: number;
 }
 
 export interface Order {
@@ -102,8 +124,17 @@ export interface Order {
   departureDate: string;
   bookingDate: string;
   totalAmount: number;
+  voucherCode?: string;
+  voucherName?: string;
+  voucherDiscount?: number;
+  childTicketCount?: number;
+  childTicketAmount?: number;
+  greenPoints?: number;
+  greenNote?: string;
+  roomType?: string;
+  roomSurcharge?: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  paymentStatus: 'paid' | 'unpaid' | 'partial' | 'refunded';
+  paymentStatus: 'paid' | 'unpaid' | 'pending_confirmation' | 'partial' | 'refunded';
   passengerCount: number;
   passengers?: Passenger[];
 }
