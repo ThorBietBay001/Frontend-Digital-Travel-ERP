@@ -37,7 +37,7 @@ export const promotionsService = {
         return response.data.data;
     },
     voHieuVoucher: async (maVoucher: string) => {
-        const response = await api.put<ApiResponseVoucherResponse>(`/api/kinh-doanh/voucher/${maVoucher}/vo-hieu-hoa`, {});
+        const response = await api.put<ApiResponseVoucherResponse>(`/api/kinh-doanh/voucher/${maVoucher}/vo-hieu`, {});
         return response.data.data;
     },
     danhSach_4: async (params?: PageQueryParams) => {
@@ -53,8 +53,16 @@ export const promotionsService = {
         return response.data.data;
     },
     danhSachKhachHangDaPhanBo: async (maVoucher: string) => {
-        const response = await api.get<{ data?: KhuyenMaiKhResponse[] }>(`/api/kinh-doanh/voucher/${maVoucher}/khach-hang-da-phan-bo`);
-        return response.data.data || [];
+        try {
+            const response = await api.get<{ data?: KhuyenMaiKhResponse[] }>(`/api/kinh-doanh/voucher/${maVoucher}/khach-hang-da-phan-bo`);
+            return response.data.data || [];
+        } catch (error) {
+            const message = error instanceof Error ? error.message : '';
+            if (message.includes('Không tìm thấy đường dẫn') || message.includes('Khong tim thay duong dan')) {
+                return [];
+            }
+            throw error;
+        }
     },
     thuHoi: async (maVoucher: string, maKhachHang: string) => {
         const response = await api.put<ApiResponseKhuyenMaiKhResponse>(`/api/kinh-doanh/voucher/${maVoucher}/khach-hang/${maKhachHang}/thu-hoi`, {});

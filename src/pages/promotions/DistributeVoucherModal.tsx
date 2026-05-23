@@ -71,7 +71,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
         })).filter((customer) => customer.id));
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Lỗi tải danh sách khách hàng';
+        const message = formatApiError(err, 'Lỗi tải danh sách khách hàng');
         setError(message);
       })
       .finally(() => setLoading(false));
