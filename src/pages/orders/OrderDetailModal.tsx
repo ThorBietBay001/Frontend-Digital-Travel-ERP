@@ -41,6 +41,63 @@ const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
   }
 };
 
+<<<<<<< Updated upstream
+=======
+const formatCurrency = (value?: number): string => `${(value || 0).toLocaleString('vi-VN')} đ`;
+
+const getSelectedGreenActions = (api: DonDatTourResponse) => (
+  api.hanhDongXanhDaChon || api.hanhDongXanh || api.danhSachHanhDongXanh || []
+);
+
+const getGreenPoints = (api: DonDatTourResponse): number => {
+  const actions = getSelectedGreenActions(api);
+  return api.soDiemXanh ?? api.diemXanh ?? actions.reduce((sum, action) => (
+    sum + (action.diemThuong ?? action.diemMacDinh ?? action.soDiem ?? 0)
+  ), 0);
+};
+
+const formatDateTime = (value?: string): string => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const time = d.toLocaleTimeString('vi-VN', { hour12: false });
+  const date = d.toLocaleDateString('vi-VN');
+  return `${time}, ${date}`;
+};
+
+const getPaymentStatusLabel = (status: Order['paymentStatus']) => {
+  switch (status) {
+    case 'paid':
+      return 'Đã thanh toán';
+    case 'unpaid':
+      return 'Chưa thanh toán';
+    case 'pending_confirmation':
+      return 'Chờ xác nhận';
+    case 'partial':
+      return 'Thanh toán 1 phần';
+    case 'refunded':
+      return 'Đã hoàn tiền';
+    default:
+      return status;
+  }
+};
+
+const getOrderStatusLabel = (status: Order['status']) => {
+  switch (status) {
+    case 'pending':
+      return 'Chờ xác nhận';
+    case 'confirmed':
+      return 'Đã xác nhận';
+    case 'completed':
+      return 'Hoàn thành';
+    case 'cancelled':
+      return 'Đã hủy';
+    default:
+      return status;
+  }
+};
+
+>>>>>>> Stashed changes
 const mapApiToOrder = (api: DonDatTourResponse): Order => ({
   id: api.maDatTour || '',
   orderCode: api.maDatTour || '',
@@ -50,6 +107,19 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => ({
   departureDate: api.ngayKhoiHanh || '',
   bookingDate: api.ngayDat || '',
   totalAmount: api.tongTien || 0,
+<<<<<<< Updated upstream
+=======
+  voucherCode: api.maVoucher,
+  voucherName: api.tenVoucher,
+  voucherDiscount: api.soTienGiam ?? api.tienGiam ?? api.giaTriVoucher ?? 0,
+  childTicketCount: api.soLuongVeTreEm ?? api.chiTietKhach?.filter((p) => p.loaiKhach?.toUpperCase().includes('TRE') || (p.doTuoi !== undefined && p.doTuoi < 12)).length ?? 0,
+  childTicketAmount: api.tienVeTreEm ?? api.chiTietKhach?.reduce((sum, p) => sum + (p.giaVeTreEm || 0), 0) ?? 0,
+  greenPoints: getGreenPoints(api),
+  greenNote: api.ghiChuDiemXanh,
+  greenActionNames: getSelectedGreenActions(api).map((action) => action.tenHanhDong || action.ten || action.moTa).filter(Boolean) as string[],
+  roomType: api.chiTietKhach?.find((p) => p.tenLoaiPhong)?.tenLoaiPhong,
+  roomSurcharge: api.chiTietKhach?.reduce((sum, p) => sum + (p.mucPhuThu || 0), 0) ?? 0,
+>>>>>>> Stashed changes
   status: mapStatus(api.trangThai),
   paymentStatus: mapPaymentStatus(api.trangThai),
   passengerCount: api.chiTietKhach?.length || 0,
@@ -193,6 +263,82 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
             </div>
           </div>
 
+<<<<<<< Updated upstream
+=======
+          <div className="bg-[#F9F9FF] p-4 rounded-xl border border-[#E1F1FF] grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-gray-500 flex items-center gap-2"><Clock size={16} className="text-[#00668A]" /> Thời gian đặt</span>
+              <span className="font-semibold text-gray-800 text-right">{order.bookingDate}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-gray-500">Trạng thái đơn</span>
+              <span className="font-semibold text-gray-800 text-right">{getOrderStatusLabel(order.status)}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-3">
+              <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
+                <User size={18} className="text-[#00668A]" />
+                Thông tin Khách hàng
+              </h3>
+              <div className="bg-[#F9F9FF] p-4 rounded-xl border border-[#E1F1FF] flex flex-col gap-2.5">
+                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
+                  <span className="text-gray-500">Họ tên</span>
+                  <span className="font-semibold text-gray-800">{order.customerName}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Mã KH</span>
+                  <span className="font-medium text-gray-800">{order.id}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-[#E1F1FF] pt-2">
+                  <span className="text-gray-500">Loại phòng</span>
+                  <span className="font-medium text-gray-800">{order.roomType || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Phụ thu</span>
+                  <span className="font-medium text-gray-800">{order.roomSurcharge ? formatCurrency(order.roomSurcharge) : '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
+                <DollarSign size={18} className="text-[#00668A]" />
+                Thanh toán
+              </h3>
+              <div className="bg-white p-4 rounded-xl border border-[#E1F1FF] flex flex-col gap-2.5 shadow-sm">
+                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
+                  <span className="text-gray-500">Tổng tiền</span>
+                  <span className="font-bold text-[#121C2C] text-base">{formatCurrency(order.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
+                  <span className="text-gray-500">Trạng thái TT</span>
+                  <span className="font-medium">{getPaymentStatusLabel(order.paymentStatus)}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
+                  <span className="text-gray-500 flex items-center gap-1"><Tag size={14} /> Voucher</span>
+                  <span className="font-medium text-right">
+                    {order.voucherCode || order.voucherName ? `${order.voucherCode || order.voucherName}${order.voucherDiscount ? ` (-${formatCurrency(order.voucherDiscount)})` : ''}` : 'Chưa áp dụng'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
+                  <span className="text-gray-500 flex items-center gap-1"><Ticket size={14} /> Vé trẻ em</span>
+                  <span className="font-medium text-right">{order.childTicketCount || 0} vé{order.childTicketAmount ? ` - ${formatCurrency(order.childTicketAmount)}` : ''}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 flex items-center gap-1"><Leaf size={14} /> Điểm xanh</span>
+                  <span className="font-medium text-green-700 text-right">
+                    {order.greenPoints ? `+${order.greenPoints} điểm` : 'Chưa ghi nhận'}
+                    {order.greenActionNames?.length ? ` - ${order.greenActionNames.join(', ')}` : ''}
+                    {order.greenNote ? ` - ${order.greenNote}` : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+>>>>>>> Stashed changes
           <div className="flex flex-col gap-3">
             <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
               <Users size={18} className="text-[#00668A]" />
