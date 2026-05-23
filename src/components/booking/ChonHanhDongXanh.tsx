@@ -30,74 +30,66 @@ export default function ChonHanhDongXanh({
         {greenActions.map((action) => {
           const quantity = selectedGreenActions[action.id] || 0;
           const isSelected = quantity > 0;
+          const displayQuantity = Math.max(1, quantity);
 
           return (
-            <label
-              key={action.id}
-              className={`grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer group ${
-                isSelected ? 'border-green-500 bg-green-50/40' : 'border-transparent hover:bg-slate-50/50'
-              }`}
-            >
-              <div className="flex min-w-0 items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => chonHanhDongXanh(action.id)}
-                  className="mt-1 w-4 h-4 rounded text-green-600 border-slate-300 focus:ring-green-500/20 cursor-pointer flex-shrink-0"
-                />
-                <div className="min-w-0">
-                  <span className="font-bold text-slate-800 text-sm group-hover:text-green-700 transition-colors">
-                    {action.title}
-                  </span>
-                  <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
-                    {action.description}
-                  </p>
+            <div key={action.id} className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <label
+                className={`flex-1 flex items-center justify-between gap-3 p-3.5 rounded-xl border transition-all cursor-pointer group ${
+                  isSelected ? 'border-green-500 bg-green-50/40' : 'border-slate-100 hover:border-green-200'
+                }`}
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => chonHanhDongXanh(action.id)}
+                    className="mt-1 w-4 h-4 rounded text-green-600 border-slate-300 focus:ring-green-500/20 cursor-pointer flex-shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <span className={`font-bold text-sm group-hover:text-green-700 transition-colors ${isSelected ? 'text-green-700' : 'text-slate-800'}`}>
+                      {action.title}
+                    </span>
+                    <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                      {action.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {isSelected && (
-                <div className="col-span-2 sm:col-span-1 sm:col-start-2 flex items-center justify-end gap-2 rounded-lg bg-white border border-green-100 px-2.5 py-1.5">
-                  <span className="hidden md:inline text-[10px] font-black uppercase text-slate-500">Số lượng</span>
+                <span className="text-[10px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-100 whitespace-nowrap">
+                  +{action.points} điểm
+                </span>
+              </label>
+
+              <div className="flex-shrink-0 flex items-center justify-end sm:ml-2">
+                <div className={`flex items-center justify-end gap-2 ${isSelected ? '' : 'opacity-60'}`}>
                   <button
                     type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      capNhatSoLuongHanhDongXanh(action.id, Math.max(1, quantity - 1));
-                    }}
-                    className="w-7 h-7 rounded-full border border-green-200 bg-white text-green-700 font-black hover:bg-green-50"
+                    disabled={!isSelected}
+                    onClick={() => capNhatSoLuongHanhDongXanh(action.id, Math.max(1, quantity - 1))}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-green-300 bg-white text-green-700 font-black hover:bg-green-50 transition-colors disabled:cursor-not-allowed disabled:hover:bg-white"
                   >
                     -
                   </button>
                   <input
                     type="number"
                     min={1}
-                    value={quantity}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                    }}
+                    value={displayQuantity}
+                    disabled={!isSelected}
                     onChange={(event) => capNhatSoLuongHanhDongXanh(action.id, Math.max(1, Number(event.target.value) || 1))}
-                    className="w-14 text-center rounded-lg border border-green-200 py-1 text-xs font-black text-green-800"
+                    className="w-14 h-8 text-center rounded-xl border-2 border-green-300 text-sm font-black text-green-800 disabled:bg-transparent focus:ring-0 focus:border-green-400 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0 m-0"
                   />
                   <button
                     type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      capNhatSoLuongHanhDongXanh(action.id, quantity + 1);
-                    }}
-                    className="w-7 h-7 rounded-full border border-green-200 bg-white text-green-700 font-black hover:bg-green-50"
+                    disabled={!isSelected}
+                    onClick={() => capNhatSoLuongHanhDongXanh(action.id, quantity + 1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-green-300 bg-white text-green-700 font-black hover:bg-green-50 transition-colors disabled:cursor-not-allowed disabled:hover:bg-white"
                   >
                     +
                   </button>
                 </div>
-              )}
-
-              <span className="row-start-1 col-start-2 sm:col-start-3 justify-self-end self-start text-[9px] font-black text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100 whitespace-nowrap">
-                +{action.points} điểm
-              </span>
-            </label>
+              </div>
+            </div>
           );
         })}
       </div>

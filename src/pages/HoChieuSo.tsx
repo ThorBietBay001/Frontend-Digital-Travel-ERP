@@ -102,7 +102,9 @@ export default function HoChieuSo() {
           complaintStatus: b.trangThaiKhieuNai || ''
         }));
 
-        setBookings([...activeBks, ...pastBks]);
+        // Lọc bỏ các tour trong pastBks đã có trong activeBks (tránh trùng lặp do 2 API trả về cùng 1 maDatTour)
+        const uniquePastBks = pastBks.filter((pb: any) => !activeBks.some(ab => ab.id === pb.id));
+        setBookings([...activeBks, ...uniquePastBks]);
         setVouchers(unwrapPageContent(vouchersRes).map(mapVoucher));
         setRedeemableVouchers(unwrapPageContent(redeemableVouchersRes).map(mapVoucher));
         setAllTours(unwrapPageContent(toursRes).map(mapPublicTour));
@@ -325,7 +327,7 @@ export default function HoChieuSo() {
       setNewPassword('');
       setConfirmNewPassword('');
       setToast({ message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', type: 'success' });
-      
+
       // Auto logout after password change
       setTimeout(() => {
         localStorage.removeItem('token');
@@ -367,6 +369,8 @@ export default function HoChieuSo() {
         return <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">Đã quyết toán</span>;
       case 'DA_HUY':
         return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">Đã hủy</span>;
+      case 'CHO_HOAN_TIEN':
+        return <span className="px-3 py-1 bg-fuchsia-50 text-fuchsia-700 rounded-full text-xs font-bold border border-fuchsia-200">Chờ hoàn tiền</span>;
       case 'CHO_XAC_NHAN':
         return (
           <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200/60 flex items-center space-x-1.5 animate-pulse">
@@ -395,6 +399,7 @@ export default function HoChieuSo() {
       case 'DA_HUY': return 'Đã hủy';
       case 'CHO_XAC_NHAN': return 'Chờ xác nhận';
       case 'CHO_HUY': return 'Chờ hủy';
+      case 'CHO_HOAN_TIEN': return 'Chờ hoàn tiền';
       case 'TU_CHOI_HOAN_TIEN': return 'Từ chối hoàn tiền';
       case 'HET_HAN_GIU_CHO': return 'Hết hạn giữ chỗ';
       case 'THANH_TOAN_THAT_BAI': return 'Thanh toán thất bại';
@@ -438,8 +443,8 @@ export default function HoChieuSo() {
       await taiLaiHoSo();
 
       setVouchers(prev => [newVoucher, ...prev.filter(v => v.id !== newVoucher.id)]);
-    setShowRedeemModal(false);
-    setToast({ message: `Quy đổi thành công voucher "${voucher.title}"! Điểm thưởng xanh đã được khấu trừ.`, type: 'success' });
+      setShowRedeemModal(false);
+      setToast({ message: `Quy đổi thành công voucher "${voucher.title}"! Điểm thưởng xanh đã được khấu trừ.`, type: 'success' });
     } catch (err: any) {
       setToast({ message: layThongBaoLoi(err, 'Không thể quy đổi voucher. Vui lòng thử lại.'), type: 'error' });
     }
@@ -493,13 +498,13 @@ export default function HoChieuSo() {
       }
 
       setBookings(prev => prev.map(b =>
-      b.id === selectedBookingForCancel.id
-        ? { ...b, status: selectedBookingForCancel.status === 'CHO_XAC_NHAN' ? 'DA_HUY' as any : 'CHO_HUY' as any }
-        : b
+        b.id === selectedBookingForCancel.id
+          ? { ...b, status: selectedBookingForCancel.status === 'CHO_XAC_NHAN' ? 'DA_HUY' as any : 'CHO_HUY' as any }
+          : b
       ));
 
-    // UC48 in SPEC-Status-Flows.md: If booking is cancelled, return voucher to CO_HIEU_LUC
-    setToast({ message: `Yêu cầu hủy tour đã được gửi! Trạng thái: Chờ hủy. Số tiền hoàn trả dự kiến: ${formatPrice(cancellationPenalty.refund)}.`, type: 'success' });
+      // UC48 in SPEC-Status-Flows.md: If booking is cancelled, return voucher to CO_HIEU_LUC
+      setToast({ message: `Yêu cầu hủy tour đã được gửi! Trạng thái: Chờ hủy. Số tiền hoàn trả dự kiến: ${formatPrice(cancellationPenalty.refund)}.`, type: 'success' });
       setSelectedBookingForCancel(null);
     } catch (err: any) {
       setToast({ message: layThongBaoLoi(err, 'Không thể gửi yêu cầu hủy tour. Vui lòng thử lại.'), type: 'error' });
@@ -666,7 +671,7 @@ export default function HoChieuSo() {
       } else if (bookingFilter === 'completed') {
         statusMatch = ['KET_THUC', 'DA_QUYET_TOAN'].includes(booking.status);
       } else if (bookingFilter === 'cancelled') {
-        statusMatch = ['CHO_HUY', 'DA_HUY', 'TU_CHOI_HOAN_TIEN', 'HET_HAN_GIU_CHO', 'THANH_TOAN_THAT_BAI'].includes(booking.status);
+        statusMatch = ['CHO_HUY', 'CHO_HOAN_TIEN', 'DA_HUY', 'TU_CHOI_HOAN_TIEN', 'HET_HAN_GIU_CHO', 'THANH_TOAN_THAT_BAI'].includes(booking.status);
       } else {
         statusMatch = (booking.status as string) === bookingFilter;
       }
@@ -677,10 +682,12 @@ export default function HoChieuSo() {
     // 2. Search Filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      return (
-        booking.tourName.toLowerCase().includes(query) ||
-        booking.qrCode.toLowerCase().includes(query)
-      );
+      const searchStr = `
+        ${booking.tourName || ''} 
+        ${booking.qrCode || ''} 
+        ${booking.id || ''}
+      `.toLowerCase();
+      return searchStr.includes(query);
     }
 
     return true;
@@ -704,11 +711,10 @@ export default function HoChieuSo() {
                 <div className="flex flex-col sm:flex-row items-center gap-2">
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight">{profile.fullName}</h1>
                   <span
-                    className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg border ${
-                      profile.accountStatus === 'HOAT_DONG'
+                    className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg border ${profile.accountStatus === 'HOAT_DONG'
                         ? 'bg-emerald-100/90 text-emerald-700 border-emerald-200/60'
                         : 'bg-red-100/90 text-red-700 border-red-200/60'
-                    }`}
+                      }`}
                   >
                     {profile.accountStatus === 'HOAT_DONG' ? 'Đang hoạt động' : 'Đã khóa'}
                   </span>
@@ -1143,11 +1149,10 @@ export default function HoChieuSo() {
                                 <button
                                   onClick={() => handleOpenReviewModal(booking)}
                                   aria-disabled={booking.hasReviewed || hasPendingComplaint(booking)}
-                                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${
-                                    booking.hasReviewed || hasPendingComplaint(booking)
+                                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${booking.hasReviewed || hasPendingComplaint(booking)
                                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                       : 'bg-green-50 text-green-700 hover:bg-green-100'
-                                  }`}
+                                    }`}
                                 >
                                   <Star className={`w-3.5 h-3.5 ${booking.hasReviewed ? 'fill-current' : ''}`} />
                                   <span>{booking.hasReviewed ? 'Đã đánh giá' : hasPendingComplaint(booking) ? 'Chờ xử lý khiếu nại' : 'Đánh giá chuyến đi'}</span>
@@ -1155,11 +1160,10 @@ export default function HoChieuSo() {
                                 <button
                                   onClick={() => handleOpenComplaintModal(booking)}
                                   aria-disabled={booking.hasComplaint}
-                                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${
-                                    booking.hasComplaint
+                                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1 ${booking.hasComplaint
                                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                  }`}
+                                    }`}
                                 >
                                   <ShieldAlert className="w-3.5 h-3.5" />
                                   <span>{booking.hasComplaint ? 'Đã khiếu nại' : 'Gửi khiếu nại'}</span>
@@ -1675,33 +1679,33 @@ export default function HoChieuSo() {
                 {/* Right side: verified ticket and payment details */}
                 <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
                   <div className="bg-white border border-blue-100 rounded-2xl p-4 text-xs text-slate-600 space-y-3 shadow-sm">
-                      <h5 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Thông tin xác thực vé</h5>
-                      <div className="grid grid-cols-2 gap-2">
-                        <span>Mã đơn</span>
-                        <span className="font-bold text-right">{selectedBookingForDetail.id}</span>
-                        <span>Tour</span>
-                        <span className="font-bold text-right">{selectedBookingForDetail.tourName}</span>
-                        <span>Khởi hành</span>
-                        <span className="font-bold text-right">{formatDate(selectedBookingForDetail.departureDate)}</span>
-                        <span>Trạng thái</span>
-                        <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status)}</span>
-                        <span>Người đặt</span>
-                        <span className="font-bold text-right">{selectedBookingForDetail.customerName || profile.fullName}</span>
-                        <span>Số khách</span>
-                        <span className="font-bold text-right">{selectedBookingForDetail.passengers || selectedBookingForDetail.guests} người</span>
-                      </div>
-                      {!!selectedBookingForDetail.details?.length && (
-                        <div className="pt-2 border-t border-slate-100 space-y-2">
-                          <h6 className="font-bold text-slate-900">Chi tiết hành khách</h6>
-                          {selectedBookingForDetail.details.map((p: any, idx: number) => (
-                            <div key={p.maChiTietDat || idx} className="flex justify-between gap-3">
-                              <span>{idx + 1}. {p.hoTen}</span>
-                              <span className="font-semibold text-slate-500">{layTenLoaiKhach(p.loaiKhach)} - {layTenNhomTuoi(p.nhomTuoi)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    <h5 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Thông tin xác thực vé</h5>
+                    <div className="grid grid-cols-2 gap-2">
+                      <span>Mã đơn</span>
+                      <span className="font-bold text-right">{selectedBookingForDetail.id}</span>
+                      <span>Tour</span>
+                      <span className="font-bold text-right">{selectedBookingForDetail.tourName}</span>
+                      <span>Khởi hành</span>
+                      <span className="font-bold text-right">{formatDate(selectedBookingForDetail.departureDate)}</span>
+                      <span>Trạng thái</span>
+                      <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status)}</span>
+                      <span>Người đặt</span>
+                      <span className="font-bold text-right">{selectedBookingForDetail.customerName || profile.fullName}</span>
+                      <span>Số khách</span>
+                      <span className="font-bold text-right">{selectedBookingForDetail.passengers || selectedBookingForDetail.guests} người</span>
                     </div>
+                    {!!selectedBookingForDetail.details?.length && (
+                      <div className="pt-2 border-t border-slate-100 space-y-2">
+                        <h6 className="font-bold text-slate-900">Chi tiết hành khách</h6>
+                        {selectedBookingForDetail.details.map((p: any, idx: number) => (
+                          <div key={p.maChiTietDat || idx} className="flex justify-between gap-3">
+                            <span>{idx + 1}. {p.hoTen}</span>
+                            <span className="font-semibold text-slate-500">{layTenLoaiKhach(p.loaiKhach)} - {layTenNhomTuoi(p.nhomTuoi)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Payment / Cost summary */}
                   <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 space-y-2">
@@ -1863,11 +1867,10 @@ export default function HoChieuSo() {
                     key={star}
                     type="button"
                     onClick={() => setReviewStars(star)}
-                    className={`group rounded-2xl border p-2.5 transition-all ${
-                      star <= reviewStars
+                    className={`group rounded-2xl border p-2.5 transition-all ${star <= reviewStars
                         ? 'border-amber-300 bg-amber-50 text-amber-500 shadow-sm'
                         : 'border-slate-200 bg-white text-slate-300 hover:border-amber-200 hover:bg-amber-50/40'
-                    }`}
+                      }`}
                   >
                     <Star
                       className={`mx-auto w-7 h-7 transition-transform group-hover:scale-110 ${star <= reviewStars
@@ -1895,11 +1898,10 @@ export default function HoChieuSo() {
                     key={star}
                     type="button"
                     onClick={() => setReviewGuideStars(star)}
-                    className={`group rounded-2xl border p-2.5 transition-all ${
-                      star <= reviewGuideStars
+                    className={`group rounded-2xl border p-2.5 transition-all ${star <= reviewGuideStars
                         ? 'border-blue-300 bg-white text-blue-600 shadow-sm'
                         : 'border-blue-100 bg-white/70 text-slate-300 hover:border-blue-200'
-                    }`}
+                      }`}
                   >
                     <Star
                       className={`mx-auto w-6 h-6 transition-transform group-hover:scale-110 ${star <= reviewGuideStars
@@ -2069,10 +2071,10 @@ export default function HoChieuSo() {
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-fadeIn">
           <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-md min-w-[320px] max-w-lg ${toast.type === 'success'
-              ? 'bg-emerald-50/95 border-emerald-200 text-emerald-800'
-              : toast.type === 'error'
-                ? 'bg-red-50/95 border-red-200 text-red-800'
-                : 'bg-blue-50/95 border-blue-200 text-blue-800'
+            ? 'bg-emerald-50/95 border-emerald-200 text-emerald-800'
+            : toast.type === 'error'
+              ? 'bg-red-50/95 border-red-200 text-red-800'
+              : 'bg-blue-50/95 border-blue-200 text-blue-800'
             }`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${toast.type === 'success' ? 'bg-emerald-500' : toast.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
               }`}>

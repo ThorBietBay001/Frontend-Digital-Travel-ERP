@@ -40,13 +40,13 @@ export default function ChonDichVuThem({
         {extraServices.map((service) => {
           const quantity = selectedServices[service.id] || 0;
           const isSelected = quantity > 0;
+          const displayQuantity = Math.max(1, quantity);
 
           return (
             <div key={service.id} className="flex flex-col sm:flex-row sm:items-center gap-3">
               <label
-                className={`flex-1 flex items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
-                  isSelected ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 hover:border-amber-200'
-                }`}
+                className={`flex-1 flex items-center justify-between gap-3 p-3.5 rounded-xl border-1 transition-all cursor-pointer group ${isSelected ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 hover:border-amber-200'
+                  }`}
               >
                 <div className="flex min-w-0 items-start gap-3">
                   <input
@@ -56,7 +56,7 @@ export default function ChonDichVuThem({
                     className="mt-1 w-4 h-4 rounded text-amber-500 border-slate-300 focus:ring-amber-500/20 cursor-pointer flex-shrink-0"
                   />
                   <div className="min-w-0">
-                    <span className={`font-bold text-sm ${isSelected ? 'text-amber-700' : 'text-slate-800'}`}>
+                    <span className={`font-bold text-sm group-hover:text-amber-700 transition-colors ${isSelected ? 'text-amber-700' : 'text-slate-800'}`}>
                       {service.title}
                     </span>
                     <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
@@ -70,41 +70,34 @@ export default function ChonDichVuThem({
                 </span>
               </label>
 
-              {isSelected && (
-                <div className="flex-shrink-0 flex items-center justify-end ml-4">
-                  <div className="flex items-center border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden h-9">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        capNhatSoLuongDichVu(service.id, Math.max(1, quantity - 1));
-                      }}
-                      className="w-9 h-full flex items-center justify-center bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      value={quantity}
-                      onChange={(event) => capNhatSoLuongDichVu(service.id, Math.max(1, Number(event.target.value) || 1))}
-                      className="w-10 h-full text-center border-0 border-x border-slate-200 text-sm font-bold text-slate-800 outline-none focus:ring-0 p-0"
-                    />
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        capNhatSoLuongDichVu(service.id, quantity + 1);
-                      }}
-                      className="w-9 h-full flex items-center justify-center bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-                    >
-                      +
-                    </button>
-                  </div>
+              <div className="flex-shrink-0 flex items-center justify-end sm:ml-2">
+                <div className={`flex items-center justify-end gap-2 ${isSelected ? '' : 'opacity-60'}`}>
+                  <button
+                    type="button"
+                    disabled={!isSelected}
+                    onClick={() => capNhatSoLuongDichVu(service.id, Math.max(1, quantity - 1))}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border-1 border-amber-200 bg-white text-amber-700 font-black hover:bg-amber-50 transition-colors disabled:cursor-not-allowed disabled:hover:bg-white"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={displayQuantity}
+                    disabled={!isSelected}
+                    onChange={(event) => capNhatSoLuongDichVu(service.id, Math.max(1, Number(event.target.value) || 1))}
+                    className="w-14 h-8 text-center rounded-xl border-2 border-amber-300 text-sm font-black text-amber-800 disabled:bg-transparent focus:ring-0 focus:border-amber-400 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0 m-0"
+                  />
+                  <button
+                    type="button"
+                    disabled={!isSelected}
+                    onClick={() => capNhatSoLuongDichVu(service.id, quantity + 1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border-1 border-amber-200 bg-white text-amber-700 font-black hover:bg-amber-50 transition-colors disabled:cursor-not-allowed disabled:hover:bg-white"
+                  >
+                    +
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
