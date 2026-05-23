@@ -12,6 +12,7 @@ export interface SettlementTour {
   guideCode: string;
   status: 'pending' | 'completed' | 'pending_over_budget';
   settlementNote?: string;
+  approverName?: string;
   actualCostItems: {
     category: string;
     amount: number;

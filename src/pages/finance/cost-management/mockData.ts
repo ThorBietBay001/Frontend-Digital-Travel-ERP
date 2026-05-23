@@ -11,6 +11,7 @@ export interface CostItem {
   warningMessage?: string;
   resolutionNote?: string;
   receiptImage?: string;
+  guideId?: string;
   guidePhone?: string;
   budgetLimit?: number;
 }

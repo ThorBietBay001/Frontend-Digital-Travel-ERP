@@ -7,6 +7,19 @@ import { AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
 import type { Column } from '../../../components/ui/Table';
 import type { SettlementTour } from './mockData';
 import { useNotification } from '../../../context/NotificationContext';
+import { tourInstanceService } from '../../../services/tour-instance';
+import { financeService } from '../../../services/finance';
+
+const formatDateStr = (dateString?: string) => {
+  if (!dateString) return 'Chưa cập nhật';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    return `${d.getDate().toString().padStart(2, '0')} - ${(d.getMonth() + 1).toString().padStart(2, '0')} - ${d.getFullYear()}`;
+  } catch {
+    return dateString;
+  }
+};
 
 export interface SettlementModalProps {
   isOpen: boolean;
@@ -25,6 +38,13 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
   const [localAllotment, setLocalAllotment] = useState(0);
   const [localActual, setLocalActual] = useState(0);
   const [grossProfit, setGrossProfit] = useState(0);
+  const [extraDetails, setExtraDetails] = useState({
+    guideName: 'Đang tải...',
+    guideCode: '...',
+    startDate: '...',
+    endDate: '...',
+    passengerCount: 0 as number | string
+  });
 
   useEffect(() => {
     if (tour && isOpen) {
@@ -35,6 +55,42 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
       setNote('');
       setNoteError('');
       setConfirmOpen(false);
+
+      setExtraDetails({
+        guideName: 'Đang tải...',
+        guideCode: '...',
+        startDate: '...',
+        endDate: '...',
+        passengerCount: 'Đang tải...'
+      });
+
+      tourInstanceService.chiTiet(tour.code).then(res => {
+        if (res) {
+          setExtraDetails(prev => ({
+            ...prev,
+            startDate: formatDateStr(res.ngayKhoiHanh),
+            endDate: formatDateStr(res.ngayKetThuc),
+            passengerCount: res.soKhachToiDa || 0
+          }));
+        }
+      }).catch(() => {});
+
+      financeService.danhSachChiPhi().then(res => {
+        const cost = res?.content?.find(c => c.maTour === tour.code);
+        if (cost) {
+          setExtraDetails(prev => ({
+            ...prev,
+            guideName: cost.tenNhanVien || 'Không xác định',
+            guideCode: cost.maNhanVien || 'N/A'
+          }));
+        } else {
+          setExtraDetails(prev => ({
+            ...prev,
+            guideName: 'Không xác định',
+            guideCode: 'N/A'
+          }));
+        }
+      }).catch(() => {});
     }
   }, [tour, isOpen]);
 
@@ -117,26 +173,31 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
         isOpen={isOpen}
         onClose={onClose}
         title={readonly ? 'Chi tiết quyết toán' : 'Quyết toán tour'}
-        size="3xl"
+        size="lg"
         footer={renderFooter()}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6">
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
             <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
               <h3 className="text-[20px] font-semibold text-gray-900 mb-3">Thông tin chung</h3>
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Thời gian</span>
-                  <span className="font-medium text-gray-800">{tour.startDate} - {tour.endDate}</span>
+                  <span className="font-medium text-gray-800">{extraDetails.startDate} đến {extraDetails.endDate}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Số khách</span>
-                  <span className="font-medium text-gray-800">{tour.passengerCount} khách</span>
+                  <span className="font-medium text-gray-800">{extraDetails.passengerCount} khách</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">HDV</span>
-                  <span className="font-medium text-gray-800">{tour.guideName} ({tour.guideCode})</span>
+                  <span className="font-medium text-gray-800">{extraDetails.guideName} ({extraDetails.guideCode})</span>
                 </div>
+                {tour.approverName && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Người duyệt</span>
+                    <span className="font-medium text-gray-800">{tour.approverName}</span>
+                  </div>
+                )}
                 {readonly && (
                   <div className="flex justify-between pt-2 border-t border-[#E1F1FF]">
                     <span className="text-gray-500">Trạng thái</span>
@@ -203,27 +264,6 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
                 <p className="mt-2 text-sm text-gray-700">{tour.settlementNote}</p>
               </div>
             )}
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-              <h3 className="text-[20px] font-semibold text-gray-900 mb-4">Đánh giá & Thưởng/Phạt HDV</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-[#E1F1FF] rounded-lg bg-[#F9F9FF]">
-                  <div>
-                    <p className="font-bold text-[#121C2C]">{tour.guideName}</p>
-                    <p className="text-xs text-gray-500">{tour.guideCode}</p>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <Badge label={isLoss ? 'Phạt (Vượt chi)' : 'Thưởng (Tiết kiệm)'} variant={isLoss ? 'error' : 'success'} />
-                    <span className={`text-sm font-semibold mt-1 ${isLoss ? 'text-red-600' : 'text-emerald-700'}`}>
-                      {isLoss ? '- 500.000 VND' : '+ 1.000.000 VND'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </Modal>
 

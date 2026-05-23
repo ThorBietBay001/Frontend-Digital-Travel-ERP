@@ -80,8 +80,10 @@ export interface ThanhToanResponse {
 export interface ChiPhiThucTeResponse {
   maChiPhi?: string;
   maTour?: string;
+  tenTour?: string;
   maNhanVien?: string;
   tenNhanVien?: string;
+  soDienThoai?: string;
   danhMuc?: string;
   thanhTien?: number;
   hoaDonAnh?: string;

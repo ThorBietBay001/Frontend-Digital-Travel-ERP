@@ -59,8 +59,9 @@ const SettlementList: React.FC = () => {
           totalAllotmentCost: 0,
           totalActualCost: q.tongChiPhi || 0,
           passengerCount: 0,
-          guideName: q.tenNhanVien || '',
+          guideName: '',
           guideCode: '',
+          approverName: q.tenNhanVien || '',
           actualCostItems: [],
           status,
           settlementNote: q.ghiChu
@@ -126,7 +127,16 @@ const SettlementList: React.FC = () => {
     {
       key: 'endDate',
       title: 'Ngày kết thúc',
-      dataIndex: 'endDate',
+      render: (record) => {
+        if (!record.endDate) return '—';
+        try {
+          const d = new Date(record.endDate);
+          if (isNaN(d.getTime())) return record.endDate;
+          return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+        } catch {
+          return record.endDate;
+        }
+      }
     },
     {
       key: 'totalRevenue',

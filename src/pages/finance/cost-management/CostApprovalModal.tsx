@@ -4,6 +4,8 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { MapPin, Calendar, Phone, AlertTriangle, Ban, CheckCircle } from 'lucide-react';
 import type { CostItem } from './mockData';
+import { tourInstanceService } from '../../../services/tour-instance';
+import { accountsService } from '../../../services/system/accounts';
 
 export interface CostApprovalModalProps {
   isOpen: boolean;
@@ -15,11 +17,44 @@ export interface CostApprovalModalProps {
 const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, cost, onUpdateStatus }) => {
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState('');
+  const [extraDetails, setExtraDetails] = useState<{ tourName: string; guidePhone: string }>({
+    tourName: 'Đang tải...',
+    guidePhone: 'Đang tải...',
+  });
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && cost) {
       setNote('');
       setNoteError('');
+      
+      setExtraDetails({
+        tourName: cost.tourName && cost.tourName !== 'Đang tải...' ? cost.tourName : 'Đang tải...',
+        guidePhone: cost.guidePhone && cost.guidePhone !== 'Đang tải...' ? cost.guidePhone : 'Đang tải...',
+      });
+
+      if (!cost.tourName || cost.tourName === 'Đang tải...') {
+        tourInstanceService.chiTiet(cost.tourCode).then(res => {
+          if (res && res.tieuDeTour) {
+            setExtraDetails(prev => ({ ...prev, tourName: res.tieuDeTour! }));
+          } else {
+            setExtraDetails(prev => ({ ...prev, tourName: 'Không xác định' }));
+          }
+        }).catch(() => {
+          setExtraDetails(prev => ({ ...prev, tourName: 'Lỗi tải dữ liệu' }));
+        });
+      }
+
+      if ((!cost.guidePhone || cost.guidePhone === 'Đang tải...') && cost.guideId) {
+        accountsService.chiTietNhanVien(cost.guideId).then(res => {
+          if (res && res.soDienThoai) {
+            setExtraDetails(prev => ({ ...prev, guidePhone: res.soDienThoai || 'Chưa cập nhật' }));
+          } else {
+            setExtraDetails(prev => ({ ...prev, guidePhone: 'Chưa cập nhật' }));
+          }
+        }).catch(() => {
+          setExtraDetails(prev => ({ ...prev, guidePhone: 'Chưa cập nhật' }));
+        });
+      }
     }
   }, [isOpen, cost?.id]);
 
@@ -102,7 +137,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-gray-500 font-medium">Không có ảnh hóa đơn</span>
+                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80" alt="Ảnh hóa đơn mẫu" className="w-full h-full object-cover opacity-60" />
               )}
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
@@ -128,7 +163,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Tên tour</span>
-                <span className="font-medium text-gray-800">{cost.tourName || '—'}</span>
+                <span className="font-medium text-gray-800 text-right max-w-[200px]">{extraDetails.tourName}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Hướng dẫn viên</span>
@@ -138,7 +173,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
                 <span className="text-gray-500">SĐT</span>
                 <span className="font-medium text-gray-800 flex items-center gap-1">
                   <Phone size={14} className="text-gray-400" />
-                  {cost.guidePhone || '—'}
+                  {extraDetails.guidePhone}
                 </span>
               </div>
             </div>
@@ -177,9 +212,18 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
             </div>
           )}
 
+          {isReadonly && cost.resolutionNote && (
+            <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
+              <h3 className="text-[16px] font-semibold text-gray-900 mb-2">Ghi chú duyệt</h3>
+              <div className="bg-gray-50 rounded-[12px] p-4 border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap">
+                {cost.resolutionNote}
+              </div>
+            </div>
+          )}
+
           {!isReadonly && (
             <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-              <label className="text-sm font-semibold text-gray-700">Ghi chú duyệt</label>
+              <label className="text-[16px] font-semibold text-gray-900">Ghi chú duyệt</label>
               <textarea
                 value={note}
                 onChange={(event) => {

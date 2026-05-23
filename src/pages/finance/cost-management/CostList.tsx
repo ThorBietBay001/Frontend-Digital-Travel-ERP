@@ -53,6 +53,7 @@ const CostList: React.FC = () => {
           tourCode: c.maTour || '',
           tourName: '',
           guideName: c.tenNhanVien || '',
+          guideId: c.maNhanVien || '',
           category: c.danhMuc || '',
           amount: c.thanhTien || 0,
           submittedDate: c.ngayKhai || '',
@@ -123,7 +124,6 @@ const CostList: React.FC = () => {
           </div>
           <div>
             <div className="font-semibold text-gray-800">{record.guideName}</div>
-            <div className="text-xs text-gray-500">{record.tourName}</div>
           </div>
         </div>
       ),
