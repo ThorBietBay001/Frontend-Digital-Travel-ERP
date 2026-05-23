@@ -47,6 +47,14 @@ const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
 
 const formatCurrency = (value?: number): string => `${(value || 0).toLocaleString('vi-VN')} đ`;
 
+const formatAdditionalService = (service: NonNullable<DonDatTourResponse['chiTietDichVu']>[number]): string => {
+  const name = service.tenDichVu || service.maDichVuThem || 'Dịch vụ thêm';
+  const quantity = service.soLuong ? ` x${service.soLuong}` : '';
+  const amount = service.thanhTien ?? (service.donGia && service.soLuong ? service.donGia * service.soLuong : service.donGia);
+
+  return amount ? `${name}${quantity} - ${formatCurrency(amount)}` : `${name}${quantity}`;
+};
+
 const calculateAge = (birthday?: string, referenceDate?: string): number | undefined => {
   if (!birthday) return undefined;
 
@@ -151,8 +159,7 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
       ?? childPassengers.reduce((sum, p) => sum + (p.giaVeTreEm ?? childTicketPrice ?? 0), 0),
     greenPoints: api.soDiemXanh ?? api.diemXanh ?? 0,
     greenNote: api.ghiChuDiemXanh,
-    roomType: passengerDetails.find((p) => p.tenLoaiPhong)?.tenLoaiPhong,
-    roomSurcharge: passengerDetails.reduce((sum, p) => sum + (p.mucPhuThu || 0), 0),
+    additionalServices: api.chiTietDichVu?.map(formatAdditionalService).filter(Boolean),
     status: mapStatus(api.trangThai),
     paymentStatus: mapPaymentStatus(api.trangThai),
     passengerCount: passengerDetails.length,
@@ -334,13 +341,11 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
                   <span className="text-gray-500">Mã KH</span>
                   <span className="font-medium text-gray-800">{order.id}</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-[#E1F1FF] pt-2">
-                  <span className="text-gray-500">Loại phòng</span>
-                  <span className="font-medium text-gray-800">{order.roomType || '—'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Phụ thu</span>
-                  <span className="font-medium text-gray-800">{order.roomSurcharge ? formatCurrency(order.roomSurcharge) : '—'}</span>
+                <div className="flex justify-between items-start gap-3 border-t border-[#E1F1FF] pt-2">
+                  <span className="text-gray-500">Dịch vụ thêm</span>
+                  <span className="font-medium text-gray-800 text-right">
+                    {order.additionalServices?.length ? order.additionalServices.join(', ') : '—'}
+                  </span>
                 </div>
               </div>
             </div>

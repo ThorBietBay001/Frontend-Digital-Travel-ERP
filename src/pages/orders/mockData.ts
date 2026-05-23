@@ -146,8 +146,7 @@ export interface Order {
   childTicketAmount?: number;
   greenPoints?: number;
   greenNote?: string;
-  roomType?: string;
-  roomSurcharge?: number;
+  additionalServices?: string[];
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   paymentStatus: 'paid' | 'unpaid' | 'pending_confirmation' | 'partial' | 'refunded';
   passengerCount: number;
