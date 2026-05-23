@@ -651,7 +651,7 @@ export default function ChiTietTour() {
                       {/* Streamlined Real Image Gallery */}
                       {review.images && review.images.length > 0 && (
                         <div className="flex flex-wrap gap-2 pt-1 sm:pl-13">
-                          {review.images.map((imgUrl, imgIdx) => (
+                          {review.images.map((imgUrl: string, imgIdx: number) => (
                             <div key={imgIdx} className="relative group overflow-hidden rounded-xl border border-slate-100 shadow-sm w-16 h-16 sm:w-20 sm:h-20">
                               <img
                                 src={imgUrl}

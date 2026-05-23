@@ -34,7 +34,7 @@ export interface Booking {
   bookingDate: string;
   departureDate: string;
   totalAmount: number;
-  status: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'CHO_HUY' | 'DA_HUY' | 'upcoming' | 'completed' | 'cancelled' | 'TU_CHOI_HOAN_TIEN' | 'HET_HAN_GIU_CHO' | 'THANH_TOAN_THAT_BAI' | 'DA_HOAN_THANH';
+  status: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'CHO_HUY' | 'DA_HUY' | 'TU_CHOI_HOAN_TIEN' | 'HET_HAN_GIU_CHO' | 'THANH_TOAN_THAT_BAI' | 'KET_THUC' | 'DA_QUYET_TOAN';
   guests: number;
   qrCode: string;
   paymentMethod?: string;

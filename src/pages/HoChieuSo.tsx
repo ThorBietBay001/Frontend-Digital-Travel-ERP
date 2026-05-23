@@ -92,7 +92,7 @@ export default function HoChieuSo() {
           bookingDate: b.ngayThamGia,
           departureDate: b.ngayKhoiHanh,
           totalAmount: 0,
-          status: 'completed' as const,
+          status: b.trangThaiTour || 'KET_THUC',
           guests: 1,
           passengers: 1,
           tourImage: `https://picsum.photos/seed/${b.maTourThucTe}/900/650`,
@@ -348,8 +348,10 @@ export default function HoChieuSo() {
     switch (status) {
       case 'DA_XAC_NHAN':
         return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200">Đã xác nhận</span>;
-      case 'DA_HOAN_THANH':
+      case 'KET_THUC':
         return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Đã hoàn thành</span>;
+      case 'DA_QUYET_TOAN':
+        return <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">Đã quyết toán</span>;
       case 'DA_HUY':
         return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">Đã hủy</span>;
       case 'CHO_XAC_NHAN':
@@ -560,7 +562,7 @@ export default function HoChieuSo() {
       if (bookingFilter === 'upcoming') {
         statusMatch = ['CHO_XAC_NHAN', 'DA_XAC_NHAN'].includes(booking.status);
       } else if (bookingFilter === 'completed') {
-        statusMatch = booking.status === 'DA_HOAN_THANH';
+        statusMatch = ['KET_THUC', 'DA_QUYET_TOAN'].includes(booking.status);
       } else if (bookingFilter === 'cancelled') {
         statusMatch = ['CHO_HUY', 'DA_HUY', 'TU_CHOI_HOAN_TIEN', 'HET_HAN_GIU_CHO', 'THANH_TOAN_THAT_BAI'].includes(booking.status);
       } else {
@@ -1034,7 +1036,7 @@ export default function HoChieuSo() {
 
                             {/* Only Hủy tour & Hoàn tiền is shown */}
 
-                            {booking.status === 'completed' && (
+                            {['KET_THUC', 'DA_QUYET_TOAN'].includes(booking.status) && (
                               <>
                                 <button
                                   onClick={() => handleOpenReviewModal(booking)}
