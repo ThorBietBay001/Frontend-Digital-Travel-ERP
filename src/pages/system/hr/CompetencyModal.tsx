@@ -7,6 +7,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { Competency, Staff } from './mockData';
 import { hrService } from '../../../services/system/hr';
 import type { NangLucResponse, NangLucRequest } from '../../../services/system/hr';
+import { useNotification } from '../../../context/NotificationContext';
 
 interface CompetencyModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const CompetencyModal: React.FC<CompetencyModalProps> = ({
   onClose,
   staff,
 }) => {
+  const { confirm } = useNotification();
   const [draftCompetencies, setDraftCompetencies] = useState<Competency[]>([]);
   const [newType, setNewType] = useState<Competency['type']>('Ngôn ngữ');
   const [newName, setNewName] = useState('');
@@ -112,8 +114,8 @@ const CompetencyModal: React.FC<CompetencyModalProps> = ({
     setNewNote('');
   };
 
-  const handleRemove = (competencyId: number) => {
-    const confirmed = window.confirm('Xóa năng lực này khỏi danh sách?');
+  const handleRemove = async (competencyId: number) => {
+    const confirmed = await confirm('Xóa năng lực này khỏi danh sách?');
     if (!confirmed) return;
 
     setDraftCompetencies((prev) => prev.filter((item) => item.id !== competencyId));

@@ -117,6 +117,7 @@ export const mapCustomerRank = (rank?: string): StatusMapping => {
 export const mapVoucherStatus = (status?: string): StatusMapping => {
   switch (status) {
     case 'SAN_SANG': return { label: 'Sẵn sàng', variant: 'success' };
+    case 'HET_HAN': return { label: 'Hết hạn', variant: 'neutral' };
     case 'VO_HIEU_HOA': return { label: 'Vô hiệu hóa', variant: 'error' };
     default: return { label: status || 'Không xác định', variant: 'neutral' };
   }

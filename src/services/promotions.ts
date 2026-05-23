@@ -51,5 +51,13 @@ export const promotionsService = {
     phatHanh: async (maVoucher: string, data: PhatHanhVoucherRequest) => {
         const response = await api.post<ApiResponseKhuyenMaiKhResponse>(`/api/kinh-doanh/voucher/${maVoucher}/phat-hanh`, data);
         return response.data.data;
+    },
+    danhSachKhachHangDaPhanBo: async (maVoucher: string) => {
+        const response = await api.get<{ data?: KhuyenMaiKhResponse[] }>(`/api/kinh-doanh/voucher/${maVoucher}/khach-hang-da-phan-bo`);
+        return response.data.data || [];
+    },
+    thuHoi: async (maVoucher: string, maKhachHang: string) => {
+        const response = await api.put<ApiResponseKhuyenMaiKhResponse>(`/api/kinh-doanh/voucher/${maVoucher}/khach-hang/${maKhachHang}/thu-hoi`, {});
+        return response.data.data;
     }
 };
