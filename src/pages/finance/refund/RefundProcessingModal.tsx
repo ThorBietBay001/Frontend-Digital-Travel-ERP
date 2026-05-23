@@ -53,10 +53,25 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
 
   if (!refund) return null;
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!window.confirm('Bạn có chắc chắn muốn từ chối yêu cầu hoàn tiền này?')) {
       return;
     }
+    setErrorMessage('');
+    setProcessing(true);
+    try {
+      const order = await ordersService.chiTietDatTour(refund.orderCode);
+      if (order.trangThai !== 'CHO_HUY') {
+        setErrorMessage('Chỉ có thể từ chối hoàn tiền cho đơn hàng ở trạng thái Chờ Hủy.');
+        setProcessing(false);
+        return;
+      }
+    } catch (e) {
+      setErrorMessage('Không thể kiểm tra trạng thái đơn hàng: ' + (e instanceof Error ? e.message : 'Lỗi không xác định'));
+      setProcessing(false);
+      return;
+    }
+
     onProcessRefund?.(refund.id, 'reject');
     onClose();
   };

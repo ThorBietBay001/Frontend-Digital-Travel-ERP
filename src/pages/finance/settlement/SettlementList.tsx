@@ -7,7 +7,7 @@ import { Select } from '../../../components/ui/Select';
 import { Pagination } from '../../../components/ui/Pagination';
 import { Table } from '../../../components/ui/Table';
 import SettlementModal from './SettlementModal';
-import { AlertTriangle, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import type { Column } from '../../../components/ui/Table';
 import type { SettlementTour } from './mockData';
 import { financeService } from '../../../services/finance';
@@ -150,21 +150,7 @@ const SettlementList: React.FC = () => {
         );
       },
     },
-    {
-      key: 'warning',
-      title: 'Cảnh báo',
-      align: 'center',
-      render: (record) => {
-        const totalCost = record.totalAllotmentCost + record.totalActualCost;
-        if (totalCost <= record.totalRevenue) return '-';
-        return (
-          <div className="inline-flex items-center gap-1 text-amber-600">
-            <AlertTriangle size={16} />
-            <span className="text-xs font-semibold">Vượt doanh thu</span>
-          </div>
-        );
-      },
-    },
+
     {
       key: 'status',
       title: 'Trạng thái',

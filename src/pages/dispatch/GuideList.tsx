@@ -18,6 +18,7 @@ import { tourInstanceService } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
+import { hrService } from '../../services/system/hr';
 import type { NangLucResponse } from '../../services/system/hr';
 import { mapEmployeeStatus } from '../../utils/statusMapping';
 
@@ -77,7 +78,19 @@ const GuideList: React.FC = () => {
         guides = await dispatchService.hdvKhaDung({ maTourThucTe: refTour.maTourThucTe });
       }
 
-      setData(guides.map((g) => mapNhanVienToGuide(g)));
+      const mappedGuides = await Promise.all(
+        guides.map(async (g) => {
+          try {
+            if (!g.maNhanVien) return mapNhanVienToGuide(g);
+            const nangLuc = await hrService.layNangLuc(g.maNhanVien);
+            return mapNhanVienToGuide(g, nangLuc);
+          } catch (e) {
+            return mapNhanVienToGuide(g);
+          }
+        })
+      );
+
+      setData(mappedGuides);
     } catch (err: unknown) {
       setError(formatApiError(err, 'Lỗi khi tải danh sách HDV'));
       setData([]);
@@ -140,15 +153,9 @@ const GuideList: React.FC = () => {
         <div className="flex items-center gap-1.5 text-sm">
           {record.rating > 0 ? (
             <>
-              {Array.from({ length: 5 }, (_, i) => (
-                <Star
-                  key={i}
-                  size={14}
-                  className={i < Math.round(record.rating) ? 'text-amber-400' : 'text-gray-200'}
-                  fill={i < Math.round(record.rating) ? 'currentColor' : 'none'}
-                />
-              ))}
-              <span className="font-bold text-gray-800 ml-1">{record.rating.toFixed(1)}</span>
+              <Star size={16} className="text-amber-400" fill="currentColor" />
+              <span className="font-bold text-gray-800">{record.rating.toFixed(1)}</span>
+              <span className="text-gray-500 text-xs">({record.completedTours})</span>
             </>
           ) : (
             <span className="text-gray-400">—</span>

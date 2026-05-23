@@ -17,6 +17,7 @@ interface LichSuTourItem {
   ngayKhoiHanh: string;
   thoiLuong: number;
   ngayThamGia: string;
+  trangThai?: string;
 }
 
 interface YeuCauHoTroItem {
@@ -25,6 +26,7 @@ interface YeuCauHoTroItem {
   noiDung: string;
   trangThai: string;
   maDatTour: string;
+  ngayTao?: string;
 }
 
 interface CustomerDetailModalProps {
@@ -38,8 +40,10 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
   const [loading, setLoading] = useState(false);
   const [tourHistory, setTourHistory] = useState<LichSuTourItem[]>([]);
   const [tourHistoryLoading, setTourHistoryLoading] = useState(false);
+  const [tourHistoryError, setTourHistoryError] = useState(false);
   const [complaints, setComplaints] = useState<YeuCauHoTroItem[]>([]);
   const [complaintsLoading, setComplaintsLoading] = useState(false);
+  const [complaintsError, setComplaintsError] = useState(false);
 
   useEffect(() => {
     if (isOpen && customer?.id) {
@@ -66,13 +70,15 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
 
       // Fetch tour history
       setTourHistoryLoading(true);
-      api.get<{ data: { content?: LichSuTourItem[] } }>('/api/khach-hang/lich-su-tour', { params: { size: 50 } })
+      setTourHistoryError(false);
+      api.get<{ data: { content?: LichSuTourItem[] } }>('/api/khach-hang/lich-su-tour', { params: { maKhachHang: customer.id, size: 50 } })
         .then((res) => {
           const items = res.data?.data?.content ?? [];
           setTourHistory(items);
         })
         .catch(() => {
           setTourHistory([]);
+          setTourHistoryError(true);
         })
         .finally(() => {
           setTourHistoryLoading(false);
@@ -80,13 +86,15 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
 
       // Fetch complaints
       setComplaintsLoading(true);
-      api.get<{ data: { content?: YeuCauHoTroItem[] } }>('/api/kinh-doanh/yeu-cau-ho-tro', { params: { size: 50 } })
+      setComplaintsError(false);
+      api.get<{ data: { content?: YeuCauHoTroItem[] } }>('/api/khach-hang/yeu-cau-ho-tro', { params: { maKhachHang: customer.id, size: 50 } })
         .then((res) => {
           const items = res.data?.data?.content ?? [];
           setComplaints(items);
         })
         .catch(() => {
           setComplaints([]);
+          setComplaintsError(true);
         })
         .finally(() => {
           setComplaintsLoading(false);
@@ -94,7 +102,9 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
     } else {
       setDetailData(null);
       setTourHistory([]);
+      setTourHistoryError(false);
       setComplaints([]);
+      setComplaintsError(false);
     }
   }, [isOpen, customer]);
 
@@ -134,6 +144,14 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
       title: 'Ngày tham gia',
       render: (record) => <span className="text-sm text-gray-600">{record.ngayThamGia || '—'}</span>,
     },
+    {
+      key: 'trangThai',
+      title: 'Trạng thái',
+      render: (record) => {
+        if (!record.trangThai) return <span className="text-sm text-gray-500">—</span>;
+        return <Badge label={record.trangThai} variant="neutral" />;
+      },
+    },
   ];
 
   const complaintColumns: Column<YeuCauHoTroItem>[] = [
@@ -162,6 +180,11 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
       key: 'loaiYeuCau',
       title: 'Loại yêu cầu',
       render: (record) => <span className="text-sm text-gray-600">{record.loaiYeuCau || '—'}</span>,
+    },
+    {
+      key: 'ngayTao',
+      title: 'Ngày tạo',
+      render: (record) => <span className="text-sm text-gray-600">{record.ngayTao || '—'}</span>,
     },
   ];
 
@@ -269,6 +292,10 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00668A]"></div>
                 <span className="ml-3 text-sm text-gray-500">Đang tải...</span>
               </div>
+            ) : tourHistoryError ? (
+              <div className="flex-1 p-8 text-center text-red-500 italic">
+                Lỗi khi tải lịch sử tour
+              </div>
             ) : tourHistory.length > 0 ? (
               <Table<LichSuTourItem>
                 columns={tourColumns}
@@ -293,6 +320,10 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00668A]"></div>
                 <span className="ml-3 text-sm text-gray-500">Đang tải...</span>
+              </div>
+            ) : complaintsError ? (
+              <div className="flex-1 p-8 text-center text-red-500 italic">
+                Lỗi khi tải lịch sử khiếu nại
               </div>
             ) : complaints.length > 0 ? (
               <Table<YeuCauHoTroItem>

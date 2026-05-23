@@ -41,11 +41,11 @@ export const financeService = {
         return response.data.data;
     },
     xacNhanHoanTien: async (maGiaoDich: string) => {
-        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/xac-nhan`);
+        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/xac-nhan`, {});
         return response.data.data;
     },
     tuChoiHoanTien: async (maGiaoDich: string) => {
-        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/tu-choi`);
+        const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/tu-choi`, {});
         return response.data.data;
     },
     tuChoiChiPhi: async (maChiPhi: string) => {
