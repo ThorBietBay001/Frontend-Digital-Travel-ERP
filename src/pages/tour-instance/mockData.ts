@@ -13,6 +13,8 @@ export interface CapNhatTourThucTeRequest {
   soKhachToiDa?: number;
   soKhachToiThieu?: number;
   trangThai?: string;
+  maDichVuThem?: string[];
+  maHanhDongXanh?: string[];
   lichTrinh?: any[];
   dichVu?: any[];
   hanhDongXanh?: any[];
@@ -40,6 +42,8 @@ export interface TaoTourThucTeRequest {
   soKhachToiDa?: number;
   soKhachToiThieu?: number;
   giaHienHanh?: number;
+  maDichVuThem?: string[];
+  maHanhDongXanh?: string[];
   lichTrinh?: any[];
   dichVu?: any[];
   hanhDongXanh?: any[];
@@ -60,6 +64,8 @@ export interface TourThucTeResponse {
   thoiDiemTao?: string;
   capNhatVao?: string;
   taoBoi?: string;
+  dichVu?: any[];
+  hanhDongXanh?: any[];
 }
 
 export interface PageTourThucTeResponse {
