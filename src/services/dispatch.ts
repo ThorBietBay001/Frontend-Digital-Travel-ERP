@@ -40,6 +40,11 @@ export const dispatchService = {
     unwrapApiData(response);
   },
 
+  nangLucHdv: async (maNhanVien: string): Promise<any> => {
+    const response = await api.get<{ data: any }>(`/api/dieu-hanh/nhan-vien/${maNhanVien}/nang-luc`);
+    return response.data.data;
+  },
+
   tourCuaToi: async (): Promise<PhanCongResponse[]> => {
     const response = await api.get<{ data: PhanCongResponse[] }>('/api/huong-dan-vien/tour-cua-toi');
     return response.data.data ?? [];

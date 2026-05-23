@@ -3,7 +3,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { UserCheck, MapPin, Calendar, Users, Target, ShieldCheck, AlertCircle, Star } from 'lucide-react';
-import type { NhanVienResponse } from '../../services/dispatch';
+import { dispatchService, type NhanVienResponse } from '../../services/dispatch';
 import type { TourNeedGuide } from './mockData';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -28,29 +28,56 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
 }) => {
   const { confirm } = useNotification();
   const [conflictGuideId, setConflictGuideId] = useState<string | null>(null);
+  const [guideCaps, setGuideCaps] = React.useState<Record<string, any>>({});
+
+  React.useEffect(() => {
+    if (availableGuides.length > 0 && isOpen) {
+      Promise.all(
+        availableGuides.map(async (g) => {
+          if (!g.maNhanVien) return null;
+          try {
+            const cap = await dispatchService.nangLucHdv(g.maNhanVien);
+            return { id: g.maNhanVien, cap };
+          } catch (e) {
+            return null;
+          }
+        })
+      )
+        .then((results) => {
+          const map: Record<string, any> = {};
+          results.forEach((r) => {
+            if (r) map[r.id] = r.cap;
+          });
+          setGuideCaps(map);
+        });
+    }
+  }, [availableGuides, isOpen]);
 
   if (!tour) return null;
 
-  // Tính match point (Mock)
-  const suggestedGuides = availableGuides.map(g => {
-    let match = 50; // default base point
-    const status = g.trangThaiLamViec === 'HOAT_DONG' ? 'available' : g.trangThaiLamViec === 'BAN' ? 'busy' : 'resting';
-    if (status === 'available') match += 20;
-    if (status === 'resting') match -= 10;
-    if (status === 'busy') match -= 40;
-    
-    // Check skills (Mock since NhanVienResponse has no skills)
-    const mockSkills = ['Trekking', 'Tiếng Anh'];
-    const matchingSkills = mockSkills.filter(s => tour.requiredSkills.includes(s)).length;
-    match += matchingSkills * 15;
+  const suggestedGuides = availableGuides.map((g) => {
+    const status =
+      g.trangThaiLamViec === 'HOAT_DONG'
+        ? 'available'
+        : g.trangThaiLamViec === 'BAN'
+        ? 'busy'
+        : 'resting';
 
-    return { 
-      ...g, 
-      status, 
-      matchPercent: Math.min(100, Math.max(10, match)),
-      mockSkills
+    const cap = guideCaps[g.maNhanVien || ''] || {};
+    
+    // Parse language and specializations into an array of skills
+    let realSkills: string[] = [];
+    if (cap.ngonNgu) realSkills = realSkills.concat(cap.ngonNgu.split(',').map((s: string) => s.trim()));
+    if (cap.chuyenMon) realSkills = realSkills.concat(cap.chuyenMon.split(',').map((s: string) => s.trim()));
+
+    return {
+      ...g,
+      status,
+      realSkills,
+      rating: cap.danhGia || 0,
+      reviewCount: cap.soDanhGia || 0,
     };
-  }).sort((a, b) => (b.matchPercent || 0) - (a.matchPercent || 0));
+  });
 
   const handleSelectGuide = async (guide: any) => {
     // Mock conflict check
@@ -172,9 +199,9 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
           <div className="flex items-center justify-between border-b border-gray-100 pb-2">
             <h3 className="font-bold text-[#121C2C] flex items-center gap-2 text-base">
               <ShieldCheck size={18} className="text-[#16A34A]" />
-              Top HDV Phù hợp nhất
+              Danh sách HDV khả dụng
             </h3>
-            <span className="text-xs text-gray-500">Dựa trên lịch trống và kỹ năng</span>
+            <span className="text-xs text-gray-500">Dựa trên lịch làm việc</span>
           </div>
 
           <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2">
@@ -213,12 +240,12 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span>{guide.maNhanVien}</span>
                           <span className="flex items-center gap-0.5 text-amber-500 font-medium">
-                            <Star size={12} fill="currentColor" /> 5.0
+                            <Star size={12} fill="currentColor" /> {guide.rating ? guide.rating.toFixed(1) : 'Chưa có'}
                           </span>
-                          <span>0 tour</span>
+                          <span>{guide.reviewCount || 0} đánh giá</span>
                         </div>
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {guide.mockSkills.map((tag: string, i: number) => (
+                          {guide.realSkills && guide.realSkills.map((tag: string, i: number) => (
                             <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[11px] rounded">
                               {tag}
                             </span>
@@ -228,12 +255,8 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
                     </div>
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <div className="flex items-center gap-1 bg-[#F0FDF4] text-[#16A34A] px-2 py-1 rounded-lg border border-[#BBF7D0]">
-                        <span className="text-xs font-medium">Độ phù hợp</span>
-                        <span className="font-bold">{guide.matchPercent}%</span>
-                      </div>
                       <Button 
-                        variant={(guide.matchPercent || 0) > 60 ? 'primary' : 'secondary'} 
+                        variant="primary"
                         size="sm"
                         onClick={() => handleSelectGuide(guide)}
                       >

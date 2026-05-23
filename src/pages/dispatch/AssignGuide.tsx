@@ -6,7 +6,8 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { Pagination } from '../../components/ui/Pagination';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
-import { Plus, MoreVertical } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
+import { Plus, MoreVertical, CheckCircle, Calendar, User, Hash, Users, ShieldCheck } from 'lucide-react';
 import type { TourNeedGuide } from './mockData';
 import AssignGuideModal from './AssignGuideModal';
 import { dispatchService } from '../../services/dispatch';
@@ -54,6 +55,7 @@ const AssignGuide: React.FC = () => {
   const [availableGuides, setAvailableGuides] = useState<NhanVienResponse[]>([]);
   const [guidesLoading, setGuidesLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [successData, setSuccessData] = useState<{ tour: TourNeedGuide; guide: NhanVienResponse } | null>(null);
 
   const { user } = useAuth();
 
@@ -104,14 +106,33 @@ const AssignGuide: React.FC = () => {
 
   const handleAssign = async (tourId: string, guideId: string) => {
     try {
+      // Create Assignment
       await dispatchService.phanCong({ maTourThucTe: tourId, maNhanVien: guideId });
+      
+      // Update Tour Status to SAP_DIEN_RA
+      try {
+        await tourInstanceService.capNhat(tourId, { trangThai: 'SAP_DIEN_RA' });
+      } catch (err: unknown) {
+        console.error('Lỗi khi cập nhật trạng thái tour:', err);
+        // It's okay to proceed even if status update fails, assignment succeeded.
+      }
+
+      const assignedGuide = availableGuides.find((g) => g.maNhanVien === guideId);
+      if (assignedGuide && selectedTour) {
+        setSuccessData({ tour: selectedTour, guide: assignedGuide });
+      }
+
       setModalOpen(false);
       setToastMessage(null);
-      await fetchTours();
     } catch (err: unknown) {
       setToastMessage('Lỗi phân công: ' + formatApiError(err));
       setTimeout(() => setToastMessage(null), 4000);
     }
+  };
+
+  const handleCloseSuccess = () => {
+    setSuccessData(null);
+    fetchTours(); // Refresh the list, which will remove the SAP_DIEN_RA tour
   };
 
   const filteredData = data.filter(
@@ -221,6 +242,93 @@ const AssignGuide: React.FC = () => {
         availableGuides={availableGuides}
         guidesLoading={guidesLoading}
       />
+      
+      {/* Success Modal */}
+      <Modal
+        isOpen={!!successData}
+        onClose={handleCloseSuccess}
+        size="md"
+        title={
+          <div className="flex flex-col items-center justify-center pt-6 pb-2 w-full gap-3 text-center pr-6">
+            <div className="w-16 h-16 bg-[#F0FDF4] text-[#16A34A] rounded-full flex items-center justify-center">
+              <CheckCircle size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-[#121C2C]">Phân công thành công!</h2>
+            <p className="text-sm text-gray-500">
+              Bạn đã phân công HDV cho tour <span className="font-bold text-[#00668A]">{successData?.tour.name}</span>
+            </p>
+          </div>
+        }
+        footer={
+          <div className="flex justify-center w-full pb-4">
+            <Button variant="primary" onClick={handleCloseSuccess} className="w-[120px]">
+              Đóng
+            </Button>
+          </div>
+        }
+      >
+        {successData && (
+          <div className="flex flex-col gap-4 p-2">
+            
+            {/* Tour Info (Top) */}
+            <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
+              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-[#E2E8F0]">
+                <ShieldCheck size={20} className="text-[#00668A]" />
+                <h3 className="font-bold text-[#121C2C] text-base">Thông tin Tour</h3>
+              </div>
+              <div className="flex flex-col gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Hash size={16} className="text-gray-400 shrink-0" />
+                  <span className="text-gray-600 w-24 shrink-0">Mã tour:</span>
+                  <span className="font-bold text-[#00668A]">{successData.tour.code}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-400 w-4 h-4 shrink-0 flex items-center justify-center">T</span>
+                  <span className="text-gray-600 w-24 shrink-0">Tên tour:</span>
+                  <span className="font-medium text-[#121C2C] leading-snug">{successData.tour.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-400 shrink-0" />
+                  <span className="text-gray-600 w-24 shrink-0">Thời gian:</span>
+                  <span className="font-medium text-[#121C2C]">{successData.tour.startDate} - {successData.tour.endDate}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users size={16} className="text-gray-400 shrink-0" />
+                  <span className="text-gray-600 w-24 shrink-0">Số khách:</span>
+                  <span className="font-medium text-[#121C2C]">{successData.tour.passengers} người</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Guide Info (Bottom) */}
+            <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-sm">
+              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-[#E2E8F0]">
+                <User size={20} className="text-[#16A34A]" />
+                <h3 className="font-bold text-[#121C2C] text-base">Hướng dẫn viên</h3>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-[#E1EFFE] text-[#1A56DB] font-bold text-xl rounded-full flex items-center justify-center shrink-0 border-2 border-[#BFDBFE]">
+                  {successData.guide.hoTen?.charAt(0) || 'U'}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="font-bold text-[#121C2C] text-base">{successData.guide.hoTen}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-medium border border-gray-200">
+                      {successData.guide.maNhanVien}
+                    </span>
+                    <span className="text-xs text-gray-500">{successData.guide.soDienThoai}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-500 text-center italic mt-2">
+              Tour này đã được chuyển sang trạng thái <strong>"Sắp diễn ra"</strong>.
+            </p>
+          </div>
+        )}
+      </Modal>
+
       {toastMessage && (
         <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-up flex items-center gap-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
