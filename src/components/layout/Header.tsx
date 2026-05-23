@@ -53,13 +53,23 @@ export default function Header() {
 
       try {
         const res = await khService.getMyBookings({ size: 5 });
-        const items = unwrapPageContent(res).map((booking: any) => ({
-          id: booking.maDatTour,
-          title: 'Cập nhật đơn đặt tour',
-          desc: `${booking.tieuDeTour || booking.maTourThucTe}: ${booking.trangThai}`,
-          time: booking.ngayDat ? new Date(booking.ngayDat).toLocaleDateString('vi-VN') : '',
-          unread: booking.trangThai === 'CHO_XAC_NHAN'
-        }));
+        const items = unwrapPageContent(res).map((booking: any) => {
+          const statusMap: Record<string, string> = {
+            'CHO_XAC_NHAN': 'Chờ xác nhận',
+            'DA_XAC_NHAN': 'Đã xác nhận',
+            'DA_HUY': 'Đã hủy',
+            'HOAN_THANH': 'Hoàn thành'
+          };
+          const trangThaiText = statusMap[booking.trangThai] || booking.trangThai;
+          
+          return {
+            id: booking.maDatTour,
+            title: 'Cập nhật đơn đặt tour',
+            desc: `${booking.tieuDeTour || booking.maTourThucTe}: ${trangThaiText}`,
+            time: booking.ngayDat ? new Date(booking.ngayDat).toLocaleDateString('vi-VN') : '',
+            unread: booking.trangThai === 'CHO_XAC_NHAN'
+          };
+        });
         setNotifications(items);
       } catch (error) {
         console.error('Không thể tải thông báo:', error);
@@ -119,8 +129,6 @@ export default function Header() {
 
   const moThongBaoDatTour = (id: string) => {
     setNotifications(prev => prev.map(notif => notif.id === id ? { ...notif, unread: false } : notif));
-    setShowNotifications(false);
-    window.location.href = '/passport';
   };
 
   return (

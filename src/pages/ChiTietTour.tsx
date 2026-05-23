@@ -351,7 +351,7 @@ export default function ChiTietTour() {
                   <span className="block text-slate-500 text-[10px] font-bold uppercase tracking-wider">Đánh giá</span>
                   <span className="block text-slate-900 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-0.5">
                     <Star className="w-3.5 h-3.5 fill-current text-yellow-500" />
-                    <span>{tour.rating}</span>
+                    <span>{actualRating !== '0.0' ? actualRating : tour.rating}</span>
                   </span>
                 </div>
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50/50 p-4 rounded-2xl border border-orange-100/50 text-center space-y-1">

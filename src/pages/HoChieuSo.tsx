@@ -1363,7 +1363,7 @@ export default function HoChieuSo() {
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                   <div>
                     <h2 className="text-xl font-extrabold text-gray-900">Khiếu nại & Yêu cầu hỗ trợ</h2>
-                    <p className="text-sm text-gray-600 mt-1">Theo dõi trạng thái giải quyết khiếu nại (CSKH & Điều phối nội bộ).</p>
+                    <p className="text-sm text-gray-600 mt-1">Theo dõi trạng thái giải quyết khiếu nại.</p>
                   </div>
                 </div>
 
@@ -1401,13 +1401,8 @@ export default function HoChieuSo() {
                         </div>
 
                         {/* History / Actions */}
-                        <div className="mt-4 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between border-t border-gray-50 gap-4">
-                          <div className="text-xs text-gray-500 flex items-center">
-                            <Clock className="w-3.5 h-3.5 mr-1" />
-                            <span>Nhật ký gần nhất: {ticket.history[ticket.history.length - 1]}</span>
-                          </div>
-
-                          {ticket.status === 'CHO_BO_SUNG' && (
+                        {ticket.status === 'CHO_BO_SUNG' && (
+                          <div className="mt-4 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between border-t border-gray-50 gap-4">
                             <div className="mt-3 border-t border-slate-100 pt-3">
                               {showAddInfoForTicket === ticket.id ? (
                                 <div className="space-y-3">
@@ -1471,8 +1466,8 @@ export default function HoChieuSo() {
                                 </button>
                               )}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -2234,7 +2229,7 @@ export default function HoChieuSo() {
               onClick={handleSubmitComplaint}
               className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md text-sm text-center mt-6"
             >
-              Gửi khiếu nại thanh tra (UC36)
+              Gửi khiếu nại
             </button>
           </div>
         </div>
