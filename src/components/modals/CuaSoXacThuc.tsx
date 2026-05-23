@@ -352,15 +352,21 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                   />
                 ))}
               </div>
-              <div className="text-center mt-4">
+              <p className="text-sm text-slate-500 text-center font-medium mt-4">
+                Bạn chưa nhận được mã?{' '}
                 {otpCountdown > 0 ? (
-                  <p className="text-sm text-slate-500 font-medium">Gửi lại mã sau <span className="text-blue-600 font-bold">{otpCountdown}s</span></p>
+                  <span className="text-blue-600 font-bold">
+                    Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
+                  </span>
                 ) : (
-                  <button type="button" onClick={handleResendOtp} className="text-sm font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2">
-                    Gửi lại mã OTP
-                  </button>
+                  <span 
+                    onClick={handleResendOtp} 
+                    className="text-blue-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Gửi lại OTP
+                  </span>
                 )}
-              </div>
+              </p>
             </div>
           ) : mode === 'register-otp' ? (
             <div className="space-y-4">
@@ -390,15 +396,21 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                   />
                 ))}
               </div>
-              <div className="text-center mt-4">
+              <p className="text-sm text-slate-500 text-center font-medium mt-4">
+                Bạn chưa nhận được mã?{' '}
                 {otpCountdown > 0 ? (
-                  <p className="text-sm text-slate-500 font-medium">Gửi lại mã sau <span className="text-blue-600 font-bold">{otpCountdown}s</span></p>
+                  <span className="text-blue-600 font-bold">
+                    Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
+                  </span>
                 ) : (
-                  <button type="button" onClick={handleResendOtp} className="text-sm font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2">
-                    Gửi lại mã OTP
-                  </button>
+                  <span 
+                    onClick={handleResendOtp} 
+                    className="text-blue-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Gửi lại OTP
+                  </span>
                 )}
-              </div>
+              </p>
             </div>
           ) : (mode === 'dangNhap' || mode === 'forgot') ? (
             <>

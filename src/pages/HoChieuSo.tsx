@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   User, Calendar, Wallet,
   MapPin, Star, Clock, CreditCard,
-  Phone, Edit, Gift, Ticket, X, Check, Bell,
+  Phone, Edit, Gift, Ticket, X, Check, Bell, Key,
   AlertTriangle, ShieldAlert, FileText, MessageSquare, ArrowRight, CheckCircle, ChevronDown, Search
 } from 'lucide-react';
 import { khService } from '../services/khService';
@@ -136,7 +136,6 @@ export default function HoChieuSo() {
   const [otpCountdown, setOtpCountdown] = useState(60);
   const [expectedProfileOtp, setExpectedProfileOtp] = useState('');
   const [otpAction, setOtpAction] = useState<'profile' | 'password'>('profile');
-  const [isPasswordOtpVerified, setIsPasswordOtpVerified] = useState(false);
 
   // Booking detail modal (UC22)
   const [selectedBookingForDetail, setSelectedBookingForDetail] = useState<Booking | null>(null);
@@ -283,17 +282,6 @@ export default function HoChieuSo() {
     setToast({ message: `Mã OTP xác thực của bạn là: ${generatedOtp}`, type: 'success' });
   };
 
-  const handleRequestPasswordOtp = () => {
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setExpectedProfileOtp(generatedOtp);
-    setOtpAction('password');
-    setOtpCountdown(60);
-    setOtpValue(['', '', '', '', '', '']);
-    setOtpError('');
-    setShowOtpModal(true);
-    setToast({ message: `Mã OTP đổi mật khẩu của bạn là: ${generatedOtp}`, type: 'info' });
-  };
-
   // Verify OTP
   const handleVerifyOtp = async () => {
     const enteredCode = otpValue.join('');
@@ -320,9 +308,28 @@ export default function HoChieuSo() {
           setOtpError(layThongBaoLoi(err, 'Không thể cập nhật hồ sơ. Vui lòng thử lại.'));
         }
       } else if (otpAction === 'password') {
-        setIsPasswordOtpVerified(true);
-        setShowOtpModal(false);
-        setToast({ message: 'Xác minh thành công! Vui lòng thiết lập mật khẩu mới.', type: 'success' });
+        try {
+          await khService.doiMatKhau({
+            matKhauCu: currentPassword,
+            matKhauMoi: newPassword,
+            xacNhanMatKhau: confirmNewPassword
+          });
+          setShowOtpModal(false);
+          setPasswordError('');
+          setPasswordSuccess(true);
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmNewPassword('');
+          setToast({ message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', type: 'success' });
+
+          setTimeout(() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userProfile');
+            window.location.href = '/';
+          }, 2000);
+        } catch (err: any) {
+          setOtpError(layThongBaoLoi(err, 'Lỗi khi đổi mật khẩu. Vui lòng thử lại.'));
+        }
       }
     } else {
       setOtpError('Mã OTP không chính xác. Vui lòng kiểm tra lại!');
@@ -353,26 +360,18 @@ export default function HoChieuSo() {
     }
 
     try {
-      await khService.doiMatKhau({
-        matKhauCu: currentPassword,
-        matKhauMoi: newPassword,
-        xacNhanMatKhau: confirmNewPassword
-      });
-      setPasswordError('');
-      setPasswordSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setToast({ message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', type: 'success' });
-
-      // Auto logout after password change
-      setTimeout(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userProfile');
-        window.location.href = '/';
-      }, 2000);
+      await khService.kiemTraMatKhau(currentPassword);
+      // Mật khẩu cũ đúng, chuyển sang bước gửi OTP
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setExpectedProfileOtp(generatedOtp);
+      setOtpCountdown(60);
+      setOtpValue(['', '', '', '', '', '']);
+      setOtpError('');
+      setOtpAction('password');
+      setShowOtpModal(true);
+      setToast({ message: `Mã OTP bảo mật đã được gửi đến thiết bị của bạn: ${generatedOtp}`, type: 'info' });
     } catch (err: any) {
-      setPasswordError(layThongBaoLoi(err, 'Không thể đổi mật khẩu. Vui lòng thử lại.'));
+      setPasswordError(layThongBaoLoi(err, 'Mật khẩu cũ không chính xác.'));
     }
   };
 
@@ -1009,98 +1008,13 @@ export default function HoChieuSo() {
                 </div>
 
                 {/* UC60: Đổi mật khẩu */}
-                <div className="border-t border-gray-100 pt-6">
+                <div className="border-t border-gray-100 pt-6 flex justify-center">
                   <button
-                    onClick={() => { setShowChangePassword(!showChangePassword); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); setIsPasswordOtpVerified(false); }}
-                    className="flex items-center justify-between w-full text-left"
+                    onClick={() => { setShowChangePassword(true); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }}
+                    className="w-56 px-6 py-2.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-xl transition-all font-bold text-sm shadow-sm text-center"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                        <ShieldAlert className="w-4.5 h-4.5 text-slate-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-extrabold text-gray-900 text-sm">Bảo mật tài khoản</h3>
-                        <p className="text-xs text-gray-500 font-medium">Thay đổi mật khẩu đăng nhập</p>
-                      </div>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showChangePassword ? 'rotate-180' : ''}`} />
+                    Đổi mật khẩu
                   </button>
-
-                  {showChangePassword && (
-                    <div className="mt-4 space-y-4 bg-gray-50 p-5 rounded-2xl border border-gray-200 animate-fadeIn">
-                      {passwordSuccess ? (
-                        <div className="text-center py-6 space-y-3">
-                          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                            <Check className="w-7 h-7 text-green-600" />
-                          </div>
-                          <p className="text-sm font-bold text-green-700">Mật khẩu đã được thay đổi thành công!</p>
-                        </div>
-                      ) : !isPasswordOtpVerified ? (
-                        <div className="text-center py-6 space-y-3">
-                          <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <ShieldAlert className="w-7 h-7 text-blue-600" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-800">Xác thực bảo mật 2 lớp</p>
-                          <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                            Để bảo vệ tài khoản, bạn cần nhập mã OTP xác nhận danh tính trước khi tiến hành đổi mật khẩu.
-                          </p>
-                          <button
-                            onClick={handleRequestPasswordOtp}
-                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-sm text-sm"
-                          >
-                            Lấy mã OTP
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Mật khẩu hiện tại</label>
-                            <input
-                              type="password"
-                              value={currentPassword}
-                              onChange={(e) => setCurrentPassword(e.target.value)}
-                              placeholder="Nhập mật khẩu hiện tại"
-                              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Mật khẩu mới</label>
-                            <input
-                              type="password"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
-                              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5">Xác nhận mật khẩu mới</label>
-                            <input
-                              type="password"
-                              value={confirmNewPassword}
-                              onChange={(e) => setConfirmNewPassword(e.target.value)}
-                              placeholder="Nhập lại mật khẩu mới"
-                              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            />
-                          </div>
-
-                          {passwordError && (
-                            <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 flex items-center">
-                              <AlertTriangle className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                              {passwordError}
-                            </p>
-                          )}
-
-                          <button
-                            onClick={handleChangePassword}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-sm text-sm"
-                          >
-                            Xác nhận đổi mật khẩu
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -1539,15 +1453,21 @@ export default function HoChieuSo() {
               Xác minh OTP
             </button>
 
-            <div className="text-center mt-4">
+            <p className="text-sm text-slate-500 text-center font-medium mt-4">
+              Bạn chưa nhận được mã?{' '}
               {otpCountdown > 0 ? (
-                <p className="text-sm text-slate-500 font-medium">Gửi lại mã sau <span className="text-blue-600 font-bold">{otpCountdown}s</span></p>
+                <span className="text-blue-600 font-bold">
+                  Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
+                </span>
               ) : (
-                <button type="button" onClick={handleResendOtp} className="text-sm font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2">
-                  Gửi lại mã OTP
-                </button>
+                <span 
+                  onClick={handleResendOtp} 
+                  className="text-blue-600 font-bold hover:underline cursor-pointer"
+                >
+                  Gửi lại OTP
+                </span>
               )}
-            </div>
+            </p>
           </div>
         </div>
       )}
@@ -2227,6 +2147,89 @@ export default function HoChieuSo() {
             >
               Gửi khiếu nại
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Password Change Modal */}
+      {showChangePassword && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-7 shadow-2xl relative animate-slide-up border border-slate-100">
+            <button 
+              onClick={() => {
+                setShowChangePassword(false);
+                setPasswordError('');
+                setPasswordSuccess(false);
+                setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword('');
+              }}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 bg-slate-50 p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-7">
+              <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Key className="w-7 h-7" />
+              </div>
+              <h3 className="font-black text-slate-800 text-xl">Đổi Mật Khẩu</h3>
+              <p className="text-sm text-slate-400 mt-1">Bảo mật tài khoản của bạn</p>
+            </div>
+
+            {passwordError && (
+              <div className="p-3.5 mb-5 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-semibold rounded-xl flex items-center space-x-2 animate-shake">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            {passwordSuccess ? (
+              <div className="p-3.5 mb-5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-sm font-semibold rounded-xl flex items-center space-x-2 animate-slide-up">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <span>Mật khẩu đã được thay đổi thành công!</span>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <label className="text-sm font-bold text-slate-500 block mb-2 uppercase">Mật khẩu hiện tại</label>
+                  <input
+                    type="password"
+                    placeholder="Nhập mật khẩu cũ..."
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full text-base px-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-500 outline-none transition bg-white/70"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-bold text-slate-500 block mb-2 uppercase">Mật khẩu mới</label>
+                  <input
+                    type="password"
+                    placeholder="Mật khẩu mới (Tối thiểu 6 ký tự)..."
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full text-base px-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-500 outline-none transition bg-white/70"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-bold text-slate-500 block mb-2 uppercase">Xác nhận mật khẩu</label>
+                  <input
+                    type="password"
+                    placeholder="Nhập lại mật khẩu mới..."
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full text-base px-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-500 outline-none transition bg-white/70"
+                  />
+                </div>
+
+                <button
+                  onClick={handleChangePassword}
+                  className="w-full mt-3 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-base rounded-xl shadow-lg transition active:scale-95 flex justify-center items-center"
+                >
+                  Xác nhận đổi mật khẩu
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
