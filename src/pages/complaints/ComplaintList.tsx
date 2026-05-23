@@ -31,9 +31,7 @@ const ComplaintList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [selectedSeverity, setSelectedSeverity] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedTour, setSelectedTour] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -76,10 +74,8 @@ const ComplaintList: React.FC = () => {
   const filteredComplaints = complaints.filter(c => {
     const matchesSearch = c.code.toLowerCase().includes(search.toLowerCase()) ||
                           c.customerName.toLowerCase().includes(search.toLowerCase());
-    const matchesSeverity = selectedSeverity === 'all' || c.severity === selectedSeverity;
     const matchesStatus = selectedStatus === 'all' || c.status === selectedStatus;
-    const matchesTour = selectedTour === 'all' || c.tourName === selectedTour;
-    return matchesSearch && matchesSeverity && matchesStatus && matchesTour;
+    return matchesSearch && matchesStatus;
   });
 
   const columns: Column<Complaint>[] = [
@@ -217,18 +213,6 @@ const ComplaintList: React.FC = () => {
         </div>
         <div className="w-48">
           <Select
-            value={selectedSeverity}
-            onChange={setSelectedSeverity}
-            options={[
-              { value: 'all', label: 'Mức độ: Tất cả' },
-              { value: 'high', label: 'Cao' },
-              { value: 'medium', label: 'Trung bình' },
-              { value: 'low', label: 'Thấp' }
-            ]}
-          />
-        </div>
-        <div className="w-48">
-          <Select
             value={selectedStatus}
             onChange={setSelectedStatus}
             options={[
@@ -240,15 +224,6 @@ const ComplaintList: React.FC = () => {
               { value: 'resolved', label: 'Đã giải quyết' },
               { value: 'rejected', label: 'Từ chối' },
               { value: 'cancelled', label: 'Đã hủy' }
-            ]}
-          />
-        </div>
-        <div className="w-48">
-          <Select
-            value={selectedTour}
-            onChange={setSelectedTour}
-            options={[
-              { value: 'all', label: 'Tour: Tất cả' },
             ]}
           />
         </div>

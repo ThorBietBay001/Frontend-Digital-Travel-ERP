@@ -95,7 +95,7 @@ const AssignGuide: React.FC = () => {
     } catch (err: unknown) {
       console.error(formatApiError(err));
       setAvailableGuides([]);
-      setToastMessage('Không thể tải danh sách HDV khả dụng. Vui lòng thử lại sau.');
+      setToastMessage('Không thể tải danh sách HDV. Vui lòng thử lại sau.');
       setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setGuidesLoading(false);

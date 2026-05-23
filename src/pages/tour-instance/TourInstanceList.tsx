@@ -51,6 +51,23 @@ const TourInstanceList: React.FC = () => {
     status: mapStatus(api),
     templateId: api.maTourMau || '',
     schedule: [],
+    services: (api.dichVu || []).map((service: any) => ({
+      id: service.maDichVuThem || '',
+      code: service.maDichVuThem || '',
+      name: service.ten || '',
+      category: 'extra',
+      price: service.donGia || 0,
+      unit: service.donViTinh || '',
+      status: 'active',
+    })),
+    greenActions: (api.hanhDongXanh || []).map((action: any) => ({
+      id: action.maHanhDongXanh || '',
+      code: action.maHanhDongXanh || '',
+      name: action.tenHanhDong || '',
+      description: '',
+      defaultPoints: action.diemCong || 0,
+      status: 'active',
+    })),
   });
 
   const mapStatus = (tour: TourThucTeResponse): string => {
@@ -106,6 +123,8 @@ const TourInstanceList: React.FC = () => {
           ngayKhoiHanh: tourData.startDate,
           soKhachToiDa: tourData.maxSeats,
           giaHienHanh: tourData.currentPrice,
+          maDichVuThem: (tourData.services || []).map((service: any) => service.id).filter(Boolean),
+          maHanhDongXanh: (tourData.greenActions || []).map((action: any) => action.id).filter((id: string) => id && id !== 'custom_other'),
           lichTrinh: tourData.schedule,
           dichVu: tourData.services,
           hanhDongXanh: tourData.greenActions,
@@ -122,6 +141,8 @@ const TourInstanceList: React.FC = () => {
           giaHienHanh: tourData.currentPrice,
           soKhachToiDa: tourData.maxSeats,
           trangThai: mapStatusToApi(tourData.status),
+          maDichVuThem: (tourData.services || []).map((service: any) => service.id).filter(Boolean),
+          maHanhDongXanh: (tourData.greenActions || []).map((action: any) => action.id).filter((id: string) => id && id !== 'custom_other'),
           lichTrinh: tourData.schedule,
           dichVu: tourData.services,
           hanhDongXanh: tourData.greenActions

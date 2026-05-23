@@ -50,6 +50,8 @@ export interface NhanVienResponse {
   loaiNhanVien?: string;
   ngayVaoLam?: string;
   thoiDiemTao?: string;
+  cccd?: string;
+  diaChi?: string;
 }
 
 export interface PageNhanVienResponse {
@@ -198,3 +200,4 @@ export const initialAccounts: Account[] = [
     status: 'active',
   },
 ];
+

@@ -1,23 +1,88 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Service } from '../services/mockData';
+import { servicesService } from '../../services/services';
 
 interface TourInstanceServiceTabProps {
   services: Service[];
+  onChange: (services: Service[]) => void;
   isEditing: boolean;
 }
 
-const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ services, isEditing }) => {
+const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ services, onChange, isEditing }) => {
+  const [availableServices, setAvailableServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      setLoading(true);
+      try {
+        const res = await servicesService.danhSachDichVuThem();
+        setAvailableServices(res.map(service => ({
+          id: service.maDichVuThem || '',
+          code: service.maDichVuThem || '',
+          name: service.ten || '',
+          category: 'extra',
+          price: service.donGia || 0,
+          unit: service.donViTinh || '',
+          status: 'active',
+        })));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  const handleToggleService = (service: Service, checked: boolean) => {
+    if (checked) {
+      onChange([...services, service]);
+      return;
+    }
+    onChange(services.filter(item => item.id !== service.id));
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
-        <p className="text-sm text-blue-800">
-          Danh sách dịch vụ dưới đây được kế thừa từ Tour Mẫu và không thể thêm/xóa trực tiếp tại đây.
-        </p>
-      </div>
+      {isEditing && (
+        <div className="bg-[#F9F9FF] p-4 rounded-lg border border-[#E1F1FF]">
+          <label className="text-sm font-semibold text-gray-700 block mb-4">Cấu hình dịch vụ bổ sung cho tour</label>
+          {loading ? (
+            <div className="text-sm text-gray-500 text-center py-4">Đang tải danh sách...</div>
+          ) : (
+            <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2">
+              {availableServices.map(service => {
+                const isSelected = services.some(item => item.id === service.id);
+                return (
+                  <div key={service.id} className={`flex items-center justify-between p-3 border rounded-lg ${isSelected ? 'border-[#89D4FF] bg-blue-50/30' : 'border-gray-200 bg-white'}`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 text-[#00668A] rounded border-gray-300 focus:ring-[#89D4FF]"
+                        checked={isSelected}
+                        onChange={(e) => handleToggleService(service, e.target.checked)}
+                      />
+                      <div>
+                        <div className="font-medium text-sm text-gray-800">{service.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">{service.code}</div>
+                      </div>
+                    </div>
+                    <span className="font-semibold text-[#00668A] text-sm">
+                      {service.price.toLocaleString('vi-VN')} đ / {service.unit || 'lần'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {services.length === 0 ? (
         <div className="text-sm text-gray-500 italic p-6 bg-gray-50 rounded-lg text-center border border-dashed border-gray-300">
-          Không có dịch vụ bổ sung nào được kế thừa từ Tour Mẫu.
+          Tour này chưa cấu hình dịch vụ bổ sung nào.
         </div>
       ) : (
         <div className="flex flex-col gap-3">

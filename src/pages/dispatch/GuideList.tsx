@@ -45,7 +45,7 @@ const GuideList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [refTourCode, setRefTourCode] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterLang, setFilterLang] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [filterSkill, setFilterSkill] = useState('all');
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -110,7 +110,7 @@ const GuideList: React.FC = () => {
 
   const handleReset = () => {
     setSearchTerm('');
-    setFilterLang('all');
+    setFilterStatus('all');
     setFilterSkill('all');
     setPage(1);
     getAll();
@@ -120,9 +120,9 @@ const GuideList: React.FC = () => {
     const matchesSearch =
       g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       g.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLang = filterLang === 'all' || g.languages.some((l) => l.includes(filterLang));
+    const matchesStatus = filterStatus === 'all' || g.status === filterStatus;
     const matchesSkill = filterSkill === 'all' || g.skills.includes(filterSkill);
-    return matchesSearch && matchesLang && matchesSkill;
+    return matchesSearch && matchesStatus && matchesSkill;
   });
 
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
@@ -213,13 +213,14 @@ const GuideList: React.FC = () => {
           <div className="w-[180px]">
             <Select
               options={[
-                { label: 'Tất cả ngôn ngữ', value: 'all' },
-                { label: 'Tiếng Việt', value: 'Tiếng Việt' },
-                { label: 'Tiếng Anh', value: 'Tiếng Anh' },
+                { label: 'Tất cả trạng thái', value: 'all' },
+                { label: 'Sẵn sàng', value: 'HOAT_DONG' },
+                { label: 'Đang đi tour', value: 'BAN' },
+                { label: 'Đang nghỉ', value: 'NGHI' },
               ]}
-              value={filterLang}
-              onChange={setFilterLang}
-              placeholder="Ngôn ngữ"
+              value={filterStatus}
+              onChange={setFilterStatus}
+              placeholder="Trạng thái"
             />
           </div>
           <div className="flex gap-2">

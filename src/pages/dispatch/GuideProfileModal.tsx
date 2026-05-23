@@ -107,11 +107,7 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
                   <Calendar size={16} className="text-gray-400" />
                   <span>Ngày vào làm: <span className="font-medium text-gray-900">{nhanVien?.ngayVaoLam || '—'}</span></span>
                 </div>
-                <div className="col-span-2 flex items-start gap-2">
-                  <MapPin size={16} className="text-gray-400 mt-0.5" />
-                  <span className="font-medium text-gray-900 line-clamp-2" title={nhanVien?.diaChi}>{nhanVien?.diaChi || '—'}</span>
                 </div>
-              </div>
             </div>
           </div>
 

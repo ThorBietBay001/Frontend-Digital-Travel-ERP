@@ -94,12 +94,16 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
               <h3 className="text-[20px] font-semibold text-gray-900">Hóa đơn chi phí</h3>
               <Badge label="Ảnh hóa đơn" variant="info" />
             </div>
-            <div className="w-full aspect-[4/3] rounded-[12px] overflow-hidden border border-[#E1F1FF] bg-[#F4F9FF]">
-              <img
-                src={cost.receiptImage}
-                alt="Ảnh hóa đơn"
-                className="w-full h-full object-cover"
-              />
+            <div className="w-full aspect-[4/3] rounded-[12px] overflow-hidden border border-[#E1F1FF] bg-[#F4F9FF] flex items-center justify-center">
+              {cost.receiptImage ? (
+                <img
+                  src={cost.receiptImage}
+                  alt="Ảnh hóa đơn"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-gray-500 font-medium">Không có ảnh hóa đơn</span>
+              )}
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
               <div className="flex items-center gap-2">
@@ -124,17 +128,17 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Tên tour</span>
-                <span className="font-medium text-gray-800">{cost.tourName}</span>
+                <span className="font-medium text-gray-800">{cost.tourName || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Hướng dẫn viên</span>
-                <span className="font-medium text-gray-800">{cost.guideName}</span>
+                <span className="font-medium text-gray-800">{cost.guideName || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">SĐT</span>
                 <span className="font-medium text-gray-800 flex items-center gap-1">
                   <Phone size={14} className="text-gray-400" />
-                  {cost.guidePhone}
+                  {cost.guidePhone || '—'}
                 </span>
               </div>
             </div>
