@@ -133,6 +133,7 @@ export interface SortObject {
 
 // --- END AUTO GENERATED ---
 export interface DaySchedule {
+  id?: string;
   title: string;
   description: string;
   meals: {

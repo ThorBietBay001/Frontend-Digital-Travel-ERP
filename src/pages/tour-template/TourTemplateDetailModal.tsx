@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import type { TourTemplate, DaySchedule } from './mockData';
-import TourTemplateServiceTab from './TourTemplateServiceTab';
 
 export interface TourTemplateDetailModalProps {
   isOpen: boolean;
@@ -67,9 +66,12 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
   }, [initialData, mode, isOpen]);
 
   useEffect(() => {
-    const days = formData.duration?.days || 1;
     setFormData((prev) => {
+      const days = prev.duration?.days || 1;
       const currentSchedule = prev.schedule ? [...prev.schedule] : [];
+      if (days === currentSchedule.length) {
+        return prev;
+      }
       if (days > currentSchedule.length) {
         for (let i = currentSchedule.length; i < days; i++) {
           currentSchedule.push({ ...defaultDaySchedule, title: `Ngày ${i + 1}: ` });
@@ -161,22 +163,6 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
       >
         Lịch trình
       </button>
-      {mode !== 'create' && (
-        <>
-
-          <button
-            type="button"
-            className={`px-4 py-2 font-medium text-sm transition-colors ${
-              activeTab === 'services'
-                ? 'border-b-2 border-[#00668A] text-[#00668A]'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setActiveTab('services')}
-          >
-            Dịch vụ bổ sung
-          </button>
-        </>
-      )}
     </div>
   );
 
@@ -315,17 +301,6 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-
-
-
-            {activeTab === 'services' && (
-              <div className="min-h-[400px]">
-                <TourTemplateServiceTab 
-                  selectedServices={formData.services || []} 
-                  onChange={(services) => handleChange('services', services)} 
-                />
               </div>
             )}
           </div>

@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button className={classes} disabled={disabled} {...props}>
-      {icon && <span className="mr-2">{icon}</span>}
+      {icon && <span className={children ? 'mr-2' : ''}>{icon}</span>}
       {children}
     </button>
   );
