@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { Pagination } from '../../components/ui/Pagination';
-import { Eye } from 'lucide-react';
+import { CheckCircle, Eye } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
@@ -13,6 +13,7 @@ import type { Order } from './mockData';
 import type { DonDatTourResponse } from '../../services/orders';
 import { ordersService } from '../../services/orders';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
 
@@ -79,8 +80,10 @@ const OrderList: React.FC = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const { user } = useAuth();
+  const { confirm, notify } = useNotification();
 
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'orders')) return;
@@ -103,6 +106,27 @@ const OrderList: React.FC = () => {
   const handleOpenDetail = (order: Order) => {
     setSelectedOrderId(order.id);
     setModalOpen(true);
+  };
+
+  const canApprovePayment = (order: Order) => order.status === 'pending' && order.paymentStatus === 'unpaid';
+
+  const handleApprovePayment = async (order: Order) => {
+    const confirmed = await confirm(`Duyệt thanh toán cho đơn ${order.orderCode}?`);
+    if (!confirmed) return;
+
+    setApprovingId(order.id);
+    setError(null);
+    try {
+      await ordersService.xacNhanDon(order.id);
+      await getAll();
+      notify(`Duyệt thanh toán đơn ${order.orderCode} thành công.`, { type: 'success' });
+    } catch (err: unknown) {
+      const message = formatApiError(err, 'Lỗi khi duyệt thanh toán');
+      setError(message);
+      notify(message, { type: 'error' });
+    } finally {
+      setApprovingId(null);
+    }
   };
 
   const filteredData = data.filter((order) => {
@@ -178,14 +202,25 @@ const OrderList: React.FC = () => {
       title: 'Hành động',
       align: 'center',
       render: (record) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Eye size={18} />}
-          onClick={() => handleOpenDetail(record)}
-          className="p-2"
-          aria-label="Xem chi tiết"
-        />
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<CheckCircle size={16} />}
+            onClick={() => handleApprovePayment(record)}
+            disabled={!canApprovePayment(record) || approvingId === record.id}
+            className="p-2"
+            aria-label="Duyệt thanh toán"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Eye size={18} />}
+            onClick={() => handleOpenDetail(record)}
+            className="p-2"
+            aria-label="Xem chi tiết"
+          />
+        </div>
       ),
     },
   ];
