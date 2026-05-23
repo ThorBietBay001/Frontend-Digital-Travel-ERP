@@ -532,15 +532,11 @@ export default function HoChieuSo() {
     }
 
     try {
-      if (selectedBookingForCancel.status === 'CHO_XAC_NHAN') {
-        await khService.huyDatTour(selectedBookingForCancel.id);
-      } else {
-        await khService.yeuCauHuyTour(selectedBookingForCancel.id, { lyDo: cancellationReason.trim() });
-      }
+      await khService.yeuCauHuyTour(selectedBookingForCancel.id, { lyDo: cancellationReason.trim() });
 
       setBookings(prev => prev.map(b =>
         b.id === selectedBookingForCancel.id
-          ? { ...b, status: selectedBookingForCancel.status === 'CHO_XAC_NHAN' ? 'DA_HUY' as any : 'CHO_HUY' as any }
+          ? { ...b, status: 'CHO_HUY' as any }
           : b
       ));
 
