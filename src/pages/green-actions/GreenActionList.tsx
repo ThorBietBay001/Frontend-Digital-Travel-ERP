@@ -78,9 +78,13 @@ const GreenActionList: React.FC = () => {
       }
       closeModal();
       getAll();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Xảy ra lỗi';
-      alert('Lỗi: ' + msg);
+    } catch (err: any) {
+      if (err?.response?.status === 500 || err?.status === 500 || err?.message?.includes('500')) {
+        alert('Không thể lưu hành động xanh. Vui lòng thử lại.');
+      } else {
+        const msg = err?.response?.data?.message || err.message || 'Xảy ra lỗi';
+        alert('Lỗi: ' + msg);
+      }
     }
   };
 

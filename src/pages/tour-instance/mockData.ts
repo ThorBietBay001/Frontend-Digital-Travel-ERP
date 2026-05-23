@@ -15,9 +15,6 @@ export interface CapNhatTourThucTeRequest {
   trangThai?: string;
   maDichVuThem?: string[];
   maHanhDongXanh?: string[];
-  lichTrinh?: any[];
-  dichVu?: any[];
-  hanhDongXanh?: any[];
 }
 
 export interface ApiResponseVoid {
@@ -44,10 +41,6 @@ export interface TaoTourThucTeRequest {
   giaHienHanh?: number;
   maDichVuThem?: string[];
   maHanhDongXanh?: string[];
-  lichTrinh?: any[];
-  dichVu?: any[];
-  hanhDongXanh?: any[];
-  trangThai?: string;
 }
 
 export interface TourThucTeResponse {
@@ -109,6 +102,7 @@ export interface TourInstance {
   departureDate: string;
   vehicle: string;
   maxSeats: number;
+  minSeats?: number;
   bookedSeats: number;
   currentPrice: number;
   basePrice: number;

@@ -10,7 +10,7 @@ import { Select } from '../../components/ui/Select';
 import { Pagination } from '../../components/ui/Pagination';
 import { PlusCircle, Pencil, Copy, Trash2 } from 'lucide-react';
 import type { TourTemplate } from './mockData';
-import type { TourMauResponse, TaoTourMauRequest, CapNhatTourMauRequest } from '../../services/tour-template';
+import type { TourMauResponse, TaoTourMauRequest, CapNhatTourMauRequest, LichTrinhRequest } from '../../services/tour-template';
 import TourTemplateDetailModal from './TourTemplateDetailModal';
 import { tourTemplateService } from '../../services/tour-template';
 import { useAuth } from '../../context/AuthContext';
@@ -42,7 +42,7 @@ const TourTemplateList: React.FC = () => {
       nights: Math.max(0, (apiData.thoiLuong || 1) - 1),
     },
     basePrice: apiData.giaSan || 0,
-    status: 'HOAT_DONG',
+    status: apiData.trangThai || 'HOAT_DONG',
     image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500&q=80',
     tags: 'Tour Mẫu',
     schedule: [],
@@ -93,13 +93,19 @@ const TourTemplateList: React.FC = () => {
       setLoading(true);
       try {
         const detail = await tourTemplateService.chiTiet(tour.id);
+        const daysCount = detail.thoiLuong || tour.duration.days || 1;
         const fullTour: TourTemplate = {
           ...tour,
           description: detail.moTa || tour.description,
-          schedule: Array.from({ length: tour.duration.days }).map((_, index) => {
+          duration: {
+            days: daysCount,
+            nights: Math.max(0, daysCount - 1)
+          },
+          schedule: Array.from({ length: daysCount }).map((_, index) => {
             const lt = (detail.lichTrinh || []).find((l: any) => l.ngayThu === index + 1);
             if (lt) {
               return {
+                id: lt.maLichTrinhTour,
                 title: lt.hoatDong || `Ngày ${lt.ngayThu}`,
                 description: lt.moTa || '',
                 meals: parseThucDon(lt.thucDon),
@@ -107,7 +113,7 @@ const TourTemplateList: React.FC = () => {
             }
             return { title: `Ngày ${index + 1}: `, description: '', meals: { breakfast: '', lunch: '', dinner: '' } };
           }),
-          services: detail.dichVu || [],
+          services: [],
         };
         setModalState({ isOpen: true, mode, selectedTour: fullTour });
       } catch (err: any) {
@@ -137,8 +143,7 @@ const TourTemplateList: React.FC = () => {
              hoatDong: day.title,
              moTa: day.description,
              thucDon: JSON.stringify(day.meals)
-           })),
-           dichVu: tourData.services
+           }))
         };
         await tourTemplateService.taoMoi(payload);
       } else if (modalState.mode === 'edit') {
@@ -146,22 +151,43 @@ const TourTemplateList: React.FC = () => {
            tieuDe: tourData.title,
            moTa: tourData.description,
            thoiLuong: tourData.duration.days,
-           giaSan: tourData.basePrice,
-           lichTrinh: tourData.schedule.map((day, index) => ({
-             ngayThu: index + 1,
+           giaSan: tourData.basePrice
+        };
+        await tourTemplateService.capNhat(tourData.id, payload);
+
+        // Đồng bộ lịch trình thông qua các API riêng biệt
+        const originalSchedule = modalState.selectedTour?.schedule || [];
+        
+        // 1. Xóa các lịch trình bị thừa (giảm số ngày)
+        for (const oldDay of originalSchedule) {
+          if (oldDay.id && !tourData.schedule.find(d => d.id === oldDay.id)) {
+            await tourTemplateService.xoaLichTrinh(tourData.id, oldDay.id);
+          }
+        }
+
+        // 2. Thêm hoặc Sửa lịch trình
+        for (let i = 0; i < tourData.schedule.length; i++) {
+          const day = tourData.schedule[i];
+          const ltRequest: LichTrinhRequest = {
+             ngayThu: i + 1,
              hoatDong: day.title,
              moTa: day.description,
              thucDon: JSON.stringify(day.meals)
-           })),
-           dichVu: tourData.services
-        };
-        await tourTemplateService.capNhat(tourData.id, payload);
+          };
+
+          if (day.id) {
+             await tourTemplateService.suaLichTrinh(tourData.id, day.id, ltRequest);
+          } else {
+             await tourTemplateService.themLichTrinh(tourData.id, ltRequest);
+          }
+        }
       } else if (modalState.mode === 'copy') {
         // form may have modified some data for copy, but the API only takes the ID for copy.
         if (modalState.selectedTour?.id) {
           await tourTemplateService.saoChep(modalState.selectedTour.id);
         }
       }
+      alert(modalState.mode === 'create' ? 'Tạo mới thành công' : 'Lưu thành công');
       closeModal();
       await getAll();
     } catch (err: any) {
@@ -229,14 +255,13 @@ const TourTemplateList: React.FC = () => {
         <span className="font-medium">{record.basePrice.toLocaleString('vi-VN')} đ</span>
       ),
     },
-
     {
       key: 'actions',
       title: 'Hành Động',
       align: 'center',
       render: (record) => (
         <div className="flex items-center justify-center gap-1">
-          <Button variant="ghost" size="sm" icon={<Pencil size={18} />} onClick={() => openModal('edit', record)} className="p-2" aria-label="Sửa" />
+          <Button variant="ghost" size="sm" icon={<Pencil size={18} />} onClick={() => openModal('edit', record)} className="p-2 text-[#faad14] hover:text-[#d48806] hover:bg-orange-50" aria-label="Sửa" />
           <Button variant="ghost" size="sm" icon={<Copy size={18} />} onClick={() => openModal('copy', record)} className="p-2" aria-label="Sao chép" />
           <Button variant="ghost" size="sm" icon={<Trash2 size={18} />} onClick={() => openModal('delete', record)} className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50" aria-label="Xóa" />
         </div>
