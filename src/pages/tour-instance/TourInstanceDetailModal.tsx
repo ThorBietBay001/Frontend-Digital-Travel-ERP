@@ -77,24 +77,30 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
     if (initialData && mode === 'edit') {
       setFormData({ ...initialData });
       setIsLoadingDetail(true);
-      tourInstanceService.chiTiet(initialData.id).then(res => {
+      tourInstanceService.chiTiet(initialData.id).then(async (res: any) => {
         if (res) {
-           const rawSchedule = res.lichTrinh;
            let parsedSchedule: any[] = [];
-           if (rawSchedule && Array.isArray(rawSchedule) && rawSchedule.length > 0) {
-             parsedSchedule = rawSchedule.map((lt: any) => {
-               let meals = { breakfast: '', lunch: '', dinner: '' };
-               if (lt.thucDon) {
-                 try { meals = JSON.parse(lt.thucDon); } catch { /* ignore */ }
-               } else if (lt.meals) {
-                 meals = lt.meals;
+           if (res.maTourMau) {
+             try {
+               const templateDetail = await tourTemplateService.chiTiet(res.maTourMau);
+               if (templateDetail && templateDetail.lichTrinh) {
+                 parsedSchedule = templateDetail.lichTrinh.map((lt: any) => {
+                   let meals = { breakfast: '', lunch: '', dinner: '' };
+                   if (lt.thucDon) {
+                     try { meals = JSON.parse(lt.thucDon); } catch { /* ignore */ }
+                   } else if (lt.meals) {
+                     meals = lt.meals;
+                   }
+                   return {
+                     title: lt.hoatDong || lt.title || `Ngày ${lt.ngayThu || ''}`,
+                     description: lt.moTa || lt.description || '',
+                     meals
+                   };
+                 });
                }
-               return {
-                 title: lt.hoatDong || lt.title || `Ngày ${lt.ngayThu || ''}`,
-                 description: lt.moTa || lt.description || '',
-                 meals
-               };
-             });
+             } catch (e) {
+               console.error('Failed to load schedule from template', e);
+             }
            }
 
            const services = (res.dichVu || []).map((service: any) => ({

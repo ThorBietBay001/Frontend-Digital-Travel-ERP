@@ -122,28 +122,28 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     { key: 'email', title: 'Email', dataIndex: 'email' },
     { key: 'tier', title: 'Hạng thẻ', dataIndex: 'tier' },
     ...(!isRevokeMode ? [
-    { key: 'phone', title: 'SĐT', dataIndex: 'phone' } as Column<CustomerTarget>,
-    {
-      key: 'voucherStatus',
-      title: 'Voucher',
-      render: (record) => record.hasVoucher
-        ? <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2 py-1">Đã phân bổ</span>
-        : <span className="text-xs text-gray-500">Chưa phân bổ</span>,
-    } as Column<CustomerTarget>,
-    {
-      key: 'action',
-      title: 'Thao tác',
-      render: (record) => record.hasVoucher ? (
-        <Button
-          size="sm"
-          variant="danger"
-          disabled={revokingCustomerId === record.id}
-          onClick={() => handleRevoke(record.id)}
-        >
-          {revokingCustomerId === record.id ? 'Đang thu hồi...' : 'Thu hồi'}
-        </Button>
-      ) : null,
-    } as Column<CustomerTarget>,
+      { key: 'phone', title: 'SĐT', dataIndex: 'phone' } as Column<CustomerTarget>,
+      {
+        key: 'voucherStatus',
+        title: 'Voucher',
+        render: (record) => record.hasVoucher
+          ? <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2 py-1">Đã phân bổ</span>
+          : <span className="text-xs text-gray-500">Chưa phân bổ</span>,
+      } as Column<CustomerTarget>,
+      {
+        key: 'action',
+        title: 'Thao tác',
+        render: (record) => record.hasVoucher ? (
+          <Button
+            size="sm"
+            variant="danger"
+            disabled={revokingCustomerId === record.id}
+            onClick={() => handleRevoke(record.id)}
+          >
+            {revokingCustomerId === record.id ? 'Đang thu hồi...' : 'Thu hồi'}
+          </Button>
+        ) : null,
+      } as Column<CustomerTarget>,
     ] : []),
   ];
 

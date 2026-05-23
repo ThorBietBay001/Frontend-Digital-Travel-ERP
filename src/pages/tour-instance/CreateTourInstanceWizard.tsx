@@ -73,7 +73,7 @@ const CreateTourInstanceWizard: React.FC<CreateTourInstanceWizardProps> = ({ isO
     if (template) {
       try {
         const detail = await tourTemplateService.chiTiet(templateId);
-        const parsedSchedule = (detail.lichTrinh || []).map((lt: any) => {
+        const parsedSchedule = (detail?.lichTrinh || []).map((lt: any) => {
           let meals = { breakfast: '', lunch: '', dinner: '' };
           if (lt.thucDon) {
             try { meals = JSON.parse(lt.thucDon); } catch { /* ignore */ }
