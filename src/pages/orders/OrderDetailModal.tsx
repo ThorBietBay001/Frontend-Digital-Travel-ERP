@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { User, DollarSign, MapPin, Users, Tag, Ticket, Leaf, Clock, CheckCircle } from 'lucide-react';
 import type { Order, Passenger } from './mockData';
 import { ordersService } from '../../services/orders';
-import type { DonDatTourResponse } from '../../services/orders';
+import type { ChiTietDatTourResponse, DonDatTourResponse } from '../../services/orders';
 import { formatApiError } from '../../utils/apiHelpers';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -46,6 +46,52 @@ const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
 };
 
 const formatCurrency = (value?: number): string => `${(value || 0).toLocaleString('vi-VN')} đ`;
+
+const formatAdditionalService = (service: NonNullable<DonDatTourResponse['chiTietDichVu']>[number]): string => {
+  const name = service.tenDichVu || service.maDichVuThem || 'Dịch vụ thêm';
+  const quantity = service.soLuong ? ` x${service.soLuong}` : '';
+  const amount = service.thanhTien ?? (service.donGia && service.soLuong ? service.donGia * service.soLuong : service.donGia);
+
+  return amount ? `${name}${quantity} - ${formatCurrency(amount)}` : `${name}${quantity}`;
+};
+
+const calculateAge = (birthday?: string, referenceDate?: string): number | undefined => {
+  if (!birthday) return undefined;
+
+  const birthDate = new Date(birthday);
+  const dateToCompare = referenceDate ? new Date(referenceDate) : new Date();
+  if (Number.isNaN(birthDate.getTime()) || Number.isNaN(dateToCompare.getTime())) return undefined;
+
+  let age = dateToCompare.getFullYear() - birthDate.getFullYear();
+  const monthDiff = dateToCompare.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && dateToCompare.getDate() < birthDate.getDate())) {
+    age -= 1;
+  }
+
+  return age;
+};
+
+const isChildPassenger = (passenger: ChiTietDatTourResponse, referenceDate?: string): boolean => {
+  if (passenger.laTreEm !== undefined) return passenger.laTreEm;
+  if (passenger.isTreEm !== undefined) return passenger.isTreEm;
+  if (passenger.isChild !== undefined) return passenger.isChild;
+  if (passenger.treEm !== undefined) return passenger.treEm;
+
+  const passengerType = [
+    passenger.loaiKhach,
+    passenger.loaiKhachHang,
+    passenger.loaiVe,
+    passenger.nhomTuoi,
+    passenger.doiTuong,
+    passenger.doiTuongKhach,
+    passenger.phanLoai,
+  ].join(' ').toUpperCase();
+
+  if (passengerType.includes('TRE') || passengerType.includes('CHILD')) return true;
+
+  const age = passenger.doTuoi ?? passenger.tuoi ?? passenger.age ?? calculateAge(passenger.ngaySinh, referenceDate);
+  return age !== undefined && age <= 11;
+};
 
 const formatDateTime = (value?: string): string => {
   if (!value) return '—';
@@ -88,41 +134,54 @@ const getOrderStatusLabel = (status: Order['status']) => {
   }
 };
 
-const mapApiToOrder = (api: DonDatTourResponse): Order => ({
-  id: api.maDatTour || '',
-  orderCode: api.maDatTour || '',
-  customerName: api.tenKhachHang || '',
-  customerPhone: '',
-  tourName: api.tieuDeTour || '',
-  departureDate: api.ngayKhoiHanh || '',
-  bookingDate: formatDateTime(api.ngayDat),
-  totalAmount: api.tongTien || 0,
-  voucherCode: api.maVoucher,
-  voucherName: api.tenVoucher,
-  voucherDiscount: api.soTienGiam ?? api.tienGiam ?? api.giaTriVoucher ?? 0,
-  childTicketCount: api.soLuongVeTreEm ?? api.chiTietKhach?.filter((p) => p.loaiKhach?.toUpperCase().includes('TRE') || (p.doTuoi !== undefined && p.doTuoi < 12)).length ?? 0,
-  childTicketAmount: api.tienVeTreEm ?? api.chiTietKhach?.reduce((sum, p) => sum + (p.giaVeTreEm || 0), 0) ?? 0,
-  greenPoints: api.soDiemXanh ?? api.diemXanh ?? 0,
-  greenNote: api.ghiChuDiemXanh,
-  roomType: api.chiTietKhach?.find((p) => p.tenLoaiPhong)?.tenLoaiPhong,
-  roomSurcharge: api.chiTietKhach?.reduce((sum, p) => sum + (p.mucPhuThu || 0), 0) ?? 0,
-  status: mapStatus(api.trangThai),
-  paymentStatus: mapPaymentStatus(api.trangThai),
-  passengerCount: api.chiTietKhach?.length || 0,
-  passengers: (api.chiTietKhach || []).map(
-    (p): Passenger => ({
-      name: p.hoTen || '—',
-      ageGroup: p.loaiKhach?.toUpperCase().includes('TRE') ? 'Trẻ em' : 'Người lớn',
-      gender: 'Nam',
-      customerCode: p.maKhachHang,
-      phone: p.soDienThoai,
-      identityNumber: p.cccd ?? p.soGiayTo,
-      roomType: p.tenLoaiPhong,
-      surcharge: p.mucPhuThu,
-      price: p.giaTaiThoiDiemDat,
-    })
-  ),
-});
+const mapApiToOrder = (api: DonDatTourResponse): Order => {
+  const passengerDetails = api.chiTietKhach || [];
+  const childPassengers = passengerDetails.filter((p) => isChildPassenger(p, api.ngayKhoiHanh));
+  const childTicketPrice = api.giaHienHanh ? api.giaHienHanh / 2 : undefined;
+  const childTicketUnitPrice = api.tienVeTreEm && childPassengers.length > 0
+    ? api.tienVeTreEm / childPassengers.length
+    : undefined;
+
+  return {
+    id: api.maDatTour || '',
+    orderCode: api.maDatTour || '',
+    customerName: api.tenKhachHang || '',
+    customerPhone: '',
+    tourName: api.tieuDeTour || '',
+    departureDate: api.ngayKhoiHanh || '',
+    bookingDate: formatDateTime(api.ngayDat),
+    totalAmount: api.tongTien || 0,
+    voucherCode: api.maVoucher,
+    voucherName: api.tenVoucher,
+    voucherDiscount: api.soTienGiam ?? api.tienGiam ?? api.giaTriVoucher ?? 0,
+    childTicketCount: childPassengers.length || api.soTreEm || api.soLuongVeTreEm || 0,
+    childTicketAmount: api.tienVeTreEm
+      ?? childPassengers.reduce((sum, p) => sum + (p.giaVeTreEm ?? childTicketPrice ?? 0), 0),
+    greenPoints: api.soDiemXanh ?? api.diemXanh ?? 0,
+    greenNote: api.ghiChuDiemXanh,
+    additionalServices: api.chiTietDichVu?.map(formatAdditionalService).filter(Boolean),
+    status: mapStatus(api.trangThai),
+    paymentStatus: mapPaymentStatus(api.trangThai),
+    passengerCount: passengerDetails.length,
+    passengers: passengerDetails.map(
+      (p): Passenger => {
+        const isChild = isChildPassenger(p, api.ngayKhoiHanh);
+
+        return {
+          name: p.hoTen || '—',
+          ageGroup: isChild ? 'Trẻ em' : 'Người lớn',
+          gender: 'Nam',
+          customerCode: p.maKhachHang,
+          phone: p.soDienThoai,
+          identityNumber: p.cccd ?? p.soGiayTo,
+          roomType: p.tenLoaiPhong,
+          surcharge: p.mucPhuThu,
+          price: isChild ? p.giaVeTreEm ?? childTicketPrice ?? childTicketUnitPrice ?? p.giaTaiThoiDiemDat : p.giaTaiThoiDiemDat,
+        };
+      }
+    ),
+  };
+};
 
 const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, maDatTour, onApproved }) => {
   const [order, setOrder] = useState<Order | null>(null);
@@ -282,13 +341,11 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
                   <span className="text-gray-500">Mã KH</span>
                   <span className="font-medium text-gray-800">{order.id}</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-[#E1F1FF] pt-2">
-                  <span className="text-gray-500">Loại phòng</span>
-                  <span className="font-medium text-gray-800">{order.roomType || '—'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Phụ thu</span>
-                  <span className="font-medium text-gray-800">{order.roomSurcharge ? formatCurrency(order.roomSurcharge) : '—'}</span>
+                <div className="flex justify-between items-start gap-3 border-t border-[#E1F1FF] pt-2">
+                  <span className="text-gray-500">Dịch vụ thêm</span>
+                  <span className="font-medium text-gray-800 text-right">
+                    {order.additionalServices?.length ? order.additionalServices.join(', ') : '—'}
+                  </span>
                 </div>
               </div>
             </div>
