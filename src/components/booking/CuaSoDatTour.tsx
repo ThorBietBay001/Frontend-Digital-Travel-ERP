@@ -93,7 +93,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
       try {
         const [profileResponse, servicesResponse, vouchersResponse] = await Promise.all([
           khService.layHoChieuSo().catch(() => null),
-          khService.layDichVuThem().catch(() => ({ data: [] })),
+          khService.layDichVuThem(tour.id).catch(() => ({ data: [] })),
           khService.getVouchers().catch(() => ({ data: { content: [] } }))
         ]);
 
@@ -119,7 +119,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
     };
 
     loadBookingData();
-  }, []);
+  }, [tour.id]);
 
   useEffect(() => {
     const timer = setInterval(() => {

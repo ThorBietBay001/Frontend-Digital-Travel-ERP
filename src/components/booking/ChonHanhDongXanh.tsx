@@ -27,7 +27,11 @@ export default function ChonHanhDongXanh({
       </div>
 
       <div className="space-y-2 pt-2">
-        {greenActions.map((action) => {
+        {greenActions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-green-200 bg-green-50/30 px-4 py-3 text-xs font-semibold text-slate-500">
+            Tour này hiện chưa có hành động xanh riêng.
+          </div>
+        ) : greenActions.map((action) => {
           const quantity = selectedGreenActions[action.id] || 0;
           const isSelected = quantity > 0;
           const displayQuantity = Math.max(1, quantity);

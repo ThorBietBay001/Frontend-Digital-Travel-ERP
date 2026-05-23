@@ -37,7 +37,11 @@ export default function ChonDichVuThem({
       </div>
 
       <div className="space-y-2 pt-2">
-        {extraServices.map((service) => {
+        {extraServices.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50/30 px-4 py-3 text-xs font-semibold text-slate-500">
+            Tour này hiện chưa có dịch vụ bổ sung riêng.
+          </div>
+        ) : extraServices.map((service) => {
           const quantity = selectedServices[service.id] || 0;
           const isSelected = quantity > 0;
           const displayQuantity = Math.max(1, quantity);

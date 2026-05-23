@@ -102,8 +102,10 @@ export const khService = {
     return res.data;
   },
 
-  layDichVuThem: async () => {
-    const res = await api.get('/khach-hang/dich-vu-them');
+  layDichVuThem: async (maTourThucTe?: string) => {
+    const res = await api.get('/khach-hang/dich-vu-them', {
+      params: maTourThucTe ? { maTourThucTe } : undefined
+    });
     return res.data;
   },
 
