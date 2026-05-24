@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Search, MapPin, Calendar, DollarSign, Star, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, MapPin, Calendar, Clock, DollarSign, Star, Users } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
 import { khService } from '../services/khService';
-import { mapPublicTour, unwrapPageContent } from '../services/apiHelpers';
+import { mapPublicTour, unwrapData, unwrapPageContent } from '../services/apiHelpers';
 import type { Tour } from '../types';
 
 export default function TrangChu() {
@@ -19,10 +19,23 @@ export default function TrangChu() {
   const [tourPage, setTourPage] = useState(1);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchTours = async () => {
       try {
-        const response = await khService.layDanhSachTour();
-        const tours = unwrapPageContent<any>(response).map(mapPublicTour);
+        const pageSize = 10;
+        const firstResponse = await khService.layDanhSachTour({ page: 0, size: pageSize });
+        const firstPage = unwrapData<any>(firstResponse);
+        const allItems = [...unwrapPageContent<any>(firstResponse)];
+        const totalPages = Number(firstPage?.totalPages || 1);
+
+        for (let page = 1; page < totalPages; page += 1) {
+          const response = await khService.layDanhSachTour({ page, size: pageSize });
+          allItems.push(...unwrapPageContent<any>(response));
+        }
+
+        if (!isMounted) return;
+        const tours = allItems.map(mapPublicTour);
         setAllTours(tours);
         setFilteredTours(tours);
       } catch (error) {
@@ -30,6 +43,10 @@ export default function TrangChu() {
       }
     };
     fetchTours();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const heroImages = [
@@ -587,8 +604,27 @@ export default function TrangChu() {
   );
 }
 
+const dinhDangNgay = (value?: string) => {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleDateString('vi-VN');
+};
+
+const dinhDangKhoangNgay = (startDate?: string, endDate?: string) => {
+  const start = dinhDangNgay(startDate);
+  const end = dinhDangNgay(endDate);
+
+  if (start && end) return `${start} - ${end}`;
+  return start || end;
+};
+
 // Tour Card Component
 function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: number) => string }) {
+  const dateRange = dinhDangKhoangNgay(tour.departureDate, tour.endDate);
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
       <div className="relative">
@@ -611,11 +647,14 @@ function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: numbe
 
       <div className="p-6">
         <h3 className="font-bold text-lg mb-2 text-gray-900">{tour.name}</h3>
-        <p className="text-gray-600 text-sm mb-3 flex items-center">
-          <MapPin className="w-4 h-4 mr-1" />
-          {tour.destination}
+        <p className="text-gray-600 text-sm mb-2 flex items-center">
+          <Clock className="w-4 h-4 mr-1 shrink-0 text-gray-500" />
+          {tour.duration}
         </p>
-        <p className="text-gray-600 text-sm mb-4">{tour.duration}</p>
+        <p className="text-gray-600 text-sm mb-4 flex items-center gap-x-1">
+          <Calendar className="w-4 h-4 shrink-0 text-gray-500" />
+          <span>{dateRange}</span>
+        </p>
 
         <div className="flex items-center justify-between mb-4">
           <div>

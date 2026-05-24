@@ -170,6 +170,15 @@ export default function ChiTietTour() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
+  const formatDate = (value?: string) => {
+    if (!value) return 'Đang cập nhật';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Đang cập nhật';
+
+    return date.toLocaleDateString('vi-VN');
+  };
+
   // Authentic Customer Reviews List is now fetched from the API
 
   const handleHelpfulClick = (idx: number) => {
@@ -232,7 +241,7 @@ export default function ChiTietTour() {
           </Link>
           <div className="flex items-center space-x-6">
             <span className="hidden sm:inline text-xs font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
-              Khởi hành: {new Date(tour.departureDate).toLocaleDateString('vi-VN')}
+              Khởi hành: {formatDate(tour.departureDate)}
             </span>
           </div>
         </div>
@@ -734,7 +743,14 @@ export default function ChiTietTour() {
                 <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
                   <span className="text-slate-400 font-semibold">Ngày khởi hành</span>
                   <span className="text-slate-900 font-black">
-                    {new Date(tour.departureDate).toLocaleDateString('vi-VN')}
+                    {formatDate(tour.departureDate)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
+                  <span className="text-slate-400 font-semibold">Ngày kết thúc</span>
+                  <span className="text-slate-900 font-black">
+                    {formatDate(tour.endDate)}
                   </span>
                 </div>
 

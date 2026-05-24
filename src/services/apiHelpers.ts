@@ -35,6 +35,28 @@ const formatDuration = (days?: number | string, seed = ''): string => {
   return `${generatedDays} ngày`;
 };
 
+const getDurationDays = (days?: number | string, seed = ''): number => {
+  const value = toNumber(days, 0);
+  if (value > 0) return value;
+
+  return laySoNgauNhienOnDinh(seed || 'digital-travel-duration', 1, 5);
+};
+
+const formatTripDuration = (days: number): string => {
+  const nights = days <= 1 ? 1 : days - 1;
+  return `${formatDuration(days)} ${nights} đêm`;
+};
+
+const calculateEndDate = (startDate: string, days: number): string => {
+  if (!startDate) return '';
+
+  const date = new Date(startDate);
+  if (Number.isNaN(date.getTime())) return '';
+
+  date.setDate(date.getDate() + Math.max(days - 1, 0));
+  return date.toISOString().slice(0, 10);
+};
+
 const tinhGiaGocGiaLap = (price: number, seed: string): number | undefined => {
   if (price <= 0) return undefined;
 
@@ -84,13 +106,16 @@ export const mapPublicTour = (item: ApiRecord): Tour => {
   const price = toNumber(item.giaHienHanh ?? item.price, 0);
   const totalSeats = toNumber(item.soKhachToiDa ?? item.totalSeats, 0);
   const originalPrice = toNumber(item.giaGoc ?? item.originalPrice, 0) || tinhGiaGocGiaLap(price, id || title);
+  const durationDays = getDurationDays(item.thoiLuong, id || title);
+  const departureDate = item.ngayKhoiHanh || '';
+  const endDate = item.ngayKetThuc || calculateEndDate(departureDate, durationDays);
 
   return {
     id,
     code: id,
     title,
     name: title,
-    duration: formatDuration(item.thoiLuong, id || title),
+    duration: formatTripDuration(durationDays),
     location: destination,
     destination,
     price,
@@ -99,8 +124,9 @@ export const mapPublicTour = (item: ApiRecord): Tour => {
     reviews: toNumber(item.soDanhGia, 0),
     image: item.hinhAnh || item.image || tourImage(id),
     tags: item.trangThai ? [item.trangThai] : [],
-    startDate: item.ngayKhoiHanh || '',
-    departureDate: item.ngayKhoiHanh || '',
+    startDate: departureDate,
+    departureDate,
+    endDate,
     availableSeats: toNumber(item.choConLai, totalSeats),
     totalSeats,
     description: item.moTa || '',
@@ -232,12 +258,35 @@ export const mapVoucher = (v: ApiRecord): Voucher => ({
   description: (v.dieuKienApDung || 'Voucher ưu đãi từ Digital Travel').replace(/\. /g, '.\n')
 });
 
-export const mapGreenAction = (a: ApiRecord) => ({
-  id: a.maHanhDongXanh || a.id || '',
-  title: a.tenHanhDong || a.title || 'Hành động xanh',
-  points: toNumber(a.diemCong ?? a.points, 0),
-  description: a.moTa || 'Cam kết hành động xanh trong chuyến đi.'
-});
+const getGreenActionDescription = (actionId: string, title: string) => {
+  const descriptions: Record<string, string> = {
+    HDX_BOTTLE: 'Giảm rác thải nhựa trong suốt hành trình, phù hợp tour leo núi và tham quan dài ngày.',
+    HDX_CLEANUP: 'Cùng hướng dẫn viên làm sạch khu tham quan theo khung giờ an toàn của đoàn.',
+    HDX_EBILL: 'Nhận chứng từ điện tử để hạn chế in ấn và lưu trữ thông tin đặt tour thuận tiện hơn.',
+    HDX_TREE: 'Đóng góp vào hoạt động trồng cây hoặc phục hồi cảnh quan tại điểm đến.',
+    HDX_LOCAL: 'Ưu tiên sản phẩm địa phương, giảm đồ nhựa dùng một lần và hỗ trợ sinh kế bản địa.',
+    HDX_REFILL: 'Dùng trạm tiếp nước trong lịch trình để hạn chế chai nhựa phát sinh trên xe và tại điểm tham quan.',
+    HDX_PUBLIC_TRANSFER: 'Ưu tiên xe ghép hoặc phương tiện công cộng cho chặng ngắn, giảm phát thải của đoàn.',
+    HDX_LOCAL_MEAL: 'Chọn bữa ăn theo mùa từ nguyên liệu địa phương, phù hợp trải nghiệm ẩm thực bản địa.',
+    HDX_CORAL_SAFE: 'Tuân thủ quy tắc bảo vệ biển, không chạm san hô và không xả rác khi tham gia hoạt động nước.',
+    HDX_REUSABLE_BAG: 'Mang túi cá nhân khi mua đặc sản để giảm túi nilon tại chợ và làng nghề.',
+    HDX_COMMUNITY_BUY: 'Mua sản phẩm trực tiếp từ cộng đồng địa phương để tăng lợi ích cho người dân điểm đến.'
+  };
+
+  return descriptions[actionId] || `Cam kết ${title.toLowerCase()} theo điều kiện thực tế của chuyến đi.`;
+};
+
+export const mapGreenAction = (a: ApiRecord) => {
+  const id = a.maHanhDongXanh || a.id || '';
+  const title = a.tenHanhDong || a.title || 'Hành động xanh';
+
+  return {
+    id,
+    title,
+    points: toNumber(a.diemCong ?? a.points, 0),
+    description: a.moTa || getGreenActionDescription(id, title)
+  };
+};
 
 export const mapExtraService = (s: ApiRecord) => ({
   id: s.maDichVuThem || s.id || '',
