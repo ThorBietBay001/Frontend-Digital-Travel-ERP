@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import type { Guide } from './mockData';
-import { Star, Mail, Phone, FileText, CreditCard, Cake, MapPin, Calendar } from 'lucide-react';
+import { Star, Mail, Phone, FileText, CreditCard, Cake, Calendar } from 'lucide-react';
 import { hrService } from '../../services/system/hr';
 import { accountsService } from '../../services/system/accounts';
 import type { NhanVienResponse } from '../../services/system/accounts';

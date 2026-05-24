@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
@@ -15,7 +14,6 @@ import TourTemplateDetailModal from './TourTemplateDetailModal';
 import { tourTemplateService } from '../../services/tour-template';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
-import { mapTourTemplateStatus } from '../../utils/statusMapping';
 
 const TourTemplateList: React.FC = () => {
   const [data, setData] = useState<TourTemplate[]>([]);
@@ -93,6 +91,9 @@ const TourTemplateList: React.FC = () => {
       setLoading(true);
       try {
         const detail = await tourTemplateService.chiTiet(tour.id);
+        if (!detail) {
+          throw new Error('Không tìm thấy chi tiết tour');
+        }
         const daysCount = detail.thoiLuong || tour.duration.days || 1;
         const fullTour: TourTemplate = {
           ...tour,

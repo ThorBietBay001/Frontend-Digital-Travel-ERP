@@ -19,8 +19,6 @@ const CostList: React.FC = () => {
   const [costs, setCosts] = useState<CostItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
-  const [warningOnly, setWarningOnly] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
@@ -44,6 +42,7 @@ const CostList: React.FC = () => {
     try {
       const res = await financeService.danhSachChiPhi();
       const mapped = (res?.content || []).map((c: ChiPhiThucTeResponse): CostItem => {
+        let status: CostItem['status'] = 'pending';
         if (c.trangThaiDuyet === 'DA_DUYET') status = 'approved';
         else if (c.trangThaiDuyet === 'TU_CHOI') status = 'rejected';
         else if (c.trangThaiDuyet === 'CHO_DUYET') status = 'pending';

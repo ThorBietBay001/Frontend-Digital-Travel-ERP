@@ -30,11 +30,11 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
     setLoading(true);
     try {
       const dichVu = await servicesService.danhSachDichVuThem().catch(() => []);
-      const mappedDichVu = dichVu.map(service => ({
+      const mappedDichVu: Service[] = dichVu.map(service => ({
         id: service.maDichVuThem || '',
         code: service.maDichVuThem || '',
         name: service.ten || '',
-        category: 'Dịch vụ thêm',
+        category: 'extra',
         price: service.donGia || 0,
         unit: service.donViTinh || '',
         status: 'active',
@@ -96,7 +96,7 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
         updatedService = { ...editingService, name: res?.ten || formData.ten, price: res?.donGia || formData.donGia, unit: res?.donViTinh || formData.donViTinh || '' };
       } else {
         const res = await servicesService.taoDichVuThem(payload);
-        updatedService = { id: res?.maDichVuThem || '', code: res?.maDichVuThem || '', name: res?.ten || '', category: 'Dịch vụ thêm', price: res?.donGia || 0, unit: res?.donViTinh || '', status: 'active' };
+        updatedService = { id: res?.maDichVuThem || '', code: res?.maDichVuThem || '', name: res?.ten || '', category: 'extra', price: res?.donGia || 0, unit: res?.donViTinh || '', status: 'active' };
       }
 
       if (editingService) {
@@ -263,4 +263,3 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
 };
 
 export default TourInstanceServiceTab;
-

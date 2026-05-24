@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, RefreshCcw, Route } from 'lucide-react';
+import { CalendarDays, Check, RefreshCcw, Route } from 'lucide-react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -9,9 +9,9 @@ import { dispatchService } from '../../services/dispatch';
 import type { PhanCongResponse } from '../../services/dispatch';
 
 const statusMeta: Record<string, { label: string; variant: 'success' | 'warning' | 'error' | 'info' | 'neutral' }> = {
-  ACTIVE: { label: 'Đang phân công', variant: 'success' },
-  COMPLETED: { label: 'Hoàn thành', variant: 'info' },
-  CANCELLED: { label: 'Đã hủy', variant: 'error' },
+  CHO_PHAN_HOI: { label: 'Chờ phản hồi', variant: 'warning' },
+  DA_DONG_Y: { label: 'Đã đồng ý', variant: 'success' },
+  TU_CHOI: { label: 'Từ chối', variant: 'error' },
 };
 
 const GuideSchedule: React.FC = () => {
@@ -31,6 +31,16 @@ const GuideSchedule: React.FC = () => {
       setLoading(false);
     }
   }, []);
+
+  const acceptAssignment = async (maPhanCong?: string) => {
+    if (!maPhanCong) return;
+    try {
+      await dispatchService.dongYPhanCong(maPhanCong);
+      await loadAssignments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể đồng ý phân công.');
+    }
+  };
 
   React.useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -66,9 +76,26 @@ const GuideSchedule: React.FC = () => {
       title: 'Trạng thái',
       align: 'center',
       render: (record) => {
-        const meta = statusMeta[record.trangThai || ''] ?? { label: record.trangThai || 'Không rõ', variant: 'neutral' as const };
+        const status = record.trangThaiChapNhan || record.trangThai || '';
+        const meta = statusMeta[status] ?? { label: status || 'Không rõ', variant: 'neutral' as const };
         return <Badge label={meta.label} variant={meta.variant} />;
       },
+    },
+    {
+      key: 'actions',
+      title: 'Hành động',
+      align: 'right',
+      render: (record) => record.trangThaiChapNhan === 'CHO_PHAN_HOI' ? (
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          icon={<Check size={16} aria-hidden="true" />}
+          onClick={() => acceptAssignment(record.maPhanCong)}
+        >
+          Đồng ý
+        </Button>
+      ) : <span className="text-sm text-gray-400">-</span>,
     },
   ];
 

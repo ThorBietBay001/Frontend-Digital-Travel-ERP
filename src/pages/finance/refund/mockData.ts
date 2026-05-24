@@ -6,7 +6,7 @@ export interface RefundRequest {
   customerPhone: string;
   amount: number;
   reason: string;
-  status: 'pending' | 'completed' | 'rejected';
+  status: 'pending' | 'completed' | 'rejected' | 'CHO_THANH_TOAN' | 'CHO_HOAN_TIEN' | 'THANH_CONG' | 'DA_HOAN_TIEN' | 'TU_CHOI';
   refundMethod?: 'gateway' | 'manual';
   bankAccount?: string;
   transactionCode?: string;

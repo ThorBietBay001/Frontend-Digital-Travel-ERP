@@ -1,17 +1,18 @@
 import api from '../api';
 import { unwrapApiData, type PageQueryParams } from '../../utils/apiHelpers';
 import type {
-  ApiResponsePageNhatKyHeThongResponse,
-  PageNhatKyHeThongResponse,
-  NhatKyHeThongResponse,
+  ApiResponsePageNhatKyBaoMatResponse,
+  PageNhatKyBaoMatResponse,
+  NhatKyBaoMatResponse,
   PageableObject,
   SortObject,
 } from '../../pages/system/logs/mockData';
 
+export type ApiResponsePageNhatKyHeThongResponse = ApiResponsePageNhatKyBaoMatResponse;
+export type PageNhatKyHeThongResponse = PageNhatKyBaoMatResponse;
+export type NhatKyHeThongResponse = NhatKyBaoMatResponse;
+
 export type {
-  ApiResponsePageNhatKyHeThongResponse,
-  PageNhatKyHeThongResponse,
-  NhatKyHeThongResponse,
   PageableObject,
   SortObject,
 };

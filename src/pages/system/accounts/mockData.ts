@@ -48,6 +48,7 @@ export interface NhanVienResponse {
   trangThaiTaiKhoan?: string;
   trangThaiLamViec?: string;
   loaiNhanVien?: string;
+  ngaySinh?: string;
   ngayVaoLam?: string;
   thoiDiemTao?: string;
   cccd?: string;
@@ -200,4 +201,3 @@ export const initialAccounts: Account[] = [
     status: 'active',
   },
 ];
-

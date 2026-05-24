@@ -36,8 +36,31 @@ export interface PhanCongResponse {
   tenTour?: string;
   maNhanVien?: string;
   tenNhanVien?: string;
+  trangThaiChapNhan?: string;
+  trangThaiTour?: string;
   trangThai?: string;
   ngayPhanCong?: string;
+  ngayKhoiHanh?: string;
+  ngayKetThuc?: string;
+  soKhachToiDa?: number;
+  choConLai?: number;
+  danhSachHanhKhach?: ThanhVienDoanResponse[];
+}
+
+export interface ThanhVienDoanResponse {
+  maDatTour?: string;
+  loaiKhach?: string;
+  maKhachHang?: string;
+  maNguoiDongHanh?: string;
+  hoTenKhachHang?: string;
+  soDienThoai?: string;
+  hangThanhVien?: string;
+  ghiChuYTe?: string;
+  ghiChuDatTour?: string;
+  hanhDongXanh?: string;
+  diemXanh?: number;
+  trangThai?: string;
+  ghiChuDiemDanh?: string;
 }
 
 export interface NhanVienResponse {

@@ -151,7 +151,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
     }
   }, [initialData, mode, isOpen]);
 
-  const isFormDisabled = mode === 'edit' && initialData && !['CHO_KICH_HOAT', 'SAP_DIEN_RA'].includes(initialData.status || '');
+  const isFormDisabled = mode === 'edit' && initialData && initialData.status !== 'CHO_KICH_HOAT';
 
   const handleChange = (field: keyof TourInstance, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -364,8 +364,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
           <Select
             options={[
               { label: 'Chờ kích hoạt', value: 'CHO_KICH_HOAT' },
-              { label: 'Mở bán', value: 'MO_BAN' },
-              { label: 'Sắp diễn ra', value: 'SAP_DIEN_RA' }
+              { label: 'Mở bán', value: 'MO_BAN' }
             ]}
             value={formData.status}
             onChange={(value) => handleChange('status', value)}

@@ -49,4 +49,9 @@ export const dispatchService = {
     const response = await api.get<{ data: PhanCongResponse[] }>('/api/huong-dan-vien/tour-cua-toi');
     return response.data.data ?? [];
   },
+
+  dongYPhanCong: async (maPhanCong: string): Promise<PhanCongResponse | undefined> => {
+    const response = await api.post<ApiResponsePhanCongResponse>(`/api/huong-dan-vien/phan-cong/${maPhanCong}/dong-y`);
+    return unwrapApiData(response);
+  },
 };
