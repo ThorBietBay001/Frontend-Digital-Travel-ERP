@@ -22,7 +22,7 @@ export default function ChiTietTour() {
   const [tourReviewsList, setTourReviewsList] = useState<any[]>([]);
 
   // Reviews filters and likes state
-  const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'high' | 'images' | 'vip'>('all');
+  const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'images' | '5star' | '4star' | '3star' | '2star' | '1star'>('all');
   const [helpfulCounts, setHelpfulCounts] = useState<Record<number, number>>({});
 
   // Scroll to top on mount
@@ -184,15 +184,19 @@ export default function ChiTietTour() {
   };
 
   const filteredReviewsList = tourReviewsList.filter((review) => {
-    if (activeReviewFilter === 'high') return review.rating === 5;
     if (activeReviewFilter === 'images') return review.images && review.images.length > 0;
-    if (activeReviewFilter === 'vip') return review.tier === 'Vàng' || review.tier === 'Bạch kim';
+    if (activeReviewFilter === '5star') return review.rating === 5;
+    if (activeReviewFilter === '4star') return review.rating === 4;
+    if (activeReviewFilter === '3star') return review.rating === 3;
+    if (activeReviewFilter === '2star') return review.rating === 2;
+    if (activeReviewFilter === '1star') return review.rating === 1;
     return true;
   });
   const actualReviewCount = tourReviewsList.length;
+  const displayReviewCount = actualReviewCount > 0 ? actualReviewCount : (tour?.reviews || 0);
   const actualRating = actualReviewCount
     ? (tourReviewsList.reduce((sum, review) => sum + Number(review.rating || 0), 0) / actualReviewCount).toFixed(1)
-    : '0.0';
+    : (tour?.rating ? tour.rating.toFixed(2) : '0.00');
 
   if (loading) {
     return (
@@ -381,8 +385,8 @@ export default function ChiTietTour() {
                   >
                     <div className="space-y-1">
                       <span className="block font-black text-slate-800 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                        {day.title?.toLowerCase().startsWith(`ngày ${day.day}`) 
-                          ? day.title 
+                        {day.title?.toLowerCase().startsWith(`ngày ${day.day}`)
+                          ? day.title
                           : `Ngày ${day.day}${day.title ? `: ${day.title}` : ''}`}
                       </span>
                       <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
@@ -444,7 +448,7 @@ export default function ChiTietTour() {
                                   </span>
                                   {(!day.title?.toLowerCase().startsWith(`ngày ${day.day}`) || day.title.length > `ngày ${day.day}`.length + 2) && (
                                     <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
-                                      {day.title?.toLowerCase().startsWith(`ngày ${day.day}`) 
+                                      {day.title?.toLowerCase().startsWith(`ngày ${day.day}`)
                                         ? day.title.substring(`ngày ${day.day}`.length).replace(/^[\s:-]+/, '').trim()
                                         : day.title}
                                     </h4>
@@ -565,18 +569,14 @@ export default function ChiTietTour() {
                     </span>
                   </h2>
                   <p className="text-[11px] font-semibold text-slate-400">
-                    {actualReviewCount > 0
-                      ? `Dựa trên ${actualReviewCount} đánh giá thực tế đã đối soát qua ERP du lịch`
+                    {displayReviewCount > 0
+                      ? `Dựa trên ${displayReviewCount} đánh giá thực tế đã đối soát qua ERP du lịch`
                       : 'Chưa có đánh giá thực tế từ khách hàng'}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[10px] font-extrabold text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100">
-                  <span className="flex items-center gap-1">Tổng đánh giá <strong className="text-slate-800">{actualReviewCount}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span className="flex items-center gap-1">5 sao <strong className="text-slate-800">{tourReviewsList.filter(r => r.rating === 5).length}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span className="flex items-center gap-1">Điểm TB <strong className="text-slate-800">{actualRating} ★</strong></span>
+                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs xs:text-base font-extrabold text-slate-600 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                  <span className="flex items-center gap-1.5">Tổng đánh giá: <strong className="text-white-200 font-extralarge">{displayReviewCount}</strong></span>
                 </div>
               </div>
 
@@ -589,9 +589,12 @@ export default function ChiTietTour() {
                 >
                   {[
                     { id: 'all', label: 'Tất cả', count: tourReviewsList.length },
-                    { id: 'high', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
                     { id: 'images', label: 'Có ảnh', count: tourReviewsList.filter(r => r.images && r.images.length > 0).length },
-                    { id: 'vip', label: 'VIP', count: tourReviewsList.filter(r => r.tier === 'Thành viên Vàng' || r.tier === 'Thành viên Bạch kim').length }
+                    { id: '5star', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
+                    { id: '4star', label: '4 ★', count: tourReviewsList.filter(r => r.rating === 4).length },
+                    { id: '3star', label: '3 ★', count: tourReviewsList.filter(r => r.rating === 3).length },
+                    { id: '2star', label: '2 ★', count: tourReviewsList.filter(r => r.rating === 2).length },
+                    { id: '1star', label: '1 ★', count: tourReviewsList.filter(r => r.rating === 1).length }
                   ].map((chip) => (
                     <option key={chip.id} value={chip.id}>
                       {chip.label} ({chip.count})
