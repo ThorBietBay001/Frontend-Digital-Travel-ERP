@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { MapPin, Users, DollarSign, ChevronRight } from 'lucide-react';
+import { Check, MapPin, Users, DollarSign, ChevronRight } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
 
 interface DashboardProps {
   currentTour: Tour | null;
   upcomingTours: Tour[];
   pastTours: Tour[];
+  pendingTours: Tour[];
   passengers: Passenger[];
   expenses: Expense[];
   attendanceStats: {
@@ -15,6 +16,8 @@ interface DashboardProps {
     pending: number;
   };
   setActiveTab: (tab: 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile') => void;
+  onAcceptAssignment: (maPhanCong?: string) => void;
+  acceptingAssignmentIds: string[];
 }
 
 // Helper: Get passenger member rank labels (unified with DiemDanh.tsx)
@@ -35,7 +38,18 @@ const layHuyHieuHangThanhVien = (rank: string) => {
 
 // Helper function removed because it is unused
 
-export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, passengers, expenses, attendanceStats, setActiveTab }: DashboardProps) {
+export default function BangDieuKhien({
+  currentTour,
+  upcomingTours,
+  pastTours,
+  pendingTours,
+  passengers,
+  expenses,
+  attendanceStats,
+  setActiveTab,
+  onAcceptAssignment,
+  acceptingAssignmentIds
+}: DashboardProps) {
   const [selectedUpcomingTour, setSelectedUpcomingTour] = useState<Tour | null>(null);
   const [modalTab, setModalTab] = useState<'ITINERARY' | 'PASSENGERS'>('ITINERARY');
 
@@ -43,6 +57,8 @@ export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, p
   const formatCurrency = (val: number) => {
     return val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   };
+
+  const selectedTourPassengers = selectedUpcomingTour?.passengers ?? passengers;
 
   return (
     <div className="space-y-4 animate-slide-up">
@@ -105,7 +121,7 @@ export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, p
           <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
             <div
               className="bg-sky-400 h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${(attendanceStats.checked / attendanceStats.total) * 100}%` }}
+              style={{ width: `${attendanceStats.total > 0 ? (attendanceStats.checked / attendanceStats.total) * 100 : 0}%` }}
             ></div>
           </div>
         </div>
@@ -133,10 +149,51 @@ export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, p
         </div>
       </div>
 
+      {pendingTours.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Yêu cầu điều phối</span>
+            <span className="text-[11px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-mono">{pendingTours.length} yêu cầu</span>
+          </h3>
+          <div className="space-y-2">
+            {pendingTours.map((tour) => {
+              const accepting = acceptingAssignmentIds.includes(tour.maPhanCong || '');
+              return (
+                <div
+                  key={tour.maPhanCong || tour.code}
+                  className="glass-card p-3 rounded-2xl border-l-4 border-l-amber-400 space-y-3"
+                >
+                  <div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-mono">
+                        {tour.code}
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-700">{tour.name}</h4>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Khởi hành: {tour.departureDate} • Trạng thái tour: {tour.status}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onAcceptAssignment(tour.maPhanCong)}
+                    disabled={accepting}
+                    className="w-full h-9 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:bg-emerald-300 flex items-center justify-center gap-1.5"
+                  >
+                    <Check size={14} />
+                    {accepting ? 'Đang xác nhận...' : 'Đồng ý nhận tour'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Upcoming LichTrinh (Lịch trình sắp khởi hành) */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-          <span>Lịch trình sắp khởi hành</span>
+          <span>Lịch trình đã nhận</span>
           <span className="text-[11px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono">{upcomingTours.length} chuyến</span>
         </h3>
 
@@ -160,7 +217,7 @@ export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, p
                   </h4>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Khởi hành: {tour.departureDate} • Quy mô: {tour.guestsCount} khách
+                  Khởi hành: {tour.departureDate} • {tour.status} • {tour.guestsCount} khách xác nhận
                 </p>
               </div>
               <ChevronRight size={14} className="text-slate-400 shrink-0" />
@@ -237,7 +294,7 @@ export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, p
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Khởi hành: <span className="font-bold text-slate-700">{selectedUpcomingTour.departureDate}</span> • Quy mô: <span className="font-bold text-slate-700">{selectedUpcomingTour.guestsCount} khách</span>
+                  Khởi hành: <span className="font-bold text-slate-700">{selectedUpcomingTour.departureDate}</span> • <span className="font-bold text-slate-700">{selectedUpcomingTour.guestsCount} khách xác nhận</span>
                 </p>
               </div>
             </div>
@@ -260,14 +317,19 @@ export default function BangDieuKhien({ currentTour, upcomingTours, pastTours, p
                   : 'bg-transparent text-slate-500 hover:text-slate-700'
                   }`}
               >
-                Hành khách ({selectedUpcomingTour.guestsCount})
+                Hành khách ({selectedTourPassengers.length})
               </button>
             </div>
 
             {modalTab === 'PASSENGERS' ? (
               <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {passengers.map((guest) => (
+                  {selectedTourPassengers.length === 0 && (
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100 text-center text-[11px] font-medium text-slate-400">
+                      Chưa có hành khách đã xác nhận thanh toán cho tour này.
+                    </div>
+                  )}
+                  {selectedTourPassengers.map((guest) => (
                     <div
                       key={guest.code}
                       className="bg-white p-3.5 rounded-2xl flex flex-col justify-between border border-slate-100 shadow-sm transition-all duration-200"

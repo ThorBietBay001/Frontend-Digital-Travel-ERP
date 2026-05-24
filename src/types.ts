@@ -2,12 +2,14 @@
 
 export interface Tour {
   code: string;
+  maPhanCong?: string;
   name: string;
   departureDate: string;
   destination: string;
   guestsCount: number;
-  status: 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
-  image: string;
+  status: 'Chờ kích hoạt' | 'Mở bán' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
+  image?: string;
+  passengers?: Passenger[];
 }
 
 export interface Passenger {
