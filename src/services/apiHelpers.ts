@@ -73,7 +73,7 @@ const buildTourIntro = (tour: Tour): string => {
     ? ` khởi hành ${new Date(tour.departureDate).toLocaleDateString('vi-VN')}`
     : '';
 
-  return `Hành trình ${tour.name} đưa du khách khám phá ${destination} với lịch trình ${tour.duration}${departure}. Chuyến đi được thiết kế để cân bằng trải nghiệm tham quan, nghỉ ngơi và các hoạt động xanh, phù hợp cho khách muốn đặt tour nhanh từ hệ thống Digital Travel.`;
+  return `Khám phá ${destination} theo cách trọn vẹn nhất cùng hành trình ${tour.name} – nơi mỗi điểm dừng không chỉ là một chuyến tham quan mà còn là trải nghiệm đáng nhớ về văn hóa, thiên nhiên và con người bản địa. Với lịch trình ${tour.duration}, tour được thiết kế hài hòa giữa nghỉ dưỡng, khám phá và các hoạt động trải nghiệm xanh, mang đến cảm giác thư thái nhưng vẫn đầy cảm hứng cho mọi du khách để bạn tận hưởng chuyến đi một cách tiện lợi, an toàn và đáng nhớ cùng Digital Travel.`;
 };
 
 export const tourImage = (id?: string): string => {
@@ -123,9 +123,15 @@ export const mapTourDetail = (item: ApiRecord, greenActions: ApiRecord[] = []): 
   const includes = extractTourIncludes(moTa);
   const excludes = extractTourExcludes(moTa);
 
+  let mainDescription = moTa.trim();
+  const matchDesc = moTa.match(/^([\s\S]*?)(?=\s*(?:bao gồm|không bao gồm))/i);
+  if (matchDesc) {
+    mainDescription = matchDesc[1].trim();
+  }
+
   return {
     ...tour,
-    description: buildTourIntro(tour),
+    description: mainDescription || buildTourIntro(tour),
     includes,
     excludes,
     included: includes,

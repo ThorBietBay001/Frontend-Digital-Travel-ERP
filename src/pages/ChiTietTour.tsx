@@ -342,7 +342,7 @@ export default function ChiTietTour() {
                 </span>
                 <span>Thông tin hành trình</span>
               </h2>
-              <p className="text-sm text-slate-600 leading-relaxed font-medium">
+              <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line">
                 {tour.description}
               </p>
 
