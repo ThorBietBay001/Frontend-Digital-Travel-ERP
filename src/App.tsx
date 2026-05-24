@@ -50,6 +50,7 @@ export default function App() {
   const [pastTours, setPastTours] = useState<Tour[]>([]);
   const [pendingTours, setPendingTours] = useState<Tour[]>([]);
   const [acceptingAssignmentIds, setAcceptingAssignmentIds] = useState<string[]>([]);
+  const [rejectingAssignmentIds, setRejectingAssignmentIds] = useState<string[]>([]);
 
   const mapPassenger = (p: any): Passenger => ({
     code: p.maKhachHang || p.maNguoiDongHanh,
@@ -194,6 +195,26 @@ export default function App() {
       alert('Không thể đồng ý phân công. Vui lòng thử lại.');
     } finally {
       setAcceptingAssignmentIds(prev => prev.filter(id => id !== maPhanCong));
+    }
+  };
+
+  const handleRejectAssignment = async (maPhanCong?: string) => {
+    if (!maPhanCong) return;
+    const confirmed = window.confirm('Bạn có chắc muốn từ chối yêu cầu điều phối này?');
+    if (!confirmed) return;
+
+    setRejectingAssignmentIds(prev => [...prev, maPhanCong]);
+    try {
+      await hdvService.tuChoiPhanCong(maPhanCong);
+      const tours = await hdvService.layDanhSachTour();
+      const data = tours?.data || [];
+      setPendingTours(data.filter((t: any) => t.trangThaiChapNhan === 'CHO_PHAN_HOI').map(mapAssignmentToTour));
+      setUpcomingTours(data.filter((t: any) => t.trangThaiChapNhan === 'DA_DONG_Y' && ['CHO_KICH_HOAT', 'MO_BAN'].includes(t.trangThaiTour)).map(mapAssignmentToTour));
+    } catch (e) {
+      console.error('Failed to reject assignment', e);
+      alert('Không thể từ chối phân công. Vui lòng thử lại.');
+    } finally {
+      setRejectingAssignmentIds(prev => prev.filter(id => id !== maPhanCong));
     }
   };
 
@@ -409,7 +430,9 @@ export default function App() {
               attendanceStats={attendanceStats}
               setActiveTab={setActiveTab}
               onAcceptAssignment={handleAcceptAssignment}
+              onRejectAssignment={handleRejectAssignment}
               acceptingAssignmentIds={acceptingAssignmentIds}
+              rejectingAssignmentIds={rejectingAssignmentIds}
             />
           )}
 

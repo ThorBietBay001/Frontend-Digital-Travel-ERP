@@ -48,6 +48,11 @@ export const hdvService = {
     return res.data;
   },
 
+  tuChoiPhanCong: async (maPhanCong: string) => {
+    const res = await api.post(`/huong-dan-vien/phan-cong/${maPhanCong}/tu-choi`);
+    return res.data;
+  },
+
   layChiTietTour: async (_maTour: string) => {
     // Hiện chưa có endpoint chi tiết tour riêng cho HDV, tạm dùng danh sách tour.
     const res = await api.get('/huong-dan-vien/tour-cua-toi');

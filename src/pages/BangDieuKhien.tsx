@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, MapPin, Users, DollarSign, ChevronRight } from 'lucide-react';
+import { Check, MapPin, Users, DollarSign, ChevronRight, Loader2, X } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
 import { hdvService } from '../services/hdvService';
 
@@ -18,7 +18,9 @@ interface DashboardProps {
   };
   setActiveTab: (tab: 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile') => void;
   onAcceptAssignment: (maPhanCong?: string) => void;
+  onRejectAssignment: (maPhanCong?: string) => void;
   acceptingAssignmentIds: string[];
+  rejectingAssignmentIds: string[];
 }
 
 // Helper: Get passenger member rank labels (unified with DiemDanh.tsx)
@@ -49,7 +51,9 @@ export default function BangDieuKhien({
   attendanceStats,
   setActiveTab,
   onAcceptAssignment,
-  acceptingAssignmentIds
+  onRejectAssignment,
+  acceptingAssignmentIds,
+  rejectingAssignmentIds
 }: DashboardProps) {
   const [selectedUpcomingTour, setSelectedUpcomingTour] = useState<Tour | null>(null);
   const [modalTab, setModalTab] = useState<'ITINERARY' | 'PASSENGERS'>('ITINERARY');
@@ -119,8 +123,6 @@ export default function BangDieuKhien({
   const formatCurrency = (val: number) => {
     return val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   };
-
-  const selectedTourPassengers = selectedUpcomingTour?.passengers ?? passengers;
 
   return (
     <div className="space-y-4 animate-slide-up">
@@ -220,6 +222,8 @@ export default function BangDieuKhien({
           <div className="space-y-2">
             {pendingTours.map((tour) => {
               const accepting = acceptingAssignmentIds.includes(tour.maPhanCong || '');
+              const rejecting = rejectingAssignmentIds.includes(tour.maPhanCong || '');
+              const responding = accepting || rejecting;
               return (
                 <div
                   key={tour.maPhanCong || tour.code}
@@ -236,15 +240,26 @@ export default function BangDieuKhien({
                       Khởi hành: {tour.departureDate} • Trạng thái tour: {tour.status}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onAcceptAssignment(tour.maPhanCong)}
-                    disabled={accepting}
-                    className="w-full h-9 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:bg-emerald-300 flex items-center justify-center gap-1.5"
-                  >
-                    <Check size={14} />
-                    {accepting ? 'Đang xác nhận...' : 'Đồng ý nhận tour'}
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onRejectAssignment(tour.maPhanCong)}
+                      disabled={responding}
+                      className="h-9 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold shadow-sm ring-1 ring-rose-100 transition active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 flex items-center justify-center gap-1.5"
+                    >
+                      <X size={14} />
+                      {rejecting ? 'Đang từ chối...' : 'Từ chối'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onAcceptAssignment(tour.maPhanCong)}
+                      disabled={responding}
+                      className="h-9 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:bg-emerald-300 flex items-center justify-center gap-1.5"
+                    >
+                      <Check size={14} />
+                      {accepting ? 'Đang xác nhận...' : 'Đồng ý'}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -420,7 +435,6 @@ export default function BangDieuKhien({
                       </div>
                     ))}
                   </div>
-                )}
               </div>
             ) : (
               <div className="space-y-3">
