@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, DollarSign, Star, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, MapPin, Calendar, Clock, DollarSign, Star, Users } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
 import { khService } from '../services/khService';
-import { mapPublicTour, unwrapPageContent } from '../services/apiHelpers';
+import { mapPublicTour, unwrapData, unwrapPageContent } from '../services/apiHelpers';
 import type { Tour } from '../types';
 
 export default function TrangChu() {
+  const TOURS_PER_PAGE = 9;
   const [searchParams, setSearchParams] = useSearchParams();
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -16,12 +17,26 @@ export default function TrangChu() {
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [tourPage, setTourPage] = useState(1);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchTours = async () => {
       try {
-        const response = await khService.layDanhSachTour();
-        const tours = unwrapPageContent<any>(response).map(mapPublicTour);
+        const pageSize = 10;
+        const firstResponse = await khService.layDanhSachTour({ page: 0, size: pageSize });
+        const firstPage = unwrapData<any>(firstResponse);
+        const allItems = [...unwrapPageContent<any>(firstResponse)];
+        const totalPages = Number(firstPage?.totalPages || 1);
+
+        for (let page = 1; page < totalPages; page += 1) {
+          const response = await khService.layDanhSachTour({ page, size: pageSize });
+          allItems.push(...unwrapPageContent<any>(response));
+        }
+
+        if (!isMounted) return;
+        const tours = allItems.map(mapPublicTour);
         setAllTours(tours);
         setFilteredTours(tours);
       } catch (error) {
@@ -29,6 +44,10 @@ export default function TrangChu() {
       }
     };
     fetchTours();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const heroImages = [
@@ -79,6 +98,7 @@ export default function TrangChu() {
     }
 
     setFilteredTours(results);
+    setTourPage(1);
     setSelectedDestination(null);
     setSelectedCategory(null);
 
@@ -98,41 +118,64 @@ export default function TrangChu() {
       tour.destination.toLowerCase().includes(destName.toLowerCase())
     );
     setFilteredTours(results);
+    setTourPage(1);
     cuonDenDanhSachTour();
   };
 
   const xuLyLocDanhMuc = (categoryId: string) => {
     let results = [...allTours];
 
+    const beachKeywords = [
+      'phu quoc', 'nha trang', 'ha long', 'con dao', 'mui ne', 'phan thiet', 'vung tau', 
+      'quy nhon', 'phu yen', 'tuy hoa', 'cu lao cham', 'co to', 'cat ba', 'ly son', 
+      'binh thuan', 'khanh hoa', 'quang ninh', 'hai phong', 'sam son', 'cua lo', 
+      'quang binh', 'binh dinh', 'ninh thuan', 'phan rang', 'ba ria', 'kien giang'
+    ];
+    
+    const mountainKeywords = [
+      'sapa', 'da lat', 'moc chau', 'ha giang', 'cao bang', 'bac kan', 'lang son', 
+      'tuyen quang', 'thai nguyen', 'phu tho', 'bac giang', 'lai chau', 'dien bien', 
+      'son la', 'yen bai', 'hoa binh', 'kon tum', 'gia lai', 'dak lak', 'dak nong', 
+      'lam dong', 'buon ma thuot', 'pleiku', 'mang den', 'ta xua', 'bao loc'
+    ];
+    
+    const cityKeywords = [
+      'ha noi', 'ho chi minh', 'sai gon', 'da nang', 'hai phong', 'can tho', 'hue', 
+      'hoi an', 'ninh binh', 'vinh', 'thanh hoa', 'nam dinh', 'thai binh', 'hai duong', 
+      'hung yen', 'vinh phuc', 'bac ninh', 'dong nai', 'bien hoa', 'binh duong', 'thu dau mot'
+    ];
+    
+    const countrysideKeywords = [
+      'can tho', 'vinh long', 'long an', 'tien giang', 'ben tre', 'tra vinh', 'dong thap', 
+      'an giang', 'kien giang', 'hau giang', 'soc trang', 'bac lieu', 'ca mau', 'my tho', 
+      'chau doc', 'ha tien'
+    ];
+
     switch (categoryId) {
       case 'beach':
         results = results.filter(tour =>
-          tour.destination.includes('Phú Quốc') ||
-          tour.destination.includes('Nha Trang') ||
-          tour.destination.includes('Hạ Long')
+          beachKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
       case 'mountain':
         results = results.filter(tour =>
-          tour.destination.includes('Sapa') ||
-          tour.destination.includes('Đà Lạt')
+          mountainKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
       case 'city':
         results = results.filter(tour =>
-          tour.destination.includes('Đà Nẵng') ||
-          tour.destination.includes('Hội An')
+          cityKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
       case 'countryside':
         results = results.filter(tour =>
-          tour.destination.includes('Cần Thơ') ||
-          tour.destination.includes('Vĩnh Long')
+          countrysideKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
     }
 
     setFilteredTours(results);
+    setTourPage(1);
     cuonDenDanhSachTour();
   };
 
@@ -143,6 +186,7 @@ export default function TrangChu() {
       tour.description.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredTours(results);
+    setTourPage(1);
     cuonDenDanhSachTour();
   };
 
@@ -164,6 +208,7 @@ export default function TrangChu() {
     setSelectedDestination(null);
     setSelectedCategory(null);
     setFilteredTours(allTours);
+    setTourPage(1);
     setSearchParams({});
   };
 
@@ -191,6 +236,43 @@ export default function TrangChu() {
     };
     return categories[categoryId] || 'Tour';
   };
+
+  const totalTourPages = Math.ceil(filteredTours.length / TOURS_PER_PAGE);
+  const tourPageStartIndex = (tourPage - 1) * TOURS_PER_PAGE;
+  const paginatedTours = filteredTours.slice(tourPageStartIndex, tourPageStartIndex + TOURS_PER_PAGE);
+  const pageItems = (() => {
+    if (totalTourPages <= 5) {
+      return Array.from({ length: totalTourPages }, (_, index) => index + 1);
+    }
+
+    const visiblePages = new Set(
+      [1, totalTourPages, tourPage - 1, tourPage, tourPage + 1].filter(
+        (page) => page >= 1 && page <= totalTourPages
+      )
+    );
+
+    return Array.from(visiblePages)
+      .sort((a, b) => a - b)
+      .reduce<(number | 'ellipsis')[]>((items, page, index, pages) => {
+        if (index > 0 && page - pages[index - 1] > 1) {
+          items.push('ellipsis');
+        }
+        items.push(page);
+        return items;
+      }, []);
+  })();
+
+  const chuyenTrangTour = (page: number) => {
+    const nextPage = Math.min(Math.max(page, 1), totalTourPages || 1);
+    setTourPage(nextPage);
+    setTimeout(() => cuonDenDanhSachTour(), 0);
+  };
+
+  useEffect(() => {
+    if (tourPage > totalTourPages && totalTourPages > 0) {
+      setTourPage(totalTourPages);
+    }
+  }, [tourPage, totalTourPages]);
 
   // Handle filters from URL after tours and filter handlers are ready.
   useEffect(() => {
@@ -347,7 +429,15 @@ export default function TrangChu() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {allTours.filter(t => t.originalPrice).slice(0, 3).map((tour) => (
+            {allTours
+              .filter((t): t is Tour & { originalPrice: number } => typeof t.originalPrice === 'number')
+              .sort((a, b) => {
+                const discountA = (a.originalPrice - a.price) / a.originalPrice;
+                const discountB = (b.originalPrice - b.price) / b.originalPrice;
+                return discountB - discountA;
+              })
+              .slice(0, 3)
+              .map((tour) => (
               <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
             ))}
           </div>
@@ -437,7 +527,7 @@ export default function TrangChu() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredTours.length > 0 ? (
-            filteredTours.slice(0, 6).map((tour) => (
+            paginatedTours.map((tour) => (
               <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
             ))
           ) : (
@@ -447,6 +537,7 @@ export default function TrangChu() {
                 onClick={() => {
                   setSelectedDestination(null);
                   setFilteredTours(allTours);
+                  setTourPage(1);
                   setSearchParams({});
                 }}
                 className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -456,6 +547,60 @@ export default function TrangChu() {
             </div>
           )}
         </div>
+
+        {totalTourPages > 1 && (
+          <div className="mt-10 flex items-center justify-center">
+            <nav
+              aria-label="Phân trang tour"
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-2 py-2 shadow-sm"
+            >
+              <button
+                type="button"
+                onClick={() => chuyenTrangTour(tourPage - 1)}
+                disabled={tourPage === 1}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-35"
+                aria-label="Trang trước"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              {pageItems.map((item, index) => (
+                item === 'ellipsis' ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="flex h-9 min-w-7 items-center justify-center text-sm font-semibold text-gray-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => chuyenTrangTour(item)}
+                    className={`h-9 min-w-9 rounded-full px-3 text-sm font-semibold transition-colors ${
+                      item === tourPage
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                    aria-current={item === tourPage ? 'page' : undefined}
+                  >
+                    {item}
+                  </button>
+                )
+              ))}
+
+              <button
+                type="button"
+                onClick={() => chuyenTrangTour(tourPage + 1)}
+                disabled={tourPage === totalTourPages}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-35"
+                aria-label="Trang sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
 
       {/* How to Book */}
@@ -499,8 +644,27 @@ export default function TrangChu() {
   );
 }
 
+const dinhDangNgay = (value?: string) => {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleDateString('vi-VN');
+};
+
+const dinhDangKhoangNgay = (startDate?: string, endDate?: string) => {
+  const start = dinhDangNgay(startDate);
+  const end = dinhDangNgay(endDate);
+
+  if (start && end) return `${start} - ${end}`;
+  return start || end;
+};
+
 // Tour Card Component
 function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: number) => string }) {
+  const dateRange = dinhDangKhoangNgay(tour.departureDate, tour.endDate);
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
       <div className="relative">
@@ -523,11 +687,14 @@ function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: numbe
 
       <div className="p-6">
         <h3 className="font-bold text-lg mb-2 text-gray-900">{tour.name}</h3>
-        <p className="text-gray-600 text-sm mb-3 flex items-center">
-          <MapPin className="w-4 h-4 mr-1" />
-          {tour.destination}
+        <p className="text-gray-600 text-sm mb-2 flex items-center">
+          <Clock className="w-4 h-4 mr-1 shrink-0 text-gray-500" />
+          {tour.duration}
         </p>
-        <p className="text-gray-600 text-sm mb-4">{tour.duration}</p>
+        <p className="text-gray-600 text-sm mb-4 flex items-center gap-x-1">
+          <Calendar className="w-4 h-4 shrink-0 text-gray-500" />
+          <span>{dateRange}</span>
+        </p>
 
         <div className="flex items-center justify-between mb-4">
           <div>

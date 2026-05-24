@@ -15,6 +15,7 @@ export interface Tour {
   tags: string[];
   startDate: string;
   departureDate: string;
+  endDate: string;
   availableSeats: number;
   totalSeats: number;
   description: string;

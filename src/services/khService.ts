@@ -27,6 +27,11 @@ export const khService = {
     return res.data;
   },
 
+  kiemTraMatKhau: async (matKhauCu: string) => {
+    const res = await api.post('/auth/kiem-tra-mat-khau', { matKhauCu });
+    return res.data;
+  },
+
   // 2. Tours
   layDanhSachTour: async (params?: any) => {
     const res = await api.get('/public/tour', { params });

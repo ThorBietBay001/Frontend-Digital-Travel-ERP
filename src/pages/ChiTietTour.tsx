@@ -22,7 +22,7 @@ export default function ChiTietTour() {
   const [tourReviewsList, setTourReviewsList] = useState<any[]>([]);
 
   // Reviews filters and likes state
-  const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'high' | 'images' | 'vip'>('all');
+  const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'images' | '5star' | '4star' | '3star' | '2star' | '1star'>('all');
   const [helpfulCounts, setHelpfulCounts] = useState<Record<number, number>>({});
 
   // Scroll to top on mount
@@ -170,6 +170,15 @@ export default function ChiTietTour() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
+  const formatDate = (value?: string) => {
+    if (!value) return 'Đang cập nhật';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Đang cập nhật';
+
+    return date.toLocaleDateString('vi-VN');
+  };
+
   // Authentic Customer Reviews List is now fetched from the API
 
   const handleHelpfulClick = (idx: number) => {
@@ -184,15 +193,19 @@ export default function ChiTietTour() {
   };
 
   const filteredReviewsList = tourReviewsList.filter((review) => {
-    if (activeReviewFilter === 'high') return review.rating === 5;
     if (activeReviewFilter === 'images') return review.images && review.images.length > 0;
-    if (activeReviewFilter === 'vip') return review.tier === 'Vàng' || review.tier === 'Bạch kim';
+    if (activeReviewFilter === '5star') return review.rating === 5;
+    if (activeReviewFilter === '4star') return review.rating === 4;
+    if (activeReviewFilter === '3star') return review.rating === 3;
+    if (activeReviewFilter === '2star') return review.rating === 2;
+    if (activeReviewFilter === '1star') return review.rating === 1;
     return true;
   });
   const actualReviewCount = tourReviewsList.length;
+  const displayReviewCount = actualReviewCount > 0 ? actualReviewCount : (tour?.reviews || 0);
   const actualRating = actualReviewCount
     ? (tourReviewsList.reduce((sum, review) => sum + Number(review.rating || 0), 0) / actualReviewCount).toFixed(1)
-    : '0.0';
+    : (tour?.rating ? tour.rating.toFixed(2) : '0.00');
 
   if (loading) {
     return (
@@ -228,7 +241,7 @@ export default function ChiTietTour() {
           </Link>
           <div className="flex items-center space-x-6">
             <span className="hidden sm:inline text-xs font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
-              Khởi hành: {new Date(tour.departureDate).toLocaleDateString('vi-VN')}
+              Khởi hành: {formatDate(tour.departureDate)}
             </span>
           </div>
         </div>
@@ -338,7 +351,7 @@ export default function ChiTietTour() {
                 </span>
                 <span>Thông tin hành trình</span>
               </h2>
-              <p className="text-sm text-slate-600 leading-relaxed font-medium">
+              <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line">
                 {tour.description}
               </p>
 
@@ -381,8 +394,8 @@ export default function ChiTietTour() {
                   >
                     <div className="space-y-1">
                       <span className="block font-black text-slate-800 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                        {day.title?.toLowerCase().startsWith(`ngày ${day.day}`) 
-                          ? day.title 
+                        {day.title?.toLowerCase().startsWith(`ngày ${day.day}`)
+                          ? day.title
                           : `Ngày ${day.day}${day.title ? `: ${day.title}` : ''}`}
                       </span>
                       <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
@@ -444,7 +457,7 @@ export default function ChiTietTour() {
                                   </span>
                                   {(!day.title?.toLowerCase().startsWith(`ngày ${day.day}`) || day.title.length > `ngày ${day.day}`.length + 2) && (
                                     <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
-                                      {day.title?.toLowerCase().startsWith(`ngày ${day.day}`) 
+                                      {day.title?.toLowerCase().startsWith(`ngày ${day.day}`)
                                         ? day.title.substring(`ngày ${day.day}`.length).replace(/^[\s:-]+/, '').trim()
                                         : day.title}
                                     </h4>
@@ -565,18 +578,14 @@ export default function ChiTietTour() {
                     </span>
                   </h2>
                   <p className="text-[11px] font-semibold text-slate-400">
-                    {actualReviewCount > 0
-                      ? `Dựa trên ${actualReviewCount} đánh giá thực tế đã đối soát qua ERP du lịch`
+                    {displayReviewCount > 0
+                      ? `Dựa trên ${displayReviewCount} đánh giá thực tế đã đối soát qua ERP du lịch`
                       : 'Chưa có đánh giá thực tế từ khách hàng'}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[10px] font-extrabold text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100">
-                  <span className="flex items-center gap-1">Tổng đánh giá <strong className="text-slate-800">{actualReviewCount}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span className="flex items-center gap-1">5 sao <strong className="text-slate-800">{tourReviewsList.filter(r => r.rating === 5).length}</strong></span>
-                  <span className="text-slate-300">•</span>
-                  <span className="flex items-center gap-1">Điểm TB <strong className="text-slate-800">{actualRating} ★</strong></span>
+                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs xs:text-base font-extrabold text-slate-600 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                  <span className="flex items-center gap-1.5">Tổng đánh giá: <strong className="text-white-200 font-extralarge">{displayReviewCount}</strong></span>
                 </div>
               </div>
 
@@ -589,9 +598,12 @@ export default function ChiTietTour() {
                 >
                   {[
                     { id: 'all', label: 'Tất cả', count: tourReviewsList.length },
-                    { id: 'high', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
                     { id: 'images', label: 'Có ảnh', count: tourReviewsList.filter(r => r.images && r.images.length > 0).length },
-                    { id: 'vip', label: 'VIP', count: tourReviewsList.filter(r => r.tier === 'Thành viên Vàng' || r.tier === 'Thành viên Bạch kim').length }
+                    { id: '5star', label: '5 ★', count: tourReviewsList.filter(r => r.rating === 5).length },
+                    { id: '4star', label: '4 ★', count: tourReviewsList.filter(r => r.rating === 4).length },
+                    { id: '3star', label: '3 ★', count: tourReviewsList.filter(r => r.rating === 3).length },
+                    { id: '2star', label: '2 ★', count: tourReviewsList.filter(r => r.rating === 2).length },
+                    { id: '1star', label: '1 ★', count: tourReviewsList.filter(r => r.rating === 1).length }
                   ].map((chip) => (
                     <option key={chip.id} value={chip.id}>
                       {chip.label} ({chip.count})
@@ -608,86 +620,86 @@ export default function ChiTietTour() {
                   const hasLiked = helpfulCounts[originalIdx] !== undefined && helpfulCounts[originalIdx] > review.helpful;
 
                   return (
-                    <div key={idx} className="py-5 first:pt-2 last:pb-2 space-y-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="relative flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full border border-slate-100 shadow-sm bg-blue-50 text-blue-700 flex items-center justify-center text-sm font-black">
-                              {review.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border border-white rounded-full flex items-center justify-center" title="Khách thật đã xác thực">
-                              <Check className="w-1.5 h-1.5 text-white" />
-                            </span>
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2 flex-wrap gap-y-0.5">
-                              <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{review.name}</span>
-                              <span className={`text-[8px] px-2 py-0.5 rounded-full font-black border tracking-wide uppercase ${review.tier === 'Thành viên Bạch kim'
-                                ? 'bg-purple-50 text-purple-700 border-purple-100'
-                                : review.tier === 'Thành viên Vàng'
-                                  ? 'bg-amber-50 text-amber-800 border-amber-100'
-                                  : 'bg-slate-50 text-slate-500 border-slate-100'
-                                }`}>
-                                {review.tier}
-                              </span>
-                            </div>
-                            <span className="block text-[10px] text-slate-400 font-bold mt-0.5">
-                              {review.tag} • <span className="text-emerald-600 font-extrabold">✓ Khách đi tour thực tế</span>
-                            </span>
-                          </div>
+                    <article key={idx} className="py-5 first:pt-2 last:pb-2">
+                      <div className="flex items-start gap-3">
+                        <div className="relative mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
+                          {review.name.charAt(0).toUpperCase()}
+                          <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-emerald-500" title="Khách đã đi tour thực tế">
+                            <Check className="h-2 w-2 text-white" />
+                          </span>
                         </div>
 
-                        <div className="flex flex-col items-end space-y-0.5">
-                          <div className="flex space-x-0.5">
-                            {Array(5).fill(0).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3 h-3 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-slate-200'}`}
-                              />
-                            ))}
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="truncate text-sm font-semibold text-slate-950">{review.name}</h3>
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                                  {review.tier}
+                                </span>
+                              </div>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                                <span>{review.tag}</span>
+                                <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                <span className="inline-flex items-center gap-1 text-emerald-700">
+                                  <Check className="h-3 w-3" />
+                                  Khách đi tour thực tế
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-xs text-slate-500 sm:flex-col sm:items-end sm:gap-0.5">
+                              <div className="flex items-center gap-0.5">
+                                {Array(5).fill(0).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-3.5 w-3.5 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`}
+                                  />
+                                ))}
+                              </div>
+                              <span>{review.date}</span>
+                            </div>
                           </div>
-                          <span className="block text-[9px] text-slate-400 font-bold">{review.date}</span>
+
+                          <p className="max-w-3xl text-sm leading-6 text-slate-700">
+                            {review.comment}
+                          </p>
+
+                          {review.images && review.images.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {review.images.map((imgUrl: string, imgIdx: number) => (
+                                <div key={imgIdx} className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 sm:h-20 sm:w-20">
+                                  <img
+                                    src={imgUrl}
+                                    alt="Ảnh đánh giá thực tế"
+                                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between gap-3 pt-1">
+                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              Đã xác thực
+                            </span>
+
+                            <button
+                              onClick={() => handleHelpfulClick(originalIdx)}
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${hasLiked
+                                ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                                }`}
+                            >
+                              <ThumbsUp className={`h-3.5 w-3.5 ${hasLiked ? 'fill-current' : ''}`} />
+                              <span>Hữu ích</span>
+                              <span className="text-slate-400">({likes})</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <p className="text-xs font-semibold text-slate-600 leading-relaxed sm:pl-13 pr-2">
-                        "{review.comment}"
-                      </p>
-
-                      {/* Streamlined Real Image Gallery */}
-                      {review.images && review.images.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-1 sm:pl-13">
-                          {review.images.map((imgUrl: string, imgIdx: number) => (
-                            <div key={imgIdx} className="relative group overflow-hidden rounded-xl border border-slate-100 shadow-sm w-16 h-16 sm:w-20 sm:h-20">
-                              <img
-                                src={imgUrl}
-                                alt={`Ảnh chụp thực tế`}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Streamlined Footer Actions */}
-                      <div className="flex items-center justify-between gap-3 pt-1.5 sm:pl-13 text-[10px] font-bold text-slate-400">
-                        <span className="inline-flex items-center text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                          <Check className="w-3 h-3 mr-1" />
-                          <span>Đánh giá đã xác thực</span>
-                        </span>
-
-                        <button
-                          onClick={() => handleHelpfulClick(originalIdx)}
-                          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border transition-all duration-200 ${hasLiked
-                            ? 'bg-blue-50 border-blue-150 text-blue-605'
-                            : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                            }`}
-                        >
-                          <ThumbsUp className={`w-2.5 h-2.5 ${hasLiked ? 'fill-current' : ''}`} />
-                          <span>Hữu ích ({likes})</span>
-                        </button>
-                      </div>
-                    </div>
+                    </article>
                   );
                 })}
 
@@ -731,7 +743,14 @@ export default function ChiTietTour() {
                 <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
                   <span className="text-slate-400 font-semibold">Ngày khởi hành</span>
                   <span className="text-slate-900 font-black">
-                    {new Date(tour.departureDate).toLocaleDateString('vi-VN')}
+                    {formatDate(tour.departureDate)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm pb-3.5 border-b border-slate-100">
+                  <span className="text-slate-400 font-semibold">Ngày kết thúc</span>
+                  <span className="text-slate-900 font-black">
+                    {formatDate(tour.endDate)}
                   </span>
                 </div>
 
