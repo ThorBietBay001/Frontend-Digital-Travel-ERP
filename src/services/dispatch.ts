@@ -8,6 +8,7 @@ import type {
   PhanCongResponse,
   NhanVienResponse,
 } from '../pages/dispatch/mockData';
+import type { ApiResponsePageTourThucTeResponse, PageTourThucTeResponse } from '../pages/tour-instance/mockData';
 
 export type {
   PhanCongHdvRequest,
@@ -25,6 +26,13 @@ export interface HdvKhaDungParams {
 export const dispatchService = {
   phanCong: async (data: PhanCongHdvRequest): Promise<PhanCongResponse | undefined> => {
     const response = await api.post<ApiResponsePhanCongResponse>('/api/dieu-hanh/phan-cong', data);
+    return unwrapApiData(response);
+  },
+
+  tourCanPhanCong: async (): Promise<PageTourThucTeResponse | undefined> => {
+    const response = await api.get<ApiResponsePageTourThucTeResponse>('/api/dieu-hanh/tour-can-phan-cong', {
+      params: { page: 0, size: 200 },
+    });
     return unwrapApiData(response);
   },
 
@@ -52,6 +60,11 @@ export const dispatchService = {
 
   dongYPhanCong: async (maPhanCong: string): Promise<PhanCongResponse | undefined> => {
     const response = await api.post<ApiResponsePhanCongResponse>(`/api/huong-dan-vien/phan-cong/${maPhanCong}/dong-y`);
+    return unwrapApiData(response);
+  },
+
+  tuChoiPhanCong: async (maPhanCong: string): Promise<PhanCongResponse | undefined> => {
+    const response = await api.post<ApiResponsePhanCongResponse>(`/api/huong-dan-vien/phan-cong/${maPhanCong}/tu-choi`);
     return unwrapApiData(response);
   },
 };

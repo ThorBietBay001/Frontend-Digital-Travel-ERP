@@ -12,7 +12,6 @@ import type { TourNeedGuide } from './mockData';
 import AssignGuideModal from './AssignGuideModal';
 import { dispatchService } from '../../services/dispatch';
 import type { NhanVienResponse } from '../../services/dispatch';
-import { tourInstanceService } from '../../services/tour-instance';
 import type { TourThucTeResponse } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
@@ -64,7 +63,7 @@ const AssignGuide: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await tourInstanceService.danhSach({ trangThai: 'CHO_KICH_HOAT', page: 0, size: 200 });
+      const res = await dispatchService.tourCanPhanCong();
       const pending = unwrapPageContent(res).filter((t) => PENDING_STATUSES.has(t.trangThai || ''));
       setData(pending.map(mapTourToUI));
     } catch (err: unknown) {
@@ -106,16 +105,7 @@ const AssignGuide: React.FC = () => {
 
   const handleAssign = async (tourId: string, guideId: string) => {
     try {
-      // Create Assignment
       await dispatchService.phanCong({ maTourThucTe: tourId, maNhanVien: guideId });
-      
-      // Update Tour Status to SAP_DIEN_RA
-      try {
-        await tourInstanceService.capNhat(tourId, { trangThai: 'SAP_DIEN_RA' });
-      } catch (err: unknown) {
-        console.error('Lỗi khi cập nhật trạng thái tour:', err);
-        // It's okay to proceed even if status update fails, assignment succeeded.
-      }
 
       const assignedGuide = availableGuides.find((g) => g.maNhanVien === guideId);
       if (assignedGuide && selectedTour) {
@@ -323,7 +313,7 @@ const AssignGuide: React.FC = () => {
             </div>
 
             <p className="text-sm text-gray-500 text-center italic mt-2">
-              Tour này đã được chuyển sang trạng thái <strong>"Sắp diễn ra"</strong>.
+              Tour này sẽ rời danh sách chờ phân bổ trong lúc chờ HDV phản hồi.
             </p>
           </div>
         )}

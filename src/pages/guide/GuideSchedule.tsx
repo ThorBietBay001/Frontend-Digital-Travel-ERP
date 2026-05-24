@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, Check, RefreshCcw, Route } from 'lucide-react';
+import { CalendarDays, Check, RefreshCcw, Route, X } from 'lucide-react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -39,6 +39,19 @@ const GuideSchedule: React.FC = () => {
       await loadAssignments();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể đồng ý phân công.');
+    }
+  };
+
+  const rejectAssignment = async (maPhanCong?: string) => {
+    if (!maPhanCong) return;
+    const confirmed = window.confirm('Bạn có chắc muốn từ chối yêu cầu điều phối này?');
+    if (!confirmed) return;
+
+    try {
+      await dispatchService.tuChoiPhanCong(maPhanCong);
+      await loadAssignments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể từ chối phân công.');
     }
   };
 
@@ -86,15 +99,26 @@ const GuideSchedule: React.FC = () => {
       title: 'Hành động',
       align: 'right',
       render: (record) => record.trangThaiChapNhan === 'CHO_PHAN_HOI' ? (
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          icon={<Check size={16} aria-hidden="true" />}
-          onClick={() => acceptAssignment(record.maPhanCong)}
-        >
-          Đồng ý
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            icon={<X size={16} aria-hidden="true" />}
+            onClick={() => rejectAssignment(record.maPhanCong)}
+          >
+            Từ chối
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            icon={<Check size={16} aria-hidden="true" />}
+            onClick={() => acceptAssignment(record.maPhanCong)}
+          >
+            Đồng ý
+          </Button>
+        </div>
       ) : <span className="text-sm text-gray-400">-</span>,
     },
   ];
