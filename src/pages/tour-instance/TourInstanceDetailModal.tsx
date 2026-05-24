@@ -574,27 +574,13 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={mode === 'create' ? (currentStep === 1 ? 'Khởi tạo Tour Thực Tế' : currentStep === 2 ? 'Cấu hình Dịch vụ bổ sung' : 'Cấu hình Hành động xanh') : (isFormDisabled ? `Chi tiết: ${initialData?.name}` : `Cập nhật: ${initialData?.name}`)}
+        title={mode === 'create' ? (currentStep === 1 ? 'Khởi tạo Tour Thực Tế' : currentStep === 2 ? 'Dịch vụ bổ sung' : 'Hành động xanh') : (isFormDisabled ? `Chi tiết: ${initialData?.name}` : `Cập nhật: ${initialData?.name}`)}
         size="3xl"
       >
         {mode === 'create' ? (
           // WIZARD UI
           <div className="flex flex-col h-[75vh]">
-            {/* Tabs cho Wizard */}
-            {currentStep > 1 && (
-              <div className="flex border-b border-gray-200 mb-6">
-                {currentStep === 2 && (
-                  <button type="button" className="px-4 py-2 font-medium text-sm border-b-2 border-[#00668A] text-[#00668A]">
-                    Dịch vụ bổ sung
-                  </button>
-                )}
-                {currentStep === 3 && (
-                  <button type="button" className="px-4 py-2 font-medium text-sm border-b-2 border-[#00668A] text-[#00668A]">
-                    Hành động xanh
-                  </button>
-                )}
-              </div>
-            )}
+
 
             <div className="flex-1 overflow-y-auto pr-2 pb-4">
               {currentStep === 1 && (

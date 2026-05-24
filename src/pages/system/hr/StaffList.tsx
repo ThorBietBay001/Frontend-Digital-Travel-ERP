@@ -36,7 +36,7 @@ const StaffList: React.FC = () => {
       if (!hasAccess(user?.maVaiTro, 'hr')) return;
       try {
         setLoading(true);
-        const res = await accountsService.danhSachNhanVien();
+        const res = await accountsService.danhSachNhanVien({ page: 0, size: 200 });
         const mapped = (res?.content || []).map((nv: NhanVienResponse): Staff => ({
           id: nv.maNhanVien || '',
           code: nv.maNhanVien || '',
@@ -45,6 +45,8 @@ const StaffList: React.FC = () => {
           phone: nv.soDienThoai || '',
           role: roleMap[nv.maVaiTro?.replace('ROLE_', '') || ''] || 'guide',
           joinDate: nv.ngayVaoLam || '',
+          birthday: nv.ngaySinh || '',
+          cccd: nv.cccd || '',
         }));
         _setStaffList(mapped);
       } catch (err) {
@@ -61,7 +63,6 @@ const StaffList: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [page, setPage] = useState(1);
   const pageSize = 5;
-  const totalStaffCount = 45;
 
   const [profileModal, setProfileModal] = useState<{ open: boolean; staff: Staff | null }>({
     open: false,
@@ -252,13 +253,10 @@ const StaffList: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="text-sm text-gray-500">
-            Hiển thị {paginatedStaff.length} trong số {totalStaffCount} nhân viên
-          </div>
           <Pagination
             current={page}
             pageSize={pageSize}
-            total={totalStaffCount}
+            total={filteredStaff.length}
             onChange={setPage}
           />
         </div>

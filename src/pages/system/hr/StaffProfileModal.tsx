@@ -4,8 +4,10 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Briefcase, Cake, Leaf, Mail, MapPin, Phone, Star, User } from 'lucide-react';
 import type { Competency, Staff, TourHistory } from './mockData';
+import { mockStaff } from './mockData';
 import { hrService } from '../../../services/system/hr';
 import type { NangLucResponse } from '../../../services/system/hr';
+import { accountsService } from '../../../services/system/accounts';
 
 interface StaffProfileModalProps {
   isOpen: boolean;
@@ -19,7 +21,9 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
   staff,
 }) => {
   const [competencies, setCompetencies] = React.useState<Competency[]>([]);
+  const [nangLuc, setNangLuc] = React.useState<NangLucResponse | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [fullStaff, setFullStaff] = React.useState<Staff | null>(null);
 
   const parseCompetencies = (res: NangLucResponse): Competency[] => {
     const result: Competency[] = [];
@@ -50,15 +54,43 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
   React.useEffect(() => {
     if (isOpen && staff) {
       setLoading(true);
-      hrService.nangLucNhanVien(staff.id)
-        .then(res => setCompetencies(parseCompetencies(res || {})))
+      Promise.all([
+        hrService.nangLucNhanVien(staff.id),
+        accountsService.chiTietNhanVien(staff.id).catch(() => null)
+      ])
+        .then(([nangLucRes, chiTietRes]) => {
+          setCompetencies(parseCompetencies(nangLucRes || {}));
+          setNangLuc(nangLucRes || null);
+          
+          const mockGuide = mockStaff.find(s => s.code === staff.code || s.email === staff.email || (chiTietRes && s.code === chiTietRes.maNhanVien));
+          const history = mockGuide?.tourHistory || staff.tourHistory || [];
+          
+          if (chiTietRes) {
+            setFullStaff({
+              ...staff,
+              birthday: chiTietRes.ngaySinh || staff.birthday,
+              joinDate: chiTietRes.ngayVaoLam || staff.joinDate,
+              cccd: chiTietRes.cccd || staff.cccd,
+              phone: chiTietRes.soDienThoai || staff.phone,
+              email: chiTietRes.email || staff.email,
+              name: chiTietRes.hoTen || staff.name,
+              tourHistory: history
+            });
+          } else {
+            setFullStaff({ ...staff, tourHistory: history });
+          }
+        })
         .catch(err => {
           console.error(err);
           setCompetencies([]);
+          setNangLuc(null);
+          setFullStaff(staff);
         })
         .finally(() => setLoading(false));
     } else if (!isOpen) {
       setCompetencies([]);
+      setNangLuc(null);
+      setFullStaff(null);
     }
   }, [staff, isOpen]);
 
@@ -104,13 +136,14 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
   };
 
   const reviews = reviewMap[staff.role] || [];
-  const rating = staff.rating ?? 0;
+  const displayStaff = fullStaff || staff;
+  const rating = nangLuc?.danhGia ?? displayStaff.rating ?? 0;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Hồ sơ nhân viên - ${staff.code} - ${staff.name}`}
+      title={`Hồ sơ nhân viên - ${displayStaff.code} - ${displayStaff.name}`}
       size="2xl"
       footer={
         <Button variant="primary" onClick={onClose}>
@@ -122,10 +155,10 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
         <div className="flex flex-col gap-6 lg:col-span-1">
           <div className="bg-white border border-[#E1F1FF] rounded-[16px] p-4 flex flex-col items-center text-center gap-2">
             <div className="w-24 h-24 rounded-full bg-[#E8F6FF] text-[#00668A] flex items-center justify-center text-2xl font-bold overflow-hidden">
-              {staff.avatar ? (
-                <img src={staff.avatar} alt={staff.name} className="w-full h-full object-cover" />
+              {displayStaff.avatar ? (
+                <img src={displayStaff.avatar} alt={displayStaff.name} className="w-full h-full object-cover" />
               ) : (
-                staff.name
+                displayStaff.name
                   .split(' ')
                   .map((word) => word[0])
                   .join('')
@@ -133,10 +166,10 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
                   .toUpperCase()
               )}
             </div>
-            <div className="text-base font-bold text-[#121C2C]">{staff.name}</div>
+            <div className="text-base font-bold text-[#121C2C]">{displayStaff.name}</div>
             <Badge
-              label={roleLabelMap[staff.role] || 'Không rõ'}
-              variant={roleVariantMap[staff.role] || 'info'}
+              label={roleLabelMap[displayStaff.role] || 'Không rõ'}
+              variant={roleVariantMap[displayStaff.role] || 'info'}
               dot={false}
             />
             {rating > 0 && (
@@ -153,59 +186,42 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
               <Cake size={16} className="text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Ngày sinh</p>
-                <p className="font-medium text-gray-800">{staff.birthday || '—'}</p>
+                <p className="font-medium text-gray-800">{displayStaff.birthday || '—'}</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <Phone size={16} className="text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Số điện thoại</p>
-                <p className="font-medium text-gray-800">{staff.phone || '—'}</p>
+                <p className="font-medium text-gray-800">{displayStaff.phone || '—'}</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <Mail size={16} className="text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Email</p>
-                <p className="font-medium text-gray-800 break-all">{staff.email || '—'}</p>
+                <p className="font-medium text-gray-800 break-all">{displayStaff.email || '—'}</p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <MapPin size={16} className="text-gray-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-gray-500">Địa chỉ</p>
-                <p className="font-medium text-gray-800">{staff.address || '—'}</p>
-              </div>
-            </div>
+
             <div className="flex items-start gap-2">
               <Briefcase size={16} className="text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Ngày vào làm</p>
-                <p className="font-medium text-gray-800">{staff.joinDate || '—'}</p>
+                <p className="font-medium text-gray-800">{displayStaff.joinDate || '—'}</p>
               </div>
             </div>
+
             <div className="flex items-start gap-2">
               <User size={16} className="text-gray-400 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-500">Giới tính</p>
-                <p className="font-medium text-gray-800">{staff.gender || '—'}</p>
+                <p className="text-xs text-gray-500">CCCD / CMND</p>
+                <p className="font-medium text-gray-800">{displayStaff.cccd || '—'}</p>
               </div>
             </div>
+
           </div>
 
-          <div className="rounded-[12px] p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 text-center">
-            <div className="flex items-center gap-3">
-              <div className="bg-white p-2 rounded-full text-emerald-500">
-                <Leaf size={20} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Điểm xanh</p>
-                <p className="text-lg font-bold text-emerald-600">
-                  {staff.greenPoints?.toLocaleString('vi-VN') ?? 0} điểm
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="lg:col-span-2 flex flex-col gap-6">
@@ -219,16 +235,36 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
             {competencies.length === 0 && !loading ? (
               <p className="text-sm text-gray-400 italic">Chưa có năng lực.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {competencies.map((competency) => (
-                  <Badge
-                    key={competency.id}
-                    label={`${competency.type}: ${competency.name}`}
-                    variant={competencyVariantMap[competency.type]}
-                    dot={false}
-                    size="sm"
-                  />
-                ))}
+              <div className="flex flex-col gap-4 mt-2">
+                {(['Ngôn ngữ', 'Chứng chỉ', 'Thế mạnh'] as const).map(group => {
+                  const filtered = competencies.filter(c => c.type === group);
+                  if (filtered.length === 0) return null;
+                  
+                  let styleClass = '';
+                  if (group === 'Ngôn ngữ') {
+                    styleClass = 'border-[#C5EAFF] text-[#00668A]';
+                  } else if (group === 'Chứng chỉ') {
+                    styleClass = 'border-[#D7CCC8] text-[#8D6E63]'; // Viền nâu nhạt, chữ nâu nhạt
+                  } else {
+                    styleClass = 'border-gray-200 text-gray-700';
+                  }
+
+                  return (
+                    <div key={group}>
+                      <span className="text-gray-500 block mb-2">{group}</span>
+                      <div className="flex flex-wrap gap-2">
+                        {filtered.map((competency) => (
+                          <span
+                            key={competency.id}
+                            className={`px-3 py-1 bg-white border rounded text-sm ${styleClass}`}
+                          >
+                            {competency.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -237,7 +273,7 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
             <div className="p-4 border-b border-[#E1F1FF] bg-[#F4F9FF]">
               <h4 className="text-sm font-semibold text-gray-800">Lịch sử đi tour</h4>
             </div>
-            {staff.tourHistory && staff.tourHistory.length > 0 ? (
+            {displayStaff.tourHistory && displayStaff.tourHistory.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-white">
@@ -249,7 +285,7 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {staff.tourHistory.map((tour, index) => {
+                    {displayStaff.tourHistory.map((tour, index) => {
                       const statusInfo = tourStatusMap[tour.status];
                       return (
                         <tr key={`${tour.tourName}-${index}`} className="border-t border-[#E1F1FF]">
@@ -277,7 +313,7 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
             )}
           </section>
 
-          {staff.role === 'guide' && (
+          {displayStaff.role === 'guide' && (
             <section className="bg-white border border-[#E1F1FF] rounded-[16px] p-4">
               <h4 className="text-sm font-semibold text-gray-800 mb-3">Đánh giá</h4>
               {reviews.length === 0 ? (

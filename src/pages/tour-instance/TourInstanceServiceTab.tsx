@@ -34,7 +34,7 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
         id: service.maDichVuThem || '',
         code: service.maDichVuThem || '',
         name: service.ten || '',
-        category: 'extra',
+        category: 'Dịch vụ thêm',
         price: service.donGia || 0,
         unit: service.donViTinh || '',
         status: 'active',
@@ -96,7 +96,7 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
         updatedService = { ...editingService, name: res?.ten || formData.ten, price: res?.donGia || formData.donGia, unit: res?.donViTinh || formData.donViTinh || '' };
       } else {
         const res = await servicesService.taoDichVuThem(payload);
-        updatedService = { id: res?.maDichVuThem || '', code: res?.maDichVuThem || '', name: res?.ten || '', category: 'extra', price: res?.donGia || 0, unit: res?.donViTinh || '', status: 'active' };
+        updatedService = { id: res?.maDichVuThem || '', code: res?.maDichVuThem || '', name: res?.ten || '', category: 'Dịch vụ bổ sung', price: res?.donGia || 0, unit: res?.donViTinh || '', status: 'active' };
       }
 
       if (editingService) {
@@ -153,12 +153,13 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
                           className={`p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex justify-between items-center ${isSelected ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`}
                           onClick={() => { if (!isSelected) handleSelectService(s); }}
                         >
-                          <div>
-                            <div className="font-medium text-sm text-gray-800">{s.name}</div>
-                            <div className="flex gap-2 items-center mt-0.5">
-                              <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{s.category}</span>
-                              <span className="text-xs text-gray-500">{s.code}</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center">
+                              <span className="text-[10px] px-1.5 py-0.5 border border-gray-200 bg-gray-50 text-gray-600 rounded">
+                                Mã dịch vụ: {s.code}
+                              </span>
                             </div>
+                            <div className="font-medium text-sm text-gray-800">{s.name}</div>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-semibold text-[#00668A]">
@@ -188,12 +189,13 @@ const TourInstanceServiceTab: React.FC<TourInstanceServiceTabProps> = ({ service
           <h4 className="font-semibold text-gray-700 text-sm mb-1">Các dịch vụ đã chọn:</h4>
           {services.map((s) => (
             <div key={s.id} className="flex justify-between items-center p-4 border border-[#89D4FF] rounded-lg bg-blue-50/20 shadow-sm">
-              <div>
-                <div className="font-medium text-sm text-gray-800">{s.name}</div>
-                <div className="flex gap-2 items-center mt-1">
-                  <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 border border-gray-200 text-gray-600 rounded">{s.category}</span>
-                  <span className="text-xs text-gray-500">{s.code}</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center">
+                  <span className="text-[10px] px-1.5 py-0.5 border border-gray-200 bg-white text-gray-600 rounded">
+                    Mã dịch vụ: {s.code}
+                  </span>
                 </div>
+                <div className="font-medium text-sm text-gray-800">{s.name}</div>
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-right">

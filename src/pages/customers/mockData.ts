@@ -83,7 +83,7 @@ export interface Customer {
   name: string;
   email: string;
   phone: string;
-  membershipTier: 'diamond' | 'gold' | 'silver' | 'bronze';
+  membershipTier: 'diamond' | 'gold' | 'silver' | 'bronze' | 'member';
   greenPoints: number;
   status: 'active' | 'locked';
   avatar?: string;

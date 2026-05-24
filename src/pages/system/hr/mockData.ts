@@ -56,6 +56,7 @@ export interface Staff {
   greenPoints?: number;
   tourHistory?: TourHistory[];
   rating?: number;
+  cccd?: string;
 }
 
 export const roles = [

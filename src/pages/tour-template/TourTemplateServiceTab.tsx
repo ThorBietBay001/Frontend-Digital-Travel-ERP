@@ -31,7 +31,7 @@ const TourTemplateServiceTab: React.FC<TourTemplateServiceTabProps> = ({ selecte
         id: r.maDichVuThem || '',
         code: r.maDichVuThem || '',
         name: r.ten || '',
-        category: 'extra' as const,
+        category: 'Dịch vụ thêm',
         price: r.donGia || 0,
         unit: r.donViTinh || '',
         status: r.trangThai?.toUpperCase() === 'ACTIVE' ? 'active' : 'inactive',
@@ -78,7 +78,7 @@ const TourTemplateServiceTab: React.FC<TourTemplateServiceTabProps> = ({ selecte
           id: newServiceResponse.maDichVuThem || '',
           code: newServiceResponse.maDichVuThem || '',
           name: newServiceResponse.ten || '',
-          category: 'extra',
+          category: 'Dịch vụ bổ sung',
           price: newServiceResponse.donGia || 0,
           unit: newServiceResponse.donViTinh || '',
           status: newServiceResponse.trangThai?.toUpperCase() === 'ACTIVE' ? 'active' : 'inactive',
@@ -130,9 +130,13 @@ const TourTemplateServiceTab: React.FC<TourTemplateServiceTabProps> = ({ selecte
                       handleSelectService(s);
                     }}
                   >
-                    <div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center">
+                        <span className="text-[10px] px-1.5 py-0.5 border border-gray-200 bg-gray-50 text-gray-600 rounded">
+                          Mã dịch vụ: {s.code}
+                        </span>
+                      </div>
                       <div className="font-medium text-sm text-gray-800">{s.name}</div>
-                      <div className="text-xs text-gray-500">{s.code}</div>
                     </div>
                     <div className="font-semibold text-[#00668A] text-sm">
                       {s.price.toLocaleString('vi-VN')} đ / {s.unit}
@@ -162,9 +166,14 @@ const TourTemplateServiceTab: React.FC<TourTemplateServiceTabProps> = ({ selecte
           <div className="flex flex-col gap-3">
             {selectedServices.map((s) => (
               <div key={s.id} className="flex justify-between items-center p-3 border border-gray-200 rounded-lg bg-white">
-                <div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center">
+                    <span className="text-[10px] px-1.5 py-0.5 border border-gray-200 bg-white text-gray-600 rounded shadow-sm">
+                      Mã dịch vụ: {s.code}
+                    </span>
+                  </div>
                   <div className="font-medium text-sm text-gray-800">{s.name}</div>
-                  <div className="text-xs text-gray-500">{s.code} - {s.price.toLocaleString('vi-VN')} đ/{s.unit}</div>
+                  <div className="text-xs text-gray-500">{s.price.toLocaleString('vi-VN')} đ/{s.unit}</div>
                 </div>
                 <div className="flex gap-2">
                   <Button type="button" variant="ghost" size="sm" icon={<Pencil size={16} />} aria-label="Sửa" onClick={() => setEditingService(s)} />

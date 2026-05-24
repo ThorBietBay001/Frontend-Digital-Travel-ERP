@@ -21,8 +21,8 @@ const mapTier = (s?: string): Customer['membershipTier'] => {
     case 'VANG': return 'gold';
     case 'BAC': return 'silver';
     case 'DONG': return 'bronze';
-    case 'THANH_VIEN': return 'bronze';
-    default: return 'bronze';
+    case 'THANH_VIEN': return 'member';
+    default: return 'member';
   }
 };
 
@@ -92,11 +92,12 @@ const CustomerList: React.FC = () => {
 
   const renderTierBadge = (tier: string) => {
     switch (tier) {
-      case 'diamond': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-800 text-white border border-slate-600">Kim Cương</span>;
-      case 'gold': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">Vàng</span>;
-      case 'silver': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-800 border border-gray-300">Bạc</span>;
-      case 'bronze': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-800 border border-orange-300">Đồng</span>;
-      default: return null;
+      case 'diamond': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-300">Kim Cương</span>;
+      case 'gold': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700 border border-yellow-300">Vàng</span>;
+      case 'silver': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-600 border border-gray-300">Bạc</span>;
+      case 'bronze': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-[#fdf8f5] text-[#8b4513] border border-[#d2b48c]">Đồng</span>;
+      case 'member': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-300">Thành viên</span>;
+      default: return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-300">Thành viên</span>;
     }
   };
 
@@ -184,7 +185,8 @@ const CustomerList: React.FC = () => {
                 { label: 'Kim Cương', value: 'diamond' },
                 { label: 'Vàng', value: 'gold' },
                 { label: 'Bạc', value: 'silver' },
-                { label: 'Đồng', value: 'bronze' }
+                { label: 'Đồng', value: 'bronze' },
+                { label: 'Thành viên', value: 'member' }
               ]}
               value={tierFilter}
               onChange={setTierFilter}

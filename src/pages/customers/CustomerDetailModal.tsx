@@ -8,7 +8,7 @@ import { Phone, Mail, CreditCard, Leaf, Cake, AlertCircle, MapPinned } from 'luc
 import type { Customer } from './mockData';
 import { customersService } from '../../services/customers';
 import api from '../../services/api';
-import { mapSupportRequestStatus } from '../../utils/statusMapping';
+import { mapSupportRequestStatus, mapOrderStatus } from '../../utils/statusMapping';
 
 interface LichSuTourItem {
   maLichSuTour: string;
@@ -128,46 +128,73 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
 
   const renderTierBadge = (tier: string) => {
     switch (tier) {
-      case 'diamond': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-800 text-white border border-slate-600">Kim Cương</span>;
-      case 'gold': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">Vàng</span>;
-      case 'silver': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-800 border border-gray-300">Bạc</span>;
-      case 'bronze': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-800 border border-orange-300">Đồng</span>;
-      default: return null;
+      case 'diamond': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-300">Kim Cương</span>;
+      case 'gold': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700 border border-yellow-300">Vàng</span>;
+      case 'silver': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-600 border border-gray-300">Bạc</span>;
+      case 'bronze': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-[#fdf8f5] text-[#8b4513] border border-[#d2b48c]">Đồng</span>;
+      case 'member': return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-300">Thành viên</span>;
+      default: return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-300">Thành viên</span>;
     }
   };
 
   const tourColumns: Column<LichSuTourItem>[] = [
     {
+      key: 'maTourThucTe',
+      title: 'Mã tour',
+      width: '110px',
+      render: (record) => (
+        <span className="font-semibold text-[#00668A] whitespace-nowrap">{record.maTourThucTe || '—'}</span>
+      ),
+    },
+    {
       key: 'tieuDeTour',
       title: 'Tên tour',
+      width: '280px',
       render: (record) => (
-        <span className="font-medium text-gray-800">{record.tieuDeTour || record.maTourThucTe}</span>
+        <div className="font-medium text-gray-800 truncate" title={record.tieuDeTour || record.maTourThucTe}>
+          {record.tieuDeTour || record.maTourThucTe}
+        </div>
       ),
     },
     {
       key: 'ngayKhoiHanh',
-      title: 'Ngày khởi hành',
-      render: (record) => <span className="text-sm text-gray-600">{record.ngayKhoiHanh || '—'}</span>,
+      title: 'Ngày KH',
+      width: '110px',
+      render: (record) => <span className="text-sm text-gray-600 whitespace-nowrap">{record.ngayKhoiHanh || '—'}</span>,
     },
     {
       key: 'thoiLuong',
       title: 'Thời lượng',
-      render: (record) => <span className="text-sm text-gray-600">{record.thoiLuong ? `${record.thoiLuong} ngày` : '—'}</span>,
+      width: '90px',
+      render: (record) => <span className="text-sm text-gray-600 whitespace-nowrap">{record.thoiLuong ? `${record.thoiLuong} ngày` : '—'}</span>,
     },
     {
       key: 'ngayThamGia',
       title: 'Ngày tham gia',
-      render: (record) => <span className="text-sm text-gray-600">{record.ngayThamGia || '—'}</span>,
+      width: '130px',
+      render: (record) => <span className="text-sm text-gray-600 whitespace-nowrap">{record.ngayThamGia || '—'}</span>,
     },
     {
       key: 'trangThai',
       title: 'Trạng thái',
+      width: '140px',
       render: (record) => {
-        if (!record.trangThai) return <span className="text-sm text-gray-500">—</span>;
-        return <Badge label={record.trangThai} variant="neutral" />;
+        if (!record.trangThai) return <span className="text-sm text-gray-500 whitespace-nowrap">—</span>;
+        const mapped = mapOrderStatus(record.trangThai);
+        return <div className="whitespace-nowrap"><Badge label={mapped.label} variant={mapped.variant} /></div>;
       },
     },
   ];
+
+  const mapRequestType = (type?: string) => {
+    switch (type) {
+      case 'THANH_TOAN': return 'Thanh toán';
+      case 'DICH_VU': return 'Dịch vụ';
+      case 'HUY_TOUR': return 'Hủy tour';
+      case 'KHAC': return 'Khác';
+      default: return type || '—';
+    }
+  };
 
   const complaintColumns: Column<YeuCauHoTroItem>[] = [
     {
@@ -194,7 +221,7 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ isOpen, onClo
     {
       key: 'loaiYeuCau',
       title: 'Loại yêu cầu',
-      render: (record) => <span className="text-sm text-gray-600">{record.loaiYeuCau || '—'}</span>,
+      render: (record) => <span className="text-sm text-gray-600">{mapRequestType(record.loaiYeuCau)}</span>,
     },
     {
       key: 'ngayTao',

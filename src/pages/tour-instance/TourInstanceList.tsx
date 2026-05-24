@@ -55,7 +55,7 @@ const TourInstanceList: React.FC = () => {
       id: service.maDichVuThem || '',
       code: service.maDichVuThem || '',
       name: service.ten || '',
-      category: 'extra',
+      category: 'Dịch vụ thêm',
       price: service.donGia || 0,
       unit: service.donViTinh || '',
       status: 'active',
@@ -163,7 +163,7 @@ const TourInstanceList: React.FC = () => {
 
   const filteredData = data.filter((tour) => {
     const matchesSearch = tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          tour.code.toLowerCase().includes(searchTerm.toLowerCase());
+      tour.code.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === '' || statusFilter === 'all' || tour.status === statusFilter;
     const tourMonth = tour.startDate ? tour.startDate.split('-')[1] : '';
     const matchesMonth = monthFilter === '' || monthFilter === 'all' || tourMonth === monthFilter;
@@ -208,10 +208,11 @@ const TourInstanceList: React.FC = () => {
     },
     {
       key: 'currentPrice',
-      title: 'Giá bán (VNĐ)',
+      title: <span className="whitespace-nowrap">Giá bán (VNĐ)</span>,
       align: 'right',
+      width: '180px',
       render: (record) => (
-        <span className="font-bold text-gray-800">{record.currentPrice.toLocaleString('vi-VN')} đ</span>
+        <span className="font-bold text-gray-800 whitespace-nowrap">{record.currentPrice.toLocaleString('vi-VN')}Đ</span>
       ),
     },
     {
@@ -233,42 +234,42 @@ const TourInstanceList: React.FC = () => {
         return (
           <div className="flex items-center justify-center gap-1">
             {/* Xem is always allowed, or at least always shown */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              icon={<Eye size={18} />} 
-              onClick={() => openModal('edit', record)} 
-              className="p-2 text-[#00668A]" 
-              aria-label="Xem chi tiết" 
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Eye size={18} />}
+              onClick={() => openModal('edit', record)}
+              className="p-2 text-[#00668A]"
+              aria-label="Xem chi tiết"
             />
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              icon={<Pencil size={18} />} 
-              onClick={() => canEditOrDelete && openModal('edit', record)} 
+
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Pencil size={18} />}
+              onClick={() => canEditOrDelete && openModal('edit', record)}
               className={`p-2 ${canEditOrDelete ? 'text-[#faad14] hover:text-[#d48806] hover:bg-orange-50' : 'opacity-40 cursor-not-allowed'}`}
-              aria-label="Sửa" 
+              aria-label="Sửa"
               disabled={!canEditOrDelete}
             />
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              icon={<Ban size={18} />} 
-              onClick={() => canBan && openModal('delete', record)} 
+
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Ban size={18} />}
+              onClick={() => canBan && openModal('delete', record)}
               className={`p-2 ${canBan ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'opacity-40 cursor-not-allowed'}`}
-              aria-label="Khóa tour" 
+              aria-label="Khóa tour"
               disabled={!canBan}
             />
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              icon={<Trash2 size={18} />} 
-              onClick={() => canEditOrDelete && openModal('delete', record)} 
+
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Trash2 size={18} />}
+              onClick={() => canEditOrDelete && openModal('delete', record)}
               className={`p-2 ${canEditOrDelete ? 'text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50' : 'opacity-40 cursor-not-allowed'}`}
-              aria-label="Xóa" 
+              aria-label="Xóa"
               disabled={!canEditOrDelete}
             />
           </div>
@@ -392,7 +393,7 @@ const TourInstanceList: React.FC = () => {
             <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
               <p className="font-bold mb-2">Cảnh báo: Tour đã có {modalState.selectedTour?.bookedSeats || 0} khách đặt.</p>
               <label className="block text-xs font-semibold mb-1">Vui lòng nhập lý do hủy:</label>
-              <textarea 
+              <textarea
                 className="w-full px-3 py-2 border border-red-200 rounded focus:outline-none focus:ring-1 focus:ring-red-400"
                 rows={2}
                 value={closeReason}
