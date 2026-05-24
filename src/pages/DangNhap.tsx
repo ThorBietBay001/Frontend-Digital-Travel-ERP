@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, Compass, Lock, User } from 'lucide-react';
+import { AlertTriangle, Compass, Eye, EyeOff, Lock, User } from 'lucide-react';
 import { hdvService } from '../services/hdvService';
 
 interface LoginProps {
@@ -29,6 +29,7 @@ export default function DangNhap({
   const [otpArray, setOtpArray] = useState<string[]>(['', '', '', '', '', '']);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const displayError = errorMsg || loginError;
 
@@ -136,13 +137,22 @@ export default function DangNhap({
                 <div className="relative">
                   <span className="absolute left-3 top-3 text-slate-400"><Lock size={15} /></span>
                   <input
-                    type="password"
+                    type={showLoginPassword ? 'text' : 'password'}
                     placeholder="Nhập mật khẩu..."
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
+                    className="w-full text-xs pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(prev => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-500 transition"
+                    aria-label={showLoginPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                    title={showLoginPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                  >
+                    {showLoginPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
                 </div>
               </div>
 
