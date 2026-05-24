@@ -45,10 +45,10 @@ const topDestinations = [
 ];
 
 function formatVietnameseCurrencyShort(value: number) {
-  if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1).replace('.0', '') + 'B VNĐ';
-  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1).replace('.0', '') + 'M VNĐ';
-  if (value >= 1_000) return (value / 1_000).toFixed(1).replace('.0', '') + 'K VNĐ';
-  return value + ' VNĐ';
+  if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1).replace('.0', '').replace('.', ',') + ' Tỷ VNĐ';
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1).replace('.0', '').replace('.', ',') + ' Triệu VNĐ';
+  if (value >= 1_000) return (value / 1_000).toFixed(1).replace('.0', '').replace('.', ',') + ' Nghìn VNĐ';
+  return value.toLocaleString('vi-VN') + ' VNĐ';
 }
 
 function getTimeAgo(dateString: string | undefined): string {
@@ -84,7 +84,7 @@ const Dashboard: React.FC = () => {
     customers: 834245,
     orders: 31684,
     tours: 256,
-    revenue: 124850
+    revenue: 5000000000
   });
 
   const [featuredTours, setFeaturedTours] = useState<TourThucTeResponse[]>([]);
@@ -145,7 +145,32 @@ const Dashboard: React.FC = () => {
     fetchStats();
   }, []);
 
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const changeMonth = (offset: number) => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+  };
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const today = new Date();
+  const isCurrentMonthAndYear = today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+  const todayDate = today.getDate();
+
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    let day = new Date(year, month, 1).getDay();
+    return day === 0 ? 6 : day - 1; // Convert to Mon=0 ... Sun=6
+  };
+
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDayOffset = getFirstDayOfMonth(currentYear, currentMonth);
+  const daysInPrevMonth = getDaysInMonth(currentYear, currentMonth - 1);
+
+  const prevMonthDays = Array.from({ length: firstDayOffset }, (_, i) => daysInPrevMonth - firstDayOffset + i + 1);
+  const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const totalSlots = Math.ceil((firstDayOffset + daysInMonth) / 7) * 7;
+  const nextMonthDays = Array.from({ length: totalSlots - (firstDayOffset + daysInMonth) }, (_, i) => i + 1);
 
   return (
     <MainLayout activeMenu="Tổng quan" breadcrumb={[{ label: 'Tổng quan' }]}>
@@ -247,24 +272,28 @@ const Dashboard: React.FC = () => {
           <div className="col-span-3">
             <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 h-full flex flex-col justify-center">
               <div className="flex justify-between items-center mb-4">
-                <button className="text-gray-400 hover:text-gray-800">&lt;</button>
-                <h3 className="font-bold text-gray-800">Tháng 5, 2026</h3>
-                <button className="text-gray-400 hover:text-gray-800">&gt;</button>
+                <button className="text-gray-400 hover:text-gray-800 transition-colors" onClick={() => changeMonth(-1)}>&lt;</button>
+                <h3 className="font-bold text-gray-800">Tháng {currentMonth + 1}, {currentYear}</h3>
+                <button className="text-gray-400 hover:text-gray-800 transition-colors" onClick={() => changeMonth(1)}>&gt;</button>
               </div>
               <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-400 mb-2">
                 <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
               </div>
               <div className="grid grid-cols-7 gap-y-2 text-center text-sm">
-                <div className="text-gray-300">27</div><div className="text-gray-300">28</div><div className="text-gray-300">29</div><div className="text-gray-300">30</div>
-                {days.slice(0, 3).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
-                {days.slice(3, 10).map(d => (
-                  <div key={d} className={`py-1 ${d === 6 ? 'bg-blue-400 text-white rounded-full mx-1' : 'text-gray-700'}`}>
-                    {d}
-                  </div>
+                {prevMonthDays.map(d => (
+                  <div key={`prev-${d}`} className="py-1 text-gray-300">{d}</div>
                 ))}
-                {days.slice(10, 17).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
-                {days.slice(17, 24).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
-                {days.slice(24, 31).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
+                {currentMonthDays.map(d => {
+                  const isToday = isCurrentMonthAndYear && d === todayDate;
+                  return (
+                    <div key={`curr-${d}`} className={`py-1 ${isToday ? 'bg-blue-400 text-white rounded-full mx-1' : 'text-gray-700'}`}>
+                      {d}
+                    </div>
+                  );
+                })}
+                {nextMonthDays.map(d => (
+                  <div key={`next-${d}`} className="py-1 text-gray-300">{d}</div>
+                ))}
               </div>
             </div>
           </div>
@@ -444,26 +473,26 @@ const Dashboard: React.FC = () => {
               <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full uppercase tracking-wider">{formatTrangThaiTour(selectedTour.trangThai)}</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-3 mb-2 leading-tight">{selectedTour.tieuDeTour || 'Tour Thực Tế'}</h2>
               <p className="text-gray-500 flex items-center gap-2 text-sm mb-6"><MapPin size={16} /> Mã Tour: {selectedTour.maTourThucTe}</p>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 mb-1">Ngày khởi hành</p>
-                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CalendarIcon size={14} className="text-blue-500"/> {selectedTour.ngayKhoiHanh ? new Date(selectedTour.ngayKhoiHanh).toLocaleDateString('vi-VN') : '---'}</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CalendarIcon size={14} className="text-blue-500" /> {selectedTour.ngayKhoiHanh ? new Date(selectedTour.ngayKhoiHanh).toLocaleDateString('vi-VN') : '---'}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 mb-1">Giá hiện hành</p>
-                  <p className="font-bold text-blue-600 flex items-center gap-1.5"><Wallet size={14}/> ₫{(selectedTour.giaHienHanh || 0).toLocaleString('vi-VN')}</p>
+                  <p className="font-bold text-blue-600 flex items-center gap-1.5"><Wallet size={14} /> ₫{(selectedTour.giaHienHanh || 0).toLocaleString('vi-VN')}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 mb-1">Chỗ còn lại</p>
-                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><Users size={14} className="text-emerald-500"/> {selectedTour.choConLai || 0} / {selectedTour.soKhachToiDa || 0}</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><Users size={14} className="text-emerald-500" /> {selectedTour.choConLai || 0} / {selectedTour.soKhachToiDa || 0}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 mb-1">Trạng thái tour</p>
-                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CheckCircle2 size={14} className="text-orange-500"/> {formatTrangThaiTour(selectedTour.trangThai)}</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CheckCircle2 size={14} className="text-orange-500" /> {formatTrangThaiTour(selectedTour.trangThai)}</p>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <Button variant="primary" className="flex-1" onClick={() => setSelectedTour(null)}>Đóng</Button>
               </div>
