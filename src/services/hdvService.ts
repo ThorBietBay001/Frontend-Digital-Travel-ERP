@@ -72,6 +72,11 @@ export const hdvService = {
     return res.data;
   },
 
+  layTatCaSuCo: async () => {
+    const res = await api.get('/huong-dan-vien/su-co');
+    return res.data;
+  },
+
   taoSuCo: async (maTour: string, data: any) => {
     const res = await api.post(`/huong-dan-vien/tour/${maTour}/su-co`, data);
     return res.data;
@@ -80,6 +85,11 @@ export const hdvService = {
   // 5. Chi phí
   layChiPhi: async (maTour: string) => {
     const res = await api.get(`/huong-dan-vien/tour/${maTour}/chi-phi`);
+    return res.data;
+  },
+
+  layTatCaChiPhi: async () => {
+    const res = await api.get('/huong-dan-vien/chi-phi');
     return res.data;
   },
 
@@ -95,8 +105,10 @@ export const hdvService = {
   },
 
   // 7. Danh mục hành động xanh
-  layDanhSachHanhDongXanh: async () => {
-    const res = await api.get('/huong-dan-vien/hanh-dong-xanh');
+  layDanhSachHanhDongXanh: async (maTourThucTe?: string) => {
+    const res = await api.get('/huong-dan-vien/hanh-dong-xanh', {
+      params: maTourThucTe ? { maTourThucTe } : undefined
+    });
     return res.data;
   },
 

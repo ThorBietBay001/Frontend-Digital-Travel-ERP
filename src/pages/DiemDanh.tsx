@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, AlertTriangle, RotateCcw, ChevronDown } from 'lucide-react';
 import type { Passenger, Tour } from '../types';
 import { hdvService } from '../services/hdvService';
@@ -299,9 +300,9 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
       </div>
 
       {/* --- GLOBAL POPUP: PASSENGER DETAILED CARD (UC40 BOTTOM SHEET) --- */}
-      {selectedPassenger && (
-        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+      {selectedPassenger && createPortal(
+        <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Hồ sơ khách hàng</h3>
               <button
@@ -355,13 +356,14 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
               Đồng ý
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* --- GLOBAL POPUP: ATTENDANCE HEALTH WARNING ACKNOWLEDGEMENT (UC41 POPUP) --- */}
-      {healthAcknowledgeModal.show && healthAcknowledgeModal.passenger && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl border-2 border-amber-400 space-y-4 animate-slide-up shadow-2xl">
+      {healthAcknowledgeModal.show && healthAcknowledgeModal.passenger && createPortal(
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl border-2 border-amber-400 max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl">
             <div className="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto">
               <AlertTriangle size={26} className="animate-pulse-subtle" />
             </div>
@@ -394,13 +396,14 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* --- GLOBAL POPUP: ATTENDANCE ABSENT EXPLANATION (UC41 POPUP) --- */}
-      {absentReasonModal.show && absentReasonModal.passenger && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl space-y-4 animate-slide-up shadow-2xl">
+      {absentReasonModal.show && absentReasonModal.passenger && createPortal(
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Ghi Nhận Vắng Mặt</h3>
               <button
@@ -471,7 +474,8 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Camera, Check, Leaf, RotateCcw, ThumbsUp } from 'lucide-react';
 import type { Passenger } from '../types';
 import { hdvService } from '../services/hdvService';
@@ -23,9 +23,13 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
+  const activePassengers = useMemo(
+    () => passengers.filter(p => p.status !== 'VANG'),
+    [passengers]
+  );
 
   useEffect(() => {
-    hdvService.layDanhSachHanhDongXanh()
+    hdvService.layDanhSachHanhDongXanh(maTour)
       .then((res) => {
         const data = res?.data ?? res ?? [];
         const list = Array.isArray(data) ? data : [];
@@ -40,7 +44,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
       .catch(() => {
         setGreenActionsList([]);
       });
-  }, []);
+  }, [maTour]);
 
   const toggleSelectGreenGuest = (code: string) => {
     setSelectedGreenGuests(prev =>
@@ -49,12 +53,17 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   };
 
   const handleSelectAllGreenGuests = () => {
-    if (selectedGreenGuests.length === passengers.length) {
+    if (selectedGreenGuests.length === activePassengers.length) {
       setSelectedGreenGuests([]);
     } else {
-      setSelectedGreenGuests(passengers.map(p => p.code));
+      setSelectedGreenGuests(activePassengers.map(p => p.code));
     }
   };
+
+  useEffect(() => {
+    const activePassengerCodes = new Set(activePassengers.map(p => p.code));
+    setSelectedGreenGuests(prev => prev.filter(code => activePassengerCodes.has(code)));
+  }, [activePassengers]);
 
   const handleCaptureGreenPhoto = () => {
     setIsCapturingGreenPhoto(true);
@@ -71,7 +80,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
     if (!action) return;
 
     try {
-      const selectedPassengers = passengers.filter(p => selectedGreenGuests.includes(p.code));
+      const selectedPassengers = activePassengers.filter(p => selectedGreenGuests.includes(p.code));
       const khachHangIds = selectedPassengers
         .map(p => p.maKhachHang || (!p.maNguoiDongHanh ? p.code : undefined))
         .filter((id): id is string => Boolean(id));
@@ -149,12 +158,12 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
             onClick={handleSelectAllGreenGuests}
             className="text-xs text-sky-500 font-semibold hover:underline"
           >
-            {selectedGreenGuests.length === passengers.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
+            {selectedGreenGuests.length === activePassengers.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          {passengers.map(p => {
+          {activePassengers.map(p => {
             const isChosen = selectedGreenGuests.includes(p.code);
             return (
               <div
@@ -169,6 +178,11 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
             );
           })}
         </div>
+        {activePassengers.length === 0 && (
+          <p className="text-[11px] text-slate-400 font-semibold bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+            Chưa có hành khách đang tham gia để ghi nhận điểm xanh.
+          </p>
+        )}
       </div>
 
       <div className="glass-card p-4 rounded-3xl space-y-3">

@@ -56,6 +56,7 @@ export interface ItineraryDay {
 
 export interface Expense {
   id: string;
+  tourCode?: string;
   category: string;
   amount: number;
   status: 'CHO_DUYET' | 'DA_DUYET' | 'TU_CHOI';
@@ -66,6 +67,7 @@ export interface Expense {
 
 export interface BaoCaoSuCo {
   id: string;
+  tourCode?: string;
   type: string;
   severity: 'Thấp' | 'Cao';
   passengerName?: string;

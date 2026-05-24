@@ -122,6 +122,28 @@ export default function App() {
     }
   };
 
+  const mapIncident = (i: any): IncidentType => ({
+    id: i.maNhatKySuCo,
+    tourCode: i.maTour,
+    type: i.loaiSuCo || 'Khác',
+    severity: i.mucDo === 'SOS' ? 'Cao' : 'Thấp',
+    description: i.moTa,
+    treatment: i.giaiPhap || '',
+    result: i.giaiPhap || '',
+    time: i.thoiGianBaoCao
+  });
+
+  const mapExpense = (e: any): Expense => ({
+    id: e.maChiPhi,
+    tourCode: e.maTour,
+    category: e.danhMuc,
+    amount: e.thanhTien,
+    status: e.trangThaiDuyet,
+    notes: e.ghiChu || e.danhMuc,
+    date: e.ngayKhai,
+    photoUrl: e.hoaDonAnh
+  });
+
   const loadHdvData = useCallback(async () => {
     if (!isLoggedIn) return;
 
@@ -138,43 +160,20 @@ export default function App() {
       setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
       setPastTours(await Promise.all(past.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
 
+      const [allIncRes, allExpRes] = await Promise.all([
+        hdvService.layTatCaSuCo().catch(() => null),
+        hdvService.layTatCaChiPhi().catch(() => null)
+      ]);
+      setIncidents(Array.isArray(allIncRes?.data) ? allIncRes.data.map(mapIncident) : []);
+      setExpenses(Array.isArray(allExpRes?.data) ? allExpRes.data.map(mapExpense) : []);
+
       if (ongoingTour) {
         const mappedTour = await hydrateTourPassengers({ ...mapAssignmentToTour(ongoingTour), destination: 'Đang đi' });
         setCurrentTour(mappedTour);
         setPassengers(mappedTour.passengers || []);
-
-        const incRes = await hdvService.laySuCo(ongoingTour.maTourThucTe);
-        if (incRes?.data) {
-          const mappedInc = incRes.data.map((i: any) => ({
-            id: i.maNhatKySuCo,
-            type: i.loaiSuCo || 'Khác',
-            severity: i.mucDo || 'Thấp',
-            description: i.moTa,
-            treatment: i.giaiPhap || '',
-            result: i.giaiPhap || '',
-            time: i.thoiGianBaoCao
-          }));
-          setIncidents(mappedInc);
-        }
-
-        const expRes = await hdvService.layChiPhi(ongoingTour.maTourThucTe);
-        if (expRes?.data) {
-          const mappedExp = expRes.data.map((e: any) => ({
-            id: e.maChiPhi,
-            category: e.danhMuc,
-            amount: e.thanhTien,
-            status: e.trangThaiDuyet,
-            notes: e.danhMuc,
-            date: e.ngayKhai,
-            photoUrl: e.hoaDonAnh
-          }));
-          setExpenses(mappedExp);
-        }
       } else {
         setCurrentTour(null);
         setPassengers([]);
-        setExpenses([]);
-        setIncidents([]);
       }
     } catch (e) {
       console.error("Failed to fetch tour data", e);
@@ -387,9 +386,9 @@ export default function App() {
 
         {/* --- GLOBAL POPUP: Notification Center List (Glassmorphism Modal) --- */}
         {notificationOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4">
             {/* Centered Modal Content */}
-            <div className="glass-modal max-w-sm w-full mt-14 p-4 rounded-3xl animate-slide-up max-h-[50vh] overflow-y-auto space-y-4 shadow-2xl h-fit border border-sky-100">
+            <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[70vh] overflow-y-auto space-y-4 shadow-2xl h-fit border border-sky-100">
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                 <div className="flex items-center space-x-1.5">
                   <h3 className="font-bold text-slate-800 text-sm">Thông báo nghiệp vụ</h3>
@@ -515,6 +514,8 @@ export default function App() {
           {activeTab === 'expense' && (
             <QuanLyChiPhi 
               maTour={currentTour?.code}
+              currentTour={currentTour}
+              pastTours={pastTours}
               expenses={expenses}
               setExpenses={setExpenses}
             />

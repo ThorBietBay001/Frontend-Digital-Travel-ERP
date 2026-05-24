@@ -110,10 +110,12 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
           </h4>
           <div className="text-xs space-y-2.5">
             <div className="border-b border-slate-50 pb-1.5 text-left">
-              <span className="text-slate-700 font-bold">Ngày vào làm:</span>
-              <span className="text-slate-500 font-medium ml-1.5">
-                {profile.ngayVaoLam ? new Date(profile.ngayVaoLam).toLocaleDateString('vi-VN') : 'Đang cập nhật'}
-              </span>
+              <span className="text-slate-700 font-bold">Tài khoản:</span>
+              <span className="bg-sky-50 text-sky-700 font-bold px-2.5 py-0.5 rounded text-[9px] uppercase tracking-wider ml-1.5">{profile.tenDangNhap || 'Đang cập nhật'}</span>
+            </div>
+            <div className="border-b border-slate-50 pb-1.5 text-left">
+              <span className="text-slate-700 font-bold">CCCD:</span>
+              <span className="text-slate-500 font-medium ml-1.5 font-mono">{profile.cccd || 'Đang cập nhật'}</span>
             </div>
             <div className="border-b border-slate-50 pb-1.5 text-left">
               <span className="text-slate-700 font-bold">Điện thoại:</span>
@@ -124,8 +126,10 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
               <span className="text-slate-500 font-medium ml-1.5 font-mono">{profile.email || 'Đang cập nhật'}</span>
             </div>
             <div className="text-left">
-              <span className="text-slate-700 font-bold">Tài khoản:</span>
-              <span className="bg-sky-50 text-sky-700 font-bold px-2.5 py-0.5 rounded text-[9px] uppercase tracking-wider ml-1.5">{profile.tenDangNhap}</span>
+              <span className="text-slate-700 font-bold">Ngày vào làm:</span>
+              <span className="text-slate-500 font-medium ml-1.5">
+                {profile.ngayVaoLam ? new Date(profile.ngayVaoLam).toLocaleDateString('vi-VN') : 'Đang cập nhật'}
+              </span>
             </div>
           </div>
         </div>

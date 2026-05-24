@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Passenger, BaoCaoSuCo as IncidentType } from '../types';
 import { hdvService } from '../services/hdvService';
@@ -18,6 +18,20 @@ const incidentTypes = [
   { id: 'Khác', label: 'Khác', apiValue: 'KHAC' }
 ];
 
+const PAGE_SIZE = 6;
+
+const getIncidentTypeMeta = (type: string) => {
+  const normalized = type.toUpperCase();
+  const label = incidentTypes.find(item => item.id === type || item.apiValue === normalized)?.label || type;
+  if (normalized === 'Y_TE' || type === 'Y tế') {
+    return { label, className: 'bg-rose-50 text-rose-600 border-rose-100' };
+  }
+  if (normalized === 'THOI_TIET' || type === 'Thời tiết') {
+    return { label, className: 'bg-sky-50 text-sky-600 border-sky-100' };
+  }
+  return { label, className: 'bg-slate-50 text-slate-600 border-slate-100' };
+};
+
 export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents }: IncidentReportProps) {
   const [incidentForm, setIncidentForm] = useState({
     type: 'Y tế',
@@ -32,6 +46,26 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
   const [isIncidentPassengerOpen, setIsIncidentPassengerOpen] = useState(false);
   const [incidentToast, setIncidentToast] = useState<string | null>(null);
   const [expandedIncidents, setExpandedIncidents] = useState<Record<string, boolean>>({});
+  const [incidentPage, setIncidentPage] = useState(1);
+  const activePassengers = useMemo(
+    () => passengers.filter(p => p.status !== 'VANG'),
+    [passengers]
+  );
+  const totalIncidentPages = Math.max(1, Math.ceil(incidents.length / PAGE_SIZE));
+  const paginatedIncidents = useMemo(
+    () => incidents.slice((incidentPage - 1) * PAGE_SIZE, incidentPage * PAGE_SIZE),
+    [incidentPage, incidents]
+  );
+
+  useEffect(() => {
+    if (incidentForm.passengerCode && !activePassengers.some(p => p.code === incidentForm.passengerCode)) {
+      setIncidentForm(prev => ({ ...prev, passengerCode: '' }));
+    }
+  }, [activePassengers, incidentForm.passengerCode]);
+
+  useEffect(() => {
+    setIncidentPage(prev => Math.min(prev, totalIncidentPages));
+  }, [totalIncidentPages]);
 
   const mapLoaiSuCo = (type: string) => {
     return incidentTypes.find(item => item.id === type)?.apiValue || 'KHAC';
@@ -47,7 +81,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
       return;
     }
 
-    const targetPassenger = passengers.find(p => p.code === incidentForm.passengerCode);
+    const targetPassenger = activePassengers.find(p => p.code === incidentForm.passengerCode);
 
     try {
       const data = {
@@ -63,6 +97,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         const i = res.data;
         const newReport: IncidentType = {
           id: i.maNhatKySuCo,
+          tourCode: i.maTour || maTour,
           type: incidentForm.type,
           severity: i.mucDo === 'SOS' ? 'Cao' : 'Thấp',
           passengerName: targetPassenger ? targetPassenger.name : undefined,
@@ -193,7 +228,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
             >
               <span>
                 {incidentForm.passengerCode
-                  ? passengers.find(p => p.code === incidentForm.passengerCode)?.name + ` (${incidentForm.passengerCode})`
+                  ? activePassengers.find(p => p.code === incidentForm.passengerCode)?.name + ` (${incidentForm.passengerCode})`
                   : '-- Không có hành khách cụ thể --'}
               </span>
               <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isIncidentPassengerOpen ? 'rotate-180' : ''}`} />
@@ -214,7 +249,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                     <span>-- Không có hành khách cụ thể --</span>
                     {incidentForm.passengerCode === '' && <span className="text-[10px] text-sky-500">✓</span>}
                   </button>
-                  {passengers.map(p => (
+                  {activePassengers.map(p => (
                     <button
                       key={p.code}
                       type="button"
@@ -228,6 +263,11 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                       {incidentForm.passengerCode === p.code && <span className="text-[10px] text-sky-500">✓</span>}
                     </button>
                   ))}
+                  {activePassengers.length === 0 && (
+                    <div className="px-3 py-2 text-slate-400 font-semibold">
+                      Chưa có hành khách đang tham gia.
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -282,9 +322,10 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
         </h4>
 
         <div className="space-y-2">
-          {incidents.map((log) => {
+          {paginatedIncidents.map((log) => {
             const isExpanded = !!expandedIncidents[log.id];
             const isHigh = log.severity === 'Cao';
+            const typeMeta = getIncidentTypeMeta(log.type);
             return (
               <div
                 key={log.id}
@@ -302,13 +343,17 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                 >
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center space-x-1.5">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${isHigh ? 'bg-rose-500 text-white' : 'bg-sky-100 text-sky-600'
-                        }`}>
-                        {log.type}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${typeMeta.className}`}>
+                        {typeMeta.label}
                       </span>
                       <span className="text-[11px] font-semibold text-slate-700 font-mono">
                         {log.id}
                       </span>
+                      {log.tourCode && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                          {log.tourCode}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2 text-[10px] text-slate-400 font-medium">
                       <span>{log.passengerName ? log.passengerName : 'Đoàn chung'}</span>
@@ -344,6 +389,29 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
             );
           })}
         </div>
+        {incidents.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-1">
+            <button
+              type="button"
+              onClick={() => setIncidentPage(prev => Math.max(1, prev - 1))}
+              disabled={incidentPage === 1}
+              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Trước
+            </button>
+            <span className="text-[10px] font-bold text-slate-400">
+              Trang {incidentPage}/{totalIncidentPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setIncidentPage(prev => Math.min(totalIncidentPages, prev + 1))}
+              disabled={incidentPage === totalIncidentPages}
+              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Sau
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

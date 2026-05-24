@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle, Plus, Camera, Trash2 } from 'lucide-react';
-import type { Expense } from '../types';
+import type { Expense, Tour } from '../types';
 
 import { hdvService } from '../services/hdvService';
 
+const PAGE_SIZE = 6;
+
 interface ExpenseTrackerProps {
   maTour?: string;
+  currentTour?: Tour | null;
+  pastTours?: Tour[];
   expenses: Expense[];
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
 }
@@ -25,6 +30,18 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
   const [isCapturing, setIsCapturing] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
+  const [expensePage, setExpensePage] = useState(1);
+  const canCreateCurrentTourExpense = Boolean(maTour);
+  const visibleExpenses = expenses;
+  const totalExpensePages = Math.max(1, Math.ceil(visibleExpenses.length / PAGE_SIZE));
+  const paginatedExpenses = useMemo(
+    () => visibleExpenses.slice((expensePage - 1) * PAGE_SIZE, expensePage * PAGE_SIZE),
+    [expensePage, visibleExpenses]
+  );
+
+  useEffect(() => {
+    setExpensePage(prev => Math.min(prev, totalExpensePages));
+  }, [totalExpensePages]);
 
   // Simulated capture function
   const handleCaptureReceipt = () => {
@@ -80,6 +97,7 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
         const eRes = res.data;
         const newExpense: Expense = {
           id: eRes.maChiPhi,
+          tourCode: eRes.maTour || maTour,
           category: eRes.danhMuc || expenseForm.category,
           amount: eRes.thanhTien || amountVal,
           status: eRes.trangThaiDuyet || 'CHO_DUYET',
@@ -130,15 +148,19 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
       <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-200 shadow-sm space-y-2 relative overflow-hidden">
         <div className="flex justify-between items-center">
           <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider">Hạn mức tạm ứng thực địa</span>
-          <span className="text-[11px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300">{maTour || 'N/A'}</span>
+          <span className="text-[11px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300">Tất cả tour</span>
         </div>
+
+        <p className="text-[10px] text-slate-400 font-semibold">
+          Lịch sử quyết toán của toàn bộ các tour bạn đã dẫn.
+        </p>
 
         <div className="space-y-1.5">
           <h2 className="text-2xl font-black tracking-tight text-slate-800 leading-none">{formatCurrency(15000000)}</h2>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-gradient-to-r from-sky-500 to-blue-500 h-1.5 rounded-full"
-              style={{ width: `${(expenses.reduce((sum, e) => sum + e.amount, 0) / 15000000) * 100}%` }}
+              style={{ width: `${Math.min((visibleExpenses.reduce((sum, e) => sum + e.amount, 0) / 15000000) * 100, 100)}%` }}
             ></div>
           </div>
         </div>
@@ -146,33 +168,40 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
         <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-200/40 pt-2 mt-0.5">
           <div>
             <span className="text-[12px] text-slate-400 block mb-0.5 font-medium leading-none">Đã quyết toán</span>
-            <strong className="text-sm font-black text-slate-700 block mt-0.5">{formatCurrency(expenses.filter(e => e.status === 'DA_DUYET').reduce((sum, e) => sum + e.amount, 0))}</strong>
+            <strong className="text-sm font-black text-slate-700 block mt-0.5">{formatCurrency(visibleExpenses.filter(e => e.status === 'DA_DUYET').reduce((sum, e) => sum + e.amount, 0))}</strong>
           </div>
           <div>
             <span className="text-[12px] text-slate-400 block mb-0.5 font-medium leading-none">Chờ duyệt</span>
-            <strong className="text-sm font-black text-amber-500 block mt-0.5">{formatCurrency(expenses.filter(e => e.status === 'CHO_DUYET').reduce((sum, e) => sum + e.amount, 0))}</strong>
+            <strong className="text-sm font-black text-amber-500 block mt-0.5">{formatCurrency(visibleExpenses.filter(e => e.status === 'CHO_DUYET').reduce((sum, e) => sum + e.amount, 0))}</strong>
           </div>
         </div>
       </div>
 
       {/* Add expense Full-Width actions */}
-      <button
-        onClick={() => setExpenseModalOpen(true)}
-        className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[11px] rounded-2xl shadow-md shadow-sky-100 transition active:scale-95 flex items-center justify-center space-x-1.5"
-      >
-        <Plus size={16} strokeWidth={3} />
-        <span className="tracking-wide uppercase">Thêm yêu cầu quyết toán</span>
-      </button>
+      {canCreateCurrentTourExpense && (
+        <button
+          onClick={() => setExpenseModalOpen(true)}
+          className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[11px] rounded-2xl shadow-md shadow-sky-100 transition active:scale-95 flex items-center justify-center space-x-1.5"
+        >
+          <Plus size={16} strokeWidth={3} />
+          <span className="tracking-wide uppercase">Thêm yêu cầu quyết toán</span>
+        </button>
+      )}
 
       {/* Expense history logs */}
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Lịch sử chi tiêu đoàn</span>
-          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-mono font-bold">{expenses.length} hóa đơn</span>
+          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-mono font-bold">{visibleExpenses.length} hóa đơn</span>
         </div>
 
         <div className="space-y-2">
-          {expenses.map((e) => (
+          {visibleExpenses.length === 0 && (
+            <div className="p-3 rounded-2xl bg-white border border-slate-100 text-[11px] text-slate-400 font-semibold">
+              Chưa có chi phí nào trong lịch sử tour đã dẫn.
+            </div>
+          )}
+          {paginatedExpenses.map((e) => (
             <div key={e.id} className="relative bg-white rounded-2xl border border-slate-100/80 hover:shadow-md transition shadow-sm overflow-hidden">
               {/* Clickable card row wrapper */}
               <div
@@ -182,6 +211,7 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
                 <div className="space-y-0.5">
                   <div className="flex items-center space-x-1.5">
                     <span className="text-[10px] font-bold px-1 py-px rounded bg-sky-50 border border-sky-100 text-sky-500 font-mono">{e.id}</span>
+                    <span className="text-[10px] font-bold px-1 py-px rounded bg-slate-50 border border-slate-100 text-slate-500 font-mono">{e.tourCode || 'N/A'}</span>
                     <span className="text-[11px] font-bold text-slate-700">{e.category}</span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-snug">{e.notes}</p>
@@ -196,7 +226,7 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
                     ) : e.status === 'CHO_DUYET' ? (
                       <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-100 font-bold px-2 py-0.5 rounded-full">Chờ duyệt</span>
                     ) : (
-                      <span className="text-[11px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded">Từ chối</span>
+                      <span className="text-[10px] bg-rose-50 text-rose-600 border border-rose-100 font-bold px-2 py-0.5 rounded-full">Từ chối</span>
                     )}
                   </div>
                 </div>
@@ -217,13 +247,13 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
                   <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100/80 text-[10px] text-slate-600 font-bold">
                     <span>HDV</span>
                     <span className="text-slate-200 font-normal">|</span>
-                    <span>{maTour || 'N/A'}</span>
+                    <span>{e.tourCode || maTour || 'N/A'}</span>
                     <span className="text-slate-200 font-normal">|</span>
                     <span>{e.date}</span>
                   </div>
 
                   {/* Delete action button inside details (Ultra-Premium, Modern & Fluid Hover) */}
-                  {e.status === 'CHO_DUYET' && (
+                  {canCreateCurrentTourExpense && e.tourCode === maTour && e.status === 'CHO_DUYET' && (
                     <button
                       onClick={(ev) => {
                         ev.stopPropagation();
@@ -241,12 +271,35 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
             </div>
           ))}
         </div>
+        {visibleExpenses.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-1">
+            <button
+              type="button"
+              onClick={() => setExpensePage(prev => Math.max(1, prev - 1))}
+              disabled={expensePage === 1}
+              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Trước
+            </button>
+            <span className="text-[10px] font-bold text-slate-400">
+              Trang {expensePage}/{totalExpensePages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setExpensePage(prev => Math.min(totalExpensePages, prev + 1))}
+              disabled={expensePage === totalExpensePages}
+              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Sau
+            </button>
+          </div>
+        )}
       </div>
 
       {/* --- GLOBAL POPUP: DAILY EXPENSE ADDITION MODAL FORM (UC44 POPUP) --- */}
-      {expenseModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">
+      {expenseModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Nhập chi phí thực tế</h3>
               <button
@@ -352,7 +405,8 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
