@@ -45,6 +45,7 @@ const CostList: React.FC = () => {
         let status: CostItem['status'] = 'pending';
         if (c.trangThaiDuyet === 'DA_DUYET') status = 'approved';
         else if (c.trangThaiDuyet === 'TU_CHOI') status = 'rejected';
+        else if (c.trangThaiDuyet === 'YEU_CAU_BO_SUNG') status = 'pending_info';
         else if (c.trangThaiDuyet === 'CHO_DUYET') status = 'pending';
         
         return {
@@ -75,6 +76,7 @@ const CostList: React.FC = () => {
       } else if (newStatus === 'rejected') {
         await financeService.tuChoiChiPhi(id);
       }
+      await getAll();
       setCosts((prev) =>
         prev.map((cost) =>
           cost.id === id
@@ -88,6 +90,7 @@ const CostList: React.FC = () => {
       );
     } catch (e) {
       alert('Lỗi cập nhật. ' + (e instanceof Error ? e.message : ''));
+      throw e;
     }
   };
 
@@ -108,6 +111,11 @@ const CostList: React.FC = () => {
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
 
   const columns: Column<CostItem>[] = [
+    {
+      key: 'id',
+      title: 'Mã chi phí',
+      render: (record) => <span className="font-mono text-xs font-semibold text-gray-600">{record.id}</span>,
+    },
     {
       key: 'tourCode',
       title: 'Mã Tour',
@@ -167,7 +175,7 @@ const CostList: React.FC = () => {
       title: 'Hành động',
       align: 'center',
       render: (record) => {
-        if (record.status === 'approved' || record.status === 'rejected') {
+        if (record.status === 'approved' || record.status === 'rejected' || record.status === 'pending_info') {
           return (
             <Button
               variant="ghost"
@@ -214,6 +222,7 @@ const CostList: React.FC = () => {
               options={[
                 { label: 'Tất cả trạng thái', value: 'all' },
                 { label: 'Chờ duyệt', value: 'pending' },
+                { label: 'Chờ bổ sung', value: 'pending_info' },
                 { label: 'Đã duyệt', value: 'approved' },
                 { label: 'Đã từ chối', value: 'rejected' }
               ]}

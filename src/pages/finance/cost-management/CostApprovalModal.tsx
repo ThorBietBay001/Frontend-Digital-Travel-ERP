@@ -11,12 +11,13 @@ export interface CostApprovalModalProps {
   isOpen: boolean;
   onClose: () => void;
   cost: CostItem | null;
-  onUpdateStatus?: (id: string, newStatus: 'approved' | 'rejected' | 'pending_info', note?: string) => void;
+  onUpdateStatus?: (id: string, newStatus: 'approved' | 'rejected' | 'pending_info', note?: string) => void | Promise<void>;
 }
 
 const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, cost, onUpdateStatus }) => {
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [extraDetails, setExtraDetails] = useState<{ tourName: string; guidePhone: string }>({
     tourName: 'Đang tải...',
     guidePhone: 'Đang tải...',
@@ -26,6 +27,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
     if (isOpen && cost) {
       setNote('');
       setNoteError('');
+      setIsSubmitting(false);
       
       setExtraDetails({
         tourName: cost.tourName && cost.tourName !== 'Đang tải...' ? cost.tourName : 'Đang tải...',
@@ -61,7 +63,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
   if (!cost) return null;
 
   // Check if this cost is already approved or rejected (readonly mode)
-  const isReadonly = cost.status === 'approved' || cost.status === 'rejected';
+  const isReadonly = cost.status === 'approved' || cost.status === 'rejected' || cost.status === 'pending_info';
 
   const warningBadge = cost.status === 'warning'
     ? { label: cost.warningMessage || 'Cảnh báo vượt định mức', variant: 'warning' as const }
@@ -69,18 +71,28 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
       ? { label: cost.warningMessage || 'Thiếu chứng từ', variant: 'error' as const }
       : null;
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!note.trim()) {
       setNoteError('Vui lòng nhập lý do từ chối');
       return;
     }
-    onUpdateStatus?.(cost.id, 'rejected', note.trim());
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onUpdateStatus?.(cost.id, 'rejected', note.trim());
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleApprove = () => {
-    onUpdateStatus?.(cost.id, 'approved');
-    onClose();
+  const handleApprove = async () => {
+    setIsSubmitting(true);
+    try {
+      await onUpdateStatus?.(cost.id, 'approved');
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderFooter = () => {
@@ -99,6 +111,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
           className="border border-red-500 text-red-600 hover:bg-red-50"
           icon={<Ban size={16} />}
           onClick={handleReject}
+          disabled={isSubmitting}
         >
           Từ chối
         </Button>
@@ -107,8 +120,9 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
           className="bg-emerald-600 hover:bg-emerald-700"
           icon={<CheckCircle size={16} />}
           onClick={handleApprove}
+          disabled={isSubmitting}
         >
-          Phê duyệt
+          {isSubmitting ? 'Đang xử lý...' : 'Phê duyệt'}
         </Button>
       </div>
     );
@@ -193,10 +207,14 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
               {isReadonly && (
                 <div className="flex items-center justify-between pt-2 border-t border-[#E1F1FF]">
                   <span className="text-gray-500">Trạng thái</span>
-                  <Badge
-                    label={cost.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
-                    variant={cost.status === 'approved' ? 'success' : 'error'}
-                  />
+                  {cost.status === 'pending_info' ? (
+                    <Badge label="Chờ bổ sung" variant="warning" />
+                  ) : (
+                    <Badge
+                      label={cost.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
+                      variant={cost.status === 'approved' ? 'success' : 'error'}
+                    />
+                  )}
                 </div>
               )}
             </div>
