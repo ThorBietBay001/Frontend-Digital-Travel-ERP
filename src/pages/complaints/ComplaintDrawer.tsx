@@ -79,6 +79,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
         ]
       };
       onUpdate(updatedComplaint);
+      onClose();
     } else {
       alert("Vui lòng nhập ghi chú xử lý (bắt buộc) trước khi hoàn tất.");
     }
@@ -135,9 +136,9 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
             )}
 
             {/* Lịch sử điều tra (Timeline) */}
-            <div>
-              <h3 className="font-bold text-[#121C2C] mb-4 text-sm">Lịch sử điều tra</h3>
-              {complaint.timeline && complaint.timeline.length > 0 ? (
+            {complaint.timeline && complaint.timeline.length > 0 && (
+              <div>
+                <h3 className="font-bold text-[#121C2C] mb-4 text-sm">Lịch sử điều tra</h3>
                 <div className="relative border-l border-gray-200 ml-3 space-y-6">
                   {complaint.timeline.map((item, index) => {
                     const isLast = index === complaint.timeline.length - 1;
@@ -152,12 +153,8 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
                     );
                   })}
                 </div>
-              ) : (
-                <div className="p-4 text-center text-gray-500 italic border border-dashed border-gray-300 rounded-lg bg-gray-50">
-                  Tính năng đang phát triển (Backend chưa hỗ trợ lưu Lịch sử)
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
           </div>
 
@@ -248,7 +245,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
                       className="w-full justify-center"
                       onClick={() => handleFinalize('rejected')}
                     >
-                      Bác bỏ / Từ chối
+                      Từ chối khiếu nại
                     </Button>
                    </div>
                  </>

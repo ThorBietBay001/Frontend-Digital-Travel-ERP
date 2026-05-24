@@ -38,19 +38,29 @@ const ComplaintList: React.FC = () => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [drawerMode, setDrawerMode] = useState<'edit' | 'view'>('view');
 
-  const mapToUI = (api: YeuCauHoTroResponse): Complaint => ({
-    id: api.maYeuCau || '',
-    code: api.maYeuCau || '',
-    customerName: api.maDatTour || '',
-    customerPhone: '',
-    tourName: api.loaiYeuCau || '',
-    guideName: api.maNhanVienXuLy,
-    sentDate: api.thoiDiemTao ? api.thoiDiemTao.split('T')[0] : '',
-    severity: 'medium',
-    status: mapStatus(api.trangThai),
-    description: api.noiDung || '',
-    timeline: [],
-  });
+  const mapToUI = (api: YeuCauHoTroResponse): Complaint => {
+    const savedResolution = localStorage.getItem(`complaint_res_${api.maYeuCau}`);
+    const savedTimelineStr = localStorage.getItem(`complaint_timeline_${api.maYeuCau}`);
+    let savedTimeline = [];
+    try {
+      if (savedTimelineStr) savedTimeline = JSON.parse(savedTimelineStr);
+    } catch (e) {}
+
+    return {
+      id: api.maYeuCau || '',
+      code: api.maYeuCau || '',
+      customerName: api.maDatTour || '',
+      customerPhone: '',
+      tourName: api.loaiYeuCau || '',
+      guideName: api.maNhanVienXuLy,
+      sentDate: api.thoiDiemTao ? api.thoiDiemTao.split('T')[0] : '',
+      severity: 'medium',
+      status: mapStatus(api.trangThai),
+      description: api.noiDung || '',
+      resolution: savedResolution || undefined,
+      timeline: savedTimeline,
+    };
+  };
 
   const { user } = useAuth();
 
@@ -191,6 +201,15 @@ const ComplaintList: React.FC = () => {
         trangThai: apiStatus,
         ghiChu: updatedComplaint.resolution,
       };
+      
+      // Save local state to persist across API reloads since Backend doesn't support these fields yet
+      if (updatedComplaint.resolution) {
+        localStorage.setItem(`complaint_res_${updatedComplaint.id}`, updatedComplaint.resolution);
+      }
+      if (updatedComplaint.timeline && updatedComplaint.timeline.length > 0) {
+        localStorage.setItem(`complaint_timeline_${updatedComplaint.id}`, JSON.stringify(updatedComplaint.timeline));
+      }
+
       await complaintsService.xuLyYeuCauHoTro(updatedComplaint.id, payload);
       setSelectedComplaint(updatedComplaint);
       getAll();
