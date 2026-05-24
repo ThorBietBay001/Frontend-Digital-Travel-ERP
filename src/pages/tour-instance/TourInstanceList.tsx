@@ -11,7 +11,6 @@ import TourInstanceDetailModal from './TourInstanceDetailModal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
 import type { TourInstance } from './mockData';
-import { mockTourInstances } from './mockData';
 import type { TourThucTeResponse, CapNhatTourThucTeRequest } from '../../services/tour-instance';
 import { tourInstanceService } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
@@ -96,8 +95,9 @@ const TourInstanceList: React.FC = () => {
         setData([]);
       }
     } catch (err: unknown) {
-      setError(null);
-      setData(mockTourInstances);
+      const msg = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu tour thực tế';
+      setError(msg);
+      setData([]);
     } finally {
       setLoading(false);
     }
