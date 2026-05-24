@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, Check, Leaf, RotateCcw, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, Check, Leaf, RotateCcw, ThumbsUp } from 'lucide-react';
 import type { Passenger } from '../types';
 import { hdvService } from '../services/hdvService';
 
@@ -24,20 +24,8 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
 
-  // Pagination for Green Actions
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
-  const totalPages = Math.ceil(greenActionsList.length / ITEMS_PER_PAGE);
-  const validCurrentPage = Math.min(currentPage, totalPages) || 1;
-  const currentGreenActions = greenActionsList.slice((validCurrentPage - 1) * ITEMS_PER_PAGE, validCurrentPage * ITEMS_PER_PAGE);
-
   useEffect(() => {
-    if (!maTour) {
-      setGreenActionsList([]);
-      return;
-    }
-
-    hdvService.layDanhSachHanhDongXanh(maTour)
+    hdvService.layDanhSachHanhDongXanh()
       .then((res) => {
         const data = res?.data ?? res ?? [];
         const list = Array.isArray(data) ? data : [];
@@ -52,9 +40,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
       .catch(() => {
         setGreenActionsList([]);
       });
-  }, [maTour]);
-
-  const presentPassengers = passengers.filter(p => p.status === 'DA_DIEM_DANH');
+  }, []);
 
   const toggleSelectGreenGuest = (code: string) => {
     setSelectedGreenGuests(prev =>
@@ -63,10 +49,10 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   };
 
   const handleSelectAllGreenGuests = () => {
-    if (selectedGreenGuests.length === presentPassengers.length && presentPassengers.length > 0) {
+    if (selectedGreenGuests.length === passengers.length) {
       setSelectedGreenGuests([]);
     } else {
-      setSelectedGreenGuests(presentPassengers.map(p => p.code));
+      setSelectedGreenGuests(passengers.map(p => p.code));
     }
   };
 
@@ -157,18 +143,18 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
       <div className="glass-card p-4 rounded-3xl space-y-3">
         <div className="flex justify-between items-center">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Chọn hành khách (có mặt)
+            Chọn hành khách
           </h4>
           <button
             onClick={handleSelectAllGreenGuests}
             className="text-xs text-sky-500 font-semibold hover:underline"
           >
-            {selectedGreenGuests.length === presentPassengers.length && presentPassengers.length > 0 ? 'Bỏ chọn hết' : 'Chọn tất cả'}
+            {selectedGreenGuests.length === passengers.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          {presentPassengers.map(p => {
+          {passengers.map(p => {
             const isChosen = selectedGreenGuests.includes(p.code);
             return (
               <div
@@ -191,7 +177,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         </h4>
 
         <div className="space-y-2">
-          {currentGreenActions.map(a => (
+          {greenActionsList.map(a => (
             <div
               key={a.id}
               onClick={() => setSelectedGreenAction(a.id)}
@@ -206,40 +192,6 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
             </div>
           ))}
         </div>
-
-        {totalPages >= 2 && (
-          <div className="flex justify-center items-center space-x-2 mt-4">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={validCurrentPage === 1}
-              className="p-1 rounded-full text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <div className="flex items-center space-x-1.5">
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 ${
-                    validCurrentPage === i + 1 
-                      ? 'bg-emerald-500 text-white shadow-sm' 
-                      : 'text-slate-500 hover:bg-slate-100'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={validCurrentPage === totalPages}
-              className="p-1 rounded-full text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="glass-card p-4 rounded-3xl space-y-3">

@@ -1,39 +1,16 @@
 import React, { useState } from 'react';
-import { CheckCircle, Plus, Camera, Trash2, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, Plus, Camera, Trash2 } from 'lucide-react';
 import type { Expense } from '../types';
 
 import { hdvService } from '../services/hdvService';
 
 interface ExpenseTrackerProps {
   maTour?: string;
-  allTours?: any[];
   expenses: Expense[];
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
 }
 
-export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpenses }: ExpenseTrackerProps) {
-  const [selectedTour, setSelectedTour] = React.useState(maTour || '');
-  const [isTourDropdownOpen, setIsTourDropdownOpen] = useState(false);
-  React.useEffect(() => {
-    if (maTour) setSelectedTour(maTour);
-  }, [maTour]);
-
-  // Filter tours for dropdown: allow ongoing/upcoming, and past tours ended within 3 days
-  const validToursForDropdown = React.useMemo(() => {
-    return allTours.filter(t => {
-      // Allow ongoing or upcoming tours
-      if (t.status !== 'Kết thúc' && t.status !== 'Đã quyết toán') {
-        return true; 
-      }
-      if (!t.endDateIso) return true;
-      const end = new Date(t.endDateIso);
-      const now = new Date();
-      const diffTime = now.getTime() - end.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      return diffDays <= 3;
-    });
-  }, [allTours]);
-
+export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseTrackerProps) {
   // Expense State
   const [expenseForm, setExpenseForm] = useState({
     category: 'Ăn uống',
@@ -48,13 +25,6 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
   const [isCapturing, setIsCapturing] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 6;
-  const totalPages = Math.ceil(expenses.length / ITEMS_PER_PAGE);
-  const validCurrentPage = Math.min(currentPage, totalPages) || 1;
-  const currentExpenses = expenses.slice((validCurrentPage - 1) * ITEMS_PER_PAGE, validCurrentPage * ITEMS_PER_PAGE);
 
   // Simulated capture function
   const handleCaptureReceipt = () => {
@@ -75,8 +45,8 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
     e.preventDefault();
     setFormError(null);
 
-    if (!selectedTour.trim()) {
-      setFormError("Vui lòng nhập mã Tour để báo cáo!");
+    if (!maTour) {
+      setFormError("Không tìm thấy thông tin Tour!");
       return;
     }
 
@@ -104,7 +74,7 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
         ghiChu: expenseForm.notes
       };
 
-      const res = await hdvService.taoChiPhi(selectedTour, data);
+      const res = await hdvService.taoChiPhi(maTour, data);
       
       if (res.data) {
         const eRes = res.data;
@@ -119,7 +89,6 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
         };
 
         setExpenses(prev => [newExpense, ...prev]);
-        setCurrentPage(1);
         setExpenseToast(`Đã lưu chi phí thành công!`);
         setExpenseModalOpen(false);
 
@@ -161,40 +130,7 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
       <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-200 shadow-sm space-y-2 relative overflow-hidden">
         <div className="flex justify-between items-center">
           <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider">Hạn mức tạm ứng thực địa</span>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsTourDropdownOpen(!isTourDropdownOpen)}
-              className="text-[11px] bg-white text-sky-600 px-2 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300 flex items-center space-x-1 outline-none transition cursor-pointer hover:bg-sky-50"
-            >
-              <span>{selectedTour || 'Chọn Tour'}</span>
-              <ChevronDown size={10} className={`transition-transform duration-200 ${isTourDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isTourDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsTourDropdownOpen(false)}></div>
-                <div className="absolute right-0 top-full mt-1.5 z-50 bg-white border border-sky-200 rounded-xl shadow-xl py-1 w-48 text-[10px] text-slate-700 animate-slide-up max-h-48 overflow-y-auto text-left">
-                  {validToursForDropdown.map((t, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTour(t.code || t.maTourThucTe);
-                        setIsTourDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 hover:bg-sky-50 transition flex items-center justify-between ${selectedTour === (t.code || t.maTourThucTe) ? 'bg-sky-50 text-sky-600 font-bold' : 'font-medium'}`}
-                    >
-                      <span className="truncate">{t.code || t.maTourThucTe} - {t.name}</span>
-                      {selectedTour === (t.code || t.maTourThucTe) && <span className="text-sky-500">✓</span>}
-                    </button>
-                  ))}
-                  {validToursForDropdown.length === 0 && (
-                    <div className="px-3 py-1.5 text-slate-400 italic">Không có tour nào</div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          <span className="text-[11px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300">{maTour || 'N/A'}</span>
         </div>
 
         <div className="space-y-1.5">
@@ -236,7 +172,7 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
         </div>
 
         <div className="space-y-2">
-          {currentExpenses.map((e) => (
+          {expenses.map((e) => (
             <div key={e.id} className="relative bg-white rounded-2xl border border-slate-100/80 hover:shadow-md transition shadow-sm overflow-hidden">
               {/* Clickable card row wrapper */}
               <div
@@ -260,7 +196,7 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
                     ) : e.status === 'CHO_DUYET' ? (
                       <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-100 font-bold px-2 py-0.5 rounded-full">Chờ duyệt</span>
                     ) : (
-                      <span className="text-[10px] bg-rose-50 text-rose-600 border border-rose-100 font-bold px-2 py-0.5 rounded-full">Từ chối</span>
+                      <span className="text-[11px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded">Từ chối</span>
                     )}
                   </div>
                 </div>
@@ -281,7 +217,7 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
                   <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100/80 text-[10px] text-slate-600 font-bold">
                     <span>HDV</span>
                     <span className="text-slate-200 font-normal">|</span>
-                    <span>{selectedTour || 'N/A'}</span>
+                    <span>{maTour || 'N/A'}</span>
                     <span className="text-slate-200 font-normal">|</span>
                     <span>{e.date}</span>
                   </div>
@@ -305,46 +241,12 @@ export default function QuanLyChiPhi({ maTour, allTours = [], expenses, setExpen
             </div>
           ))}
         </div>
-
-        {totalPages >= 2 && (
-          <div className="flex justify-center items-center space-x-2 mt-4">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={validCurrentPage === 1}
-              className="p-1 rounded-full text-slate-400 hover:text-sky-500 hover:bg-sky-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronLeft size={16} strokeWidth={3} />
-            </button>
-            <div className="flex items-center space-x-1.5">
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200 ${
-                    validCurrentPage === i + 1 
-                      ? 'bg-sky-500 text-white shadow-sm' 
-                      : 'text-slate-500 hover:bg-slate-100'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={validCurrentPage === totalPages}
-              className="p-1 rounded-full text-slate-400 hover:text-sky-500 hover:bg-sky-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronRight size={16} strokeWidth={3} />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* --- GLOBAL POPUP: DAILY EXPENSE ADDITION MODAL FORM (UC44 POPUP) --- */}
       {expenseModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center px-4 py-20 animate-fade-in">
-          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[calc(100vh-10rem)] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Nhập chi phí thực tế</h3>
               <button

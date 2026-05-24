@@ -40,7 +40,6 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incidents, setIncidents] = useState<IncidentType[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [guideProfile, setGuideProfile] = useState<any>(null);
 
   // UI States
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -98,20 +97,29 @@ export default function App() {
     if (isLoggedIn) {
       const fetchData = async () => {
         try {
-          const profileRes = await hdvService.layHoSo();
-          if (profileRes?.data) setGuideProfile(profileRes.data);
-
           const tours = await hdvService.layDanhSachTour();
           if (tours?.data?.length > 0) {
-            const pending = tours.data.filter((t: any) => t.trangThaiChapNhan === 'CHO_PHAN_HOI');
-            const accepted = tours.data.filter((t: any) => t.trangThaiChapNhan === 'DA_DONG_Y');
-            const ongoingTour = accepted.find((t: any) => t.trangThaiTour === 'DANG_DIEN_RA');
-            const upcoming = accepted.filter((t: any) => ['CHO_KICH_HOAT', 'MO_BAN'].includes(t.trangThaiTour));
-            const past = accepted.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
+            const ongoingTour = tours.data.find((t: any) => t.trangThaiTour === 'DANG_DIEN_RA');
+            const upcoming = tours.data.filter((t: any) => t.trangThaiTour === 'SAP_DIEN_RA');
+            const past = tours.data.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
             
-            setPendingTours(pending.map(mapAssignmentToTour));
-            setUpcomingTours(upcoming.map(mapAssignmentToTour));
-            setPastTours(past.map(mapAssignmentToTour));
+            setUpcomingTours(upcoming.map((t: any) => ({
+              code: t.maTourThucTe,
+              name: t.tenTour || t.maTourThucTe,
+              departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
+              destination: 'Chưa cập nhật',
+              guestsCount: 0,
+              status: 'Sắp khởi hành'
+            })));
+
+            setPastTours(past.map((t: any) => ({
+              code: t.maTourThucTe,
+              name: t.tenTour || t.maTourThucTe, 
+              departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
+              destination: 'Chưa cập nhật',
+              guestsCount: 0,
+              status: t.trangThaiTour === 'DA_QUYET_TOAN' ? 'Đã quyết toán' : 'Kết thúc'
+            })));
 
             if (ongoingTour) {
               const mappedTour = mapAssignmentToTour(ongoingTour);
@@ -120,12 +128,21 @@ export default function App() {
               // Fetch đoàn
               const passRes = await hdvService.layDanhSachDoan(ongoingTour.maTourThucTe);
               if (passRes?.data) {
-                const mapped = passRes.data.map(mapPassenger);
+                const mapped = passRes.data.map((p: any) => ({
+                  code: p.maKhachHang || p.maNguoiDongHanh,
+                  maKhachHang: p.maKhachHang || undefined,
+                  maNguoiDongHanh: p.maNguoiDongHanh || undefined,
+                  loaiKhach: p.loaiKhach,
+                  name: p.hoTenKhachHang || p.hoTen,
+                  phone: p.soDienThoai || 'N/A',
+                  rank: p.hangThanhVien || 'THANH_VIEN',
+                  healthNotes: p.ghiChu || '',
+                  status: p.trangThai || 'CHUA_DIEM_DANH',
+                  greenPoints: p.diemXanh || 0
+                }));
                 setPassengers(mapped);
                 mappedTour.guestsCount = mapped.length;
-                mappedTour.passengers = mapped;
               }
-              setCurrentTour(mappedTour);
 
               // Fetch sự cố
               const incRes = await hdvService.laySuCo(ongoingTour.maTourThucTe);
@@ -158,26 +175,13 @@ export default function App() {
               }
             } else {
               setCurrentTour(null);
-              setPassengers([]);
-              setExpenses([]);
-              setIncidents([]);
             }
-          } else {
-            setPendingTours([]);
-            setUpcomingTours([]);
-            setPastTours([]);
-            setCurrentTour(null);
-            setPassengers([]);
           }
         } catch (e) {
           console.error("Failed to fetch tour data", e);
         }
       };
-      
-      // Initial fetch
       fetchData();
-      const refreshId = window.setInterval(fetchData, 30000);
-      return () => window.clearInterval(refreshId);
     }
   }, [isLoggedIn]);
 
@@ -247,8 +251,6 @@ export default function App() {
     return notifications.filter(n => !n.read).length;
   }, [notifications]);
 
-  const guideInitials = guideProfile?.hoTen ? guideProfile.hoTen.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase() : 'HD';
-
   // If not logged in, show the styled DangNhap component wrapped in a mobile layout
   if (!isLoggedIn) {
     return (
@@ -306,7 +308,7 @@ export default function App() {
                 className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-600 font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shrink-0"
                 title="Xem hồ sơ"
               >
-                {guideInitials}
+                AN
               </button>
               <div>
                 <h1 className="text-xs font-black text-slate-800 tracking-wider leading-none">DIGITAL TRAVEL</h1>
@@ -342,7 +344,7 @@ export default function App() {
 
         {/* --- GLOBAL POPUP: Notification Center List (Glassmorphism Modal) --- */}
         {notificationOpen && (
-          <div className="absolute inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
             {/* Centered Modal Content */}
             <div className="glass-modal max-w-sm w-full mt-14 p-4 rounded-3xl animate-slide-up max-h-[50vh] overflow-y-auto space-y-4 shadow-2xl h-fit border border-sky-100">
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -458,7 +460,7 @@ export default function App() {
 
           {activeTab === 'expense' && (
             <QuanLyChiPhi 
-              maTour={currentTour?.code}
+              maTour={currentTour?.maTourThucTe}
               expenses={expenses}
               setExpenses={setExpenses}
             />
@@ -466,7 +468,7 @@ export default function App() {
 
           {activeTab === 'incident' && (
             <BaoCaoSuCo 
-              maTour={currentTour?.code}
+              maTour={currentTour?.maTourThucTe}
               passengers={passengers}
               incidents={incidents}
               setIncidents={setIncidents}

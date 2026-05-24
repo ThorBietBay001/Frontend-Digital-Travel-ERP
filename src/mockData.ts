@@ -118,7 +118,7 @@ export const upcomingTours: Tour[] = [
     departureDate: '22/05/2026',
     destination: 'Đà Nẵng',
     guestsCount: 15,
-    status: 'Mở bán',
+    status: 'Sắp khởi hành',
     image: 'da-nang-hero'
   },
   {
@@ -127,7 +127,7 @@ export const upcomingTours: Tour[] = [
     departureDate: '26/05/2026',
     destination: 'Hạ Long',
     guestsCount: 20,
-    status: 'Mở bán',
+    status: 'Sắp khởi hành',
     image: 'ha-long-hero'
   }
 ];

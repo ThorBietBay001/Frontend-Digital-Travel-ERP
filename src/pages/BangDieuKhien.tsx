@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Check, MapPin, Users, DollarSign, ChevronRight, Loader2, X } from 'lucide-react';
+import { MapPin, Users, DollarSign, ChevronRight } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
-import { hdvService } from '../services/hdvService';
 
 interface DashboardProps {
   currentTour: Tour | null;
@@ -57,67 +56,6 @@ export default function BangDieuKhien({
 }: DashboardProps) {
   const [selectedUpcomingTour, setSelectedUpcomingTour] = useState<Tour | null>(null);
   const [modalTab, setModalTab] = useState<'ITINERARY' | 'PASSENGERS'>('ITINERARY');
-  const [selectedTourPassengers, setSelectedTourPassengers] = useState<Passenger[]>([]);
-  const [selectedTourItinerary, setSelectedTourItinerary] = useState<any[]>([]);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [detailError, setDetailError] = useState<string | null>(null);
-
-  const handleOpenTour = async (tour: Tour) => {
-    setSelectedUpcomingTour(tour);
-    setModalTab('ITINERARY');
-    setIsLoadingDetails(true);
-    setDetailError(null);
-    setSelectedTourPassengers([]);
-    setSelectedTourItinerary([]);
-    try {
-      const [passengerResult, itineraryResult] = await Promise.allSettled([
-        hdvService.layDanhSachDoan(tour.code),
-        hdvService.layLichTrinhTourThucTe(tour.code)
-      ]);
-
-      if (passengerResult.status === 'fulfilled' && passengerResult.value?.data) {
-        const mapped = passengerResult.value.data.map((p: any) => ({
-          code: p.maKhachHang || p.maNguoiDongHanh,
-          maKhachHang: p.maKhachHang || undefined,
-          maNguoiDongHanh: p.maNguoiDongHanh || undefined,
-          loaiKhach: p.loaiKhach,
-          name: p.hoTenKhachHang || p.hoTen || '(Chưa cập nhật tên)',
-          phone: p.soDienThoai || 'N/A',
-          rank: p.hangThanhVien || 'THANH_VIEN',
-          healthNotes: p.ghiChuYTe || p.ghiChu || '',
-          bookingNotes: p.ghiChuDatTour || '',
-          status: p.trangThai || 'CHUA_DIEM_DANH',
-          greenPoints: p.diemXanh || 0
-        }));
-        setSelectedTourPassengers(mapped);
-        setSelectedUpcomingTour({ ...tour, guestsCount: mapped.length });
-      } else {
-        setSelectedTourPassengers([]);
-      }
-
-      if (itineraryResult.status === 'fulfilled') {
-        const tourRes = itineraryResult.value;
-        if (tourRes?.data?.lichTrinh) {
-          setSelectedTourItinerary(tourRes.data.lichTrinh);
-        } else if (tourRes?.data?.lichTrinhTours) {
-          setSelectedTourItinerary(tourRes.data.lichTrinhTours);
-        } else {
-          setSelectedTourItinerary([]);
-        }
-      }
-
-      if (passengerResult.status === 'rejected' || itineraryResult.status === 'rejected') {
-        setDetailError('Một phần dữ liệu chi tiết chưa tải được. Vui lòng kiểm tra backend hoặc thử lại.');
-      }
-    } catch (e) {
-      console.error(e);
-      setSelectedTourPassengers([]);
-      setSelectedTourItinerary([]);
-      setDetailError('Không thể tải chi tiết tour. Vui lòng thử lại sau.');
-    } finally {
-      setIsLoadingDetails(false);
-    }
-  };
 
   // Helper: Format price currency
   const formatCurrency = (val: number) => {
@@ -278,7 +216,10 @@ export default function BangDieuKhien({
           {upcomingTours.map((tour) => (
             <div
               key={tour.code}
-              onClick={() => handleOpenTour(tour)}
+              onClick={() => {
+                setSelectedUpcomingTour(tour);
+                setModalTab('ITINERARY');
+              }}
               className="glass-card p-3 rounded-2xl flex items-center justify-between border-l-4 border-l-sky-400 cursor-pointer hover:bg-slate-50/50 transition-all duration-200"
             >
               <div>
@@ -311,7 +252,10 @@ export default function BangDieuKhien({
           {pastTours.map((tour) => (
             <div
               key={tour.code}
-              onClick={() => handleOpenTour(tour)}
+              onClick={() => {
+                setSelectedUpcomingTour(tour);
+                setModalTab('ITINERARY');
+              }}
               className="glass-card p-3 rounded-2xl flex items-center justify-between border-l-4 border-l-slate-400 cursor-pointer hover:bg-slate-50/50 transition-all duration-200"
             >
               <div>
@@ -335,7 +279,7 @@ export default function BangDieuKhien({
 
       {/* --- GLOBAL POPUP: UPCOMING TOUR ITINERARY BOTTOM SHEET --- */}
       {selectedUpcomingTour && (
-        <div className="absolute inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Chi tiết lịch trình</h3>
@@ -365,7 +309,7 @@ export default function BangDieuKhien({
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Khởi hành: <span className="font-bold text-slate-700">{selectedUpcomingTour.departureDate}</span> • <span className="font-bold text-slate-700">{selectedUpcomingTour.guestsCount} khách xác nhận</span>
+                  Khởi hành: <span className="font-bold text-slate-700">{selectedUpcomingTour.departureDate}</span> • Quy mô: <span className="font-bold text-slate-700">{selectedUpcomingTour.guestsCount} khách</span>
                 </p>
               </div>
             </div>
@@ -388,30 +332,14 @@ export default function BangDieuKhien({
                   : 'bg-transparent text-slate-500 hover:text-slate-700'
                   }`}
               >
-                Hành khách ({selectedTourPassengers.length})
+                Hành khách ({selectedUpcomingTour.guestsCount})
               </button>
             </div>
 
-            {detailError && (
-              <div className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                {detailError}
-              </div>
-            )}
-
-            {isLoadingDetails ? (
-              <div className="py-10 flex flex-col items-center justify-center space-y-2">
-                <Loader2 className="animate-spin text-sky-400" size={24} />
-                <span className="text-[10px] text-slate-400 font-bold">Đang tải dữ liệu...</span>
-              </div>
-            ) : modalTab === 'PASSENGERS' ? (
+            {modalTab === 'PASSENGERS' ? (
               <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {selectedTourPassengers.length === 0 && (
-                    <div className="bg-white p-4 rounded-2xl border border-slate-100 text-center text-[11px] font-medium text-slate-400">
-                      Chưa có hành khách đã xác nhận thanh toán cho tour này.
-                    </div>
-                  )}
-                  {selectedTourPassengers.map((guest) => (
+                  {passengers.map((guest) => (
                     <div
                       key={guest.code}
                       className="bg-white p-3.5 rounded-2xl flex flex-col justify-between border border-slate-100 shadow-sm transition-all duration-200"
@@ -426,30 +354,20 @@ export default function BangDieuKhien({
                         </div>
                       </div>
 
-                        {guest.healthNotes && (
-                          <div className="mt-1 text-rose-500 text-[11px] leading-relaxed text-left">
-                            <span className="font-extrabold">Lưu ý:</span>{' '}
-                            <span className="font-semibold">{guest.healthNotes}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                      {guest.healthNotes && (
+                        <div className="mt-1 text-rose-500 text-[11px] leading-relaxed text-left">
+                          <span className="font-extrabold">Lưu ý:</span>{' '}
+                          <span className="font-semibold">{guest.healthNotes}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="space-y-3.5 pl-3 relative border-l border-sky-100 max-h-[42vh] overflow-y-auto pr-1">
-                  {selectedTourItinerary.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">Chưa cập nhật chi tiết lịch trình.</p>
-                  ) : (
-                    selectedTourItinerary.map((item: any, index: number) => (
-                      <div key={index} className="relative pl-4 pb-2">
-                        <span className="absolute -left-[22px] top-1 w-3 h-3 bg-sky-400 border-2 border-white rounded-full"></span>
-                        <h4 className="text-xs font-bold text-slate-800">Ngày {item.ngayThu || index + 1}: {item.hoatDong || item.tieuDe}</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{item.moTa || item.noiDung}</p>
-                      </div>
-                    ))
-                  )}
+                  <p className="text-xs text-slate-400 italic">Chưa cập nhật chi tiết lịch trình.</p>
                 </div>
               </div>
             )}

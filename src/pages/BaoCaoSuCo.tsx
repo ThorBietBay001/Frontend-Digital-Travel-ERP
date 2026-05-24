@@ -5,7 +5,6 @@ import { hdvService } from '../services/hdvService';
 
 interface IncidentReportProps {
   maTour?: string;
-  allTours?: any[];
   passengers: Passenger[];
   incidents: IncidentType[];
   setIncidents: React.Dispatch<React.SetStateAction<IncidentType[]>>;
@@ -19,45 +18,7 @@ const incidentTypes = [
   { id: 'Khác', label: 'Khác', apiValue: 'KHAC' }
 ];
 
-export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incidents, setIncidents }: IncidentReportProps) {
-  const [selectedTour, setSelectedTour] = useState(maTour || '');
-  const [localPassengers, setLocalPassengers] = useState<Passenger[]>(passengers);
-  const [isTourDropdownOpen, setIsTourDropdownOpen] = useState(false);
-
-  // Filter tours for dropdown: allow ongoing/upcoming, and past tours ended within 3 days
-  const validToursForDropdown = React.useMemo(() => {
-    return allTours.filter(t => {
-      // Allow ongoing or upcoming tours
-      if (t.status !== 'Kết thúc' && t.status !== 'Đã quyết toán') {
-        return true;
-      }
-      if (!t.endDateIso) return true;
-      const end = new Date(t.endDateIso);
-      const now = new Date();
-      const diffTime = now.getTime() - end.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      return diffDays <= 3;
-    });
-  }, [allTours]);
-
-  React.useEffect(() => {
-    if (selectedTour === maTour) {
-      setLocalPassengers(passengers);
-    } else if (selectedTour) {
-      hdvService.layDanhSachDoan(selectedTour).then(res => {
-        if (res?.data) {
-          const mapped = res.data.map((p: any) => ({
-            code: p.maKhachHang || p.maNguoiDongHanh,
-            name: p.hoTenKhachHang || p.hoTen || '(Chưa cập nhật tên)',
-            phone: p.soDienThoai || 'N/A',
-            rank: p.hangThanhVien || 'THANH_VIEN',
-            status: p.trangThai || 'CHUA_DIEM_DANH'
-          }));
-          setLocalPassengers(mapped);
-        }
-      }).catch(err => console.error("Error fetching passengers for tour", err));
-    }
-  }, [selectedTour, maTour, passengers]);
+export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents }: IncidentReportProps) {
   const [incidentForm, setIncidentForm] = useState({
     type: 'Y tế',
     severity: 'Thấp' as 'Thấp' | 'Cao',
@@ -72,13 +33,6 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
   const [incidentToast, setIncidentToast] = useState<string | null>(null);
   const [expandedIncidents, setExpandedIncidents] = useState<Record<string, boolean>>({});
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 6;
-  const totalPages = Math.ceil(incidents.length / ITEMS_PER_PAGE);
-  const validCurrentPage = Math.min(currentPage, totalPages) || 1;
-  const currentIncidents = incidents.slice((validCurrentPage - 1) * ITEMS_PER_PAGE, validCurrentPage * ITEMS_PER_PAGE);
-
   const mapLoaiSuCo = (type: string) => {
     return incidentTypes.find(item => item.id === type)?.apiValue || 'KHAC';
   };
@@ -87,13 +41,13 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
 
   const handleIncidentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTour) {
-      setIncidentToast('Lỗi: Vui lòng chọn tour!');
+    if (!maTour) {
+      setIncidentToast('Lỗi: Không tìm thấy thông tin tour!');
       setTimeout(() => setIncidentToast(null), 4000);
       return;
     }
 
-    const targetPassenger = localPassengers.find(p => p.code === incidentForm.passengerCode);
+    const targetPassenger = passengers.find(p => p.code === incidentForm.passengerCode);
 
     try {
       const data = {
@@ -103,7 +57,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
         giaiPhap: incidentForm.treatment
       };
 
-      const res = await hdvService.taoSuCo(selectedTour, data);
+      const res = await hdvService.taoSuCo(maTour, data);
 
       if (res.data) {
         const i = res.data;
@@ -120,7 +74,6 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
         };
 
         setIncidents(prev => [newReport, ...prev]);
-        setCurrentPage(1);
         setIncidentToast(`Đã gửi báo cáo sự cố ${newReport.id} thành công!`);
 
         setIncidentForm({
@@ -159,41 +112,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
             </h3>
             <p className="text-[10px] text-slate-400 mt-1">Ghi nhận nhanh các trường hợp y tế</p>
           </div>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsTourDropdownOpen(!isTourDropdownOpen)}
-              className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300 flex items-center space-x-1 outline-none transition cursor-pointer hover:bg-sky-100"
-            >
-              <span>{selectedTour || 'Chọn Tour'}</span>
-              <ChevronDown size={10} className={`transition-transform duration-200 ${isTourDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isTourDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsTourDropdownOpen(false)}></div>
-                <div className="absolute right-0 top-full mt-1.5 z-50 bg-white border border-sky-200 rounded-xl shadow-xl py-1 w-48 text-[10px] text-slate-700 animate-slide-up max-h-48 overflow-y-auto text-left">
-                  {validToursForDropdown.map((t, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTour(t.code || t.maTourThucTe);
-                        setIsTourDropdownOpen(false);
-                        setIncidentForm(prev => ({ ...prev, passengerCode: '' }));
-                      }}
-                      className={`w-full text-left px-3 py-1.5 hover:bg-sky-50 transition flex items-center justify-between ${selectedTour === (t.code || t.maTourThucTe) ? 'bg-sky-50 text-sky-600 font-bold' : 'font-medium'}`}
-                    >
-                      <span className="truncate">{t.code || t.maTourThucTe} - {t.name}</span>
-                      {selectedTour === (t.code || t.maTourThucTe) && <span className="text-sky-500">✓</span>}
-                    </button>
-                  ))}
-                  {validToursForDropdown.length === 0 && (
-                    <div className="px-3 py-1.5 text-slate-400 italic">Không có tour nào</div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300">{maTour || 'N/A'}</span>
         </div>
       </div>
 
@@ -213,7 +132,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
 
               {isIncidentTypeOpen && (
                 <>
-                  <div className="absolute inset-0 z-40" onClick={() => setIsIncidentTypeOpen(false)}></div>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsIncidentTypeOpen(false)}></div>
                   <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white/95 backdrop-blur-md border border-sky-100 rounded-2xl shadow-xl py-1 animate-slide-up text-[11px] font-bold text-slate-700 overflow-hidden">
                     {incidentTypes.map(t => (
                       <button
@@ -274,7 +193,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
             >
               <span>
                 {incidentForm.passengerCode
-                  ? localPassengers.find(p => p.code === incidentForm.passengerCode)?.name + ` (${incidentForm.passengerCode})`
+                  ? passengers.find(p => p.code === incidentForm.passengerCode)?.name + ` (${incidentForm.passengerCode})`
                   : '-- Không có hành khách cụ thể --'}
               </span>
               <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isIncidentPassengerOpen ? 'rotate-180' : ''}`} />
@@ -295,7 +214,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
                     <span>-- Không có hành khách cụ thể --</span>
                     {incidentForm.passengerCode === '' && <span className="text-[10px] text-sky-500">✓</span>}
                   </button>
-                  {localPassengers.filter(p => p.status === 'DA_DIEM_DANH').map(p => (
+                  {passengers.map(p => (
                     <button
                       key={p.code}
                       type="button"
@@ -323,8 +242,6 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
               placeholder="Diễn biến sự việc..."
               className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:border-sky-400 bg-white text-[11px] font-semibold text-slate-700 shadow-sm select-text"
               required
-              onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng mô tả sự việc chi tiết.')}
-              onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
             />
           </div>
 
@@ -337,8 +254,6 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
               placeholder="Đã xử lý những gì tại chỗ..."
               className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:border-sky-400 bg-white text-[11px] font-semibold text-slate-700 shadow-sm select-text"
               required
-              onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng ghi rõ phương án xử lý.')}
-              onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
             />
           </div>
 
@@ -355,7 +270,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
                 <span>GỬI BÁO CÁO KHẨN SOS</span>
               </>
             ) : (
-              <span>GỬI</span>
+              <span>Gửi Báo Cáo Sự Cố</span>
             )}
           </button>
         </form>
@@ -367,7 +282,7 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
         </h4>
 
         <div className="space-y-2">
-          {currentIncidents.map((log) => {
+          {incidents.map((log) => {
             const isExpanded = !!expandedIncidents[log.id];
             const isHigh = log.severity === 'Cao';
             return (
@@ -429,23 +344,6 @@ export default function BaoCaoSuCo({ maTour, allTours = [], passengers, incident
             );
           })}
         </div>
-
-        {totalPages >= 2 && (
-          <div className="flex justify-center items-center space-x-2 mt-4 pt-2 pb-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${validCurrentPage === i + 1
-                  ? 'bg-sky-500 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
