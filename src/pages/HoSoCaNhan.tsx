@@ -1,4 +1,4 @@
-import { Shield, Award, Star, Compass, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Shield, Award, Star, Compass, CheckCircle, ArrowLeft, LockKeyhole, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { hdvService } from '../services/hdvService';
 
@@ -12,6 +12,15 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
   const [nangLuc, setNangLuc] = useState<any>(null);
   const [pastToursCount, setPastToursCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -44,6 +53,73 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
   if (!profile) return <div className="text-center p-4 mt-10 text-red-500">Lỗi không thể tải hồ sơ!</div>;
 
   const initials = profile.hoTen ? profile.hoTen.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase() : 'HD';
+
+  const resetPasswordForm = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setGeneratedOtp('');
+    setOtpCode('');
+    setPasswordError(null);
+  };
+
+  const generateOtp = () => {
+    const nextOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(nextOtp);
+    setOtpCode('');
+    setPasswordError(null);
+    setPasswordSuccess(`OTP đã được tạo: ${nextOtp}`);
+  };
+
+  const closeChangePasswordModal = () => {
+    setChangePasswordOpen(false);
+    resetPasswordForm();
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+      setPasswordError('Vui lòng nhập đầy đủ thông tin mật khẩu.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Mật khẩu mới và xác nhận không khớp.');
+      return;
+    }
+    if (!generatedOtp) {
+      setPasswordError('Vui lòng tạo OTP trước khi đổi mật khẩu.');
+      return;
+    }
+    if (otpCode !== generatedOtp) {
+      setPasswordError('Mã OTP không chính xác.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await hdvService.doiMatKhau({
+        matKhauCu: oldPassword,
+        matKhauMoi: newPassword,
+        xacNhanMatKhau: confirmPassword
+      });
+      setPasswordSuccess('Đổi mật khẩu thành công.');
+      resetPasswordForm();
+      window.setTimeout(() => {
+        setChangePasswordOpen(false);
+        setPasswordSuccess(null);
+      }, 900);
+    } catch (e: any) {
+      setPasswordError(e?.response?.data?.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-4 animate-fade-in pb-6">
@@ -182,8 +258,20 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
           </div>
         </div>
 
-        {/* Logout Button (Positioned close to the card layout above) */}
-        <div className="pt-1 flex justify-center">
+        {/* Account actions */}
+        <div className="pt-1 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPasswordSuccess(null);
+              setPasswordError(null);
+              setChangePasswordOpen(true);
+            }}
+            className="w-full max-w-[240px] py-2 bg-sky-50 hover:bg-sky-100 text-sky-600 font-bold text-xs rounded-full transition active:scale-95 border border-sky-200/70 text-center shadow-sm flex items-center justify-center gap-1.5"
+          >
+            <LockKeyhole size={13} />
+            Đổi mật khẩu
+          </button>
           <button 
             onClick={onLogout}
             className="w-full max-w-[240px] py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-full transition active:scale-95 border border-rose-200/60 text-center shadow-sm"
@@ -193,6 +281,110 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
         </div>
 
       </div>
+
+      {changePasswordOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="font-bold text-slate-800 text-sm">Đổi mật khẩu</h3>
+              <button
+                type="button"
+                onClick={closeChangePasswordModal}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition"
+                aria-label="Đóng"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 block">Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-xl glass-input"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 block">Mật khẩu mới</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-xl glass-input"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 block">Xác nhận mật khẩu mới</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-xl glass-input"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 block">Mã OTP xác thực</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="flex-1 min-w-0 text-xs p-2.5 rounded-xl glass-input font-mono tracking-widest"
+                    placeholder="Nhập OTP"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateOtp}
+                    className="shrink-0 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[11px] font-bold border border-emerald-100 transition active:scale-95"
+                  >
+                    Tạo OTP
+                  </button>
+                </div>
+              </div>
+
+              {passwordError && (
+                <div className="text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl p-2.5">
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl p-2.5">
+                  {passwordSuccess}
+                </div>
+              )}
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={closeChangePasswordModal}
+                className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={changingPassword}
+                className="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-xl shadow-md transition disabled:cursor-not-allowed disabled:bg-sky-300"
+              >
+                {changingPassword ? 'Đang đổi...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

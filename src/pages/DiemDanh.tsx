@@ -362,23 +362,34 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
 
       {/* --- GLOBAL POPUP: ATTENDANCE HEALTH WARNING ACKNOWLEDGEMENT (UC41 POPUP) --- */}
       {healthAcknowledgeModal.show && healthAcknowledgeModal.passenger && createPortal(
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl border-2 border-amber-400 max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl">
-            <div className="w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle size={26} className="animate-pulse-subtle" />
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="font-bold text-slate-800 text-sm">Cảnh Báo Sức Khỏe Nghiêm Trọng</h3>
+              <button
+                onClick={() => setHealthAcknowledgeModal({ show: false, passenger: null, targetStatus: 'DA_DIEM_DANH' })}
+                className="text-slate-400 hover:text-slate-600 font-bold text-xs"
+              >
+                Đóng
+              </button>
             </div>
 
-            <div className="text-center space-y-1">
-              <h3 className="font-bold text-slate-800 text-sm">Cảnh Báo Sức Khỏe Nghiêm Trọng</h3>
-              <p className="text-xs text-slate-500">Hành khách này có lưu ý y tế đặc biệt cần chú ý:</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center shrink-0">
+                <AlertTriangle size={22} className="animate-pulse-subtle" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-700">{healthAcknowledgeModal.passenger.name}</h4>
+                <p className="text-[11px] text-slate-500">Hành khách này có lưu ý y tế đặc biệt cần chú ý.</p>
+              </div>
             </div>
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-bold leading-relaxed">
-              🚨 {healthAcknowledgeModal.passenger.healthNotes}
+              {healthAcknowledgeModal.passenger.healthNotes}
             </div>
 
             <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-400 leading-normal">
-              👉 Hướng dẫn viên cam kết đã kiểm tra tình trạng sức khỏe thực tế, trao đổi trực tiếp và bố trí phương án chăm sóc phù hợp trước khi xác nhận.
+              Hướng dẫn viên cam kết đã kiểm tra tình trạng sức khỏe thực tế, trao đổi trực tiếp và bố trí phương án chăm sóc phù hợp trước khi xác nhận.
             </div>
 
             <div className="flex space-x-2 pt-2">

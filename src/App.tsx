@@ -62,6 +62,18 @@ export default function App() {
   const [rejectingAssignmentIds, setRejectingAssignmentIds] = useState<string[]>([]);
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [dismissedAssignmentNotificationIds, setDismissedAssignmentNotificationIds] = useState<string[]>([]);
+  const [guideProfile, setGuideProfile] = useState<any>(null);
+
+  const buildHealthNotes = (p: any): string => {
+    const notes = [
+      p.ghiChuYTe,
+      p.diUng
+    ]
+      .map((note) => String(note || '').trim())
+      .filter(Boolean);
+
+    return notes.join(' | ');
+  };
 
   const mapPassenger = (p: any): Passenger => ({
     code: p.maKhachHang || p.maNguoiDongHanh,
@@ -71,7 +83,7 @@ export default function App() {
     name: p.hoTenKhachHang || p.hoTen,
     phone: p.soDienThoai || 'N/A',
     rank: p.hangThanhVien || 'THANH_VIEN',
-    healthNotes: p.ghiChuYTe || p.ghiChuDatTour || '',
+    healthNotes: buildHealthNotes(p),
     status: p.trangThai || 'CHUA_DIEM_DANH',
     greenPoints: p.diemXanh || 0
   });
@@ -184,6 +196,21 @@ export default function App() {
     loadHdvData();
   }, [loadHdvData]);
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const loadGuideProfile = async () => {
+      try {
+        const res = await hdvService.layHoSo();
+        setGuideProfile(res?.data || null);
+      } catch (e) {
+        console.error('Failed to fetch guide profile', e);
+      }
+    };
+
+    loadGuideProfile();
+  }, [isLoggedIn]);
+
   const handleAcceptAssignment = async (maPhanCong?: string) => {
     if (!maPhanCong) return;
     setAcceptingAssignmentIds(prev => [...prev, maPhanCong]);
@@ -254,6 +281,7 @@ export default function App() {
     setActiveTab('dashboard');
     setLoginError(null);
     setNotificationOpen(false);
+    setGuideProfile(null);
   };
 
   const assignmentNotifications = useMemo<AppNotification[]>(() => {
@@ -292,6 +320,16 @@ export default function App() {
   const unreadCount = useMemo(() => {
     return allNotifications.filter(n => !n.read).length;
   }, [allNotifications]);
+
+  const guideInitials = useMemo(() => {
+    if (!guideProfile?.hoTen) return 'HD';
+    return guideProfile.hoTen
+      .split(' ')
+      .map((part: string) => part[0])
+      .slice(-2)
+      .join('')
+      .toUpperCase();
+  }, [guideProfile]);
 
   // If not logged in, show the styled DangNhap component wrapped in a mobile layout
   if (!isLoggedIn) {
@@ -347,10 +385,11 @@ export default function App() {
               {/* HoSoCaNhan avatar button on the far left */}
               <button 
                 onClick={() => setActiveTab('profile')}
-                className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-600 font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shrink-0"
+                className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-sky-400 to-sky-500 border border-white text-white font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shadow-sky-100 shrink-0 ring-2 ring-sky-50"
                 title="Xem hồ sơ"
               >
-                AN
+                {guideInitials}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
               </button>
               <div>
                 <h1 className="text-xs font-black text-slate-800 tracking-wider leading-none">DIGITAL TRAVEL</h1>

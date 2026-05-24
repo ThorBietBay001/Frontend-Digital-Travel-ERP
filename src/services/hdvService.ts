@@ -7,6 +7,11 @@ export const hdvService = {
     return res.data;
   },
 
+  doiMatKhau: async (data: { matKhauCu: string; matKhauMoi: string; xacNhanMatKhau: string }) => {
+    const res = await api.post('/auth/doi-mat-khau', data);
+    return res.data;
+  },
+
   layHoSo: async () => {
     const res = await api.get('/huong-dan-vien/ho-so');
     return res.data;
