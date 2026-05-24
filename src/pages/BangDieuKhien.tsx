@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Users, DollarSign, ChevronRight } from 'lucide-react';
+import { Check, MapPin, Users, DollarSign, ChevronRight, X } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
 
 interface DashboardProps {
@@ -339,7 +339,7 @@ export default function BangDieuKhien({
             {modalTab === 'PASSENGERS' ? (
               <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {passengers.map((guest) => (
+                  {(selectedUpcomingTour.passengers || []).map((guest) => (
                     <div
                       key={guest.code}
                       className="bg-white p-3.5 rounded-2xl flex flex-col justify-between border border-slate-100 shadow-sm transition-all duration-200"
@@ -362,6 +362,11 @@ export default function BangDieuKhien({
                       )}
                     </div>
                   ))}
+                  {(selectedUpcomingTour.passengers || []).length === 0 && (
+                    <p className="text-xs text-slate-400 italic text-center py-5">
+                      Chưa có hành khách đã thanh toán và được xác nhận.
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

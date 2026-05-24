@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   Compass, 
   Calendar, 
@@ -70,6 +70,8 @@ export default function App() {
         return 'Chờ kích hoạt';
       case 'MO_BAN':
         return 'Mở bán';
+      case 'SAP_DIEN_RA':
+        return 'Sắp khởi hành';
       case 'DANG_DIEN_RA':
         return 'Đang diễn ra';
       case 'DA_QUYET_TOAN':
@@ -84,116 +86,99 @@ export default function App() {
     return {
       code: assignment.maTourThucTe,
       maPhanCong: assignment.maPhanCong,
+      trangThaiChapNhan: assignment.trangThaiChapNhan,
       name: assignment.tenTour || assignment.maTourThucTe,
       departureDate: assignment.ngayKhoiHanh ? new Date(assignment.ngayKhoiHanh).toLocaleDateString('vi-VN') : '-',
       destination: 'Chưa cập nhật',
-      guestsCount: tourPassengers.length,
+      guestsCount: tourPassengers.length || assignment.soKhachDaXacNhan || 0,
       status: getTourStatusLabel(assignment.trangThaiTour),
       passengers: tourPassengers
     };
   };
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      const fetchData = async () => {
-        try {
-          const tours = await hdvService.layDanhSachTour();
-          if (tours?.data?.length > 0) {
-            const ongoingTour = tours.data.find((t: any) => t.trangThaiTour === 'DANG_DIEN_RA');
-            const upcoming = tours.data.filter((t: any) => t.trangThaiTour === 'SAP_DIEN_RA');
-            const past = tours.data.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
-            
-            setUpcomingTours(upcoming.map((t: any) => ({
-              code: t.maTourThucTe,
-              name: t.tenTour || t.maTourThucTe,
-              departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
-              destination: 'Chưa cập nhật',
-              guestsCount: 0,
-              status: 'Sắp khởi hành'
-            })));
+  const loadPassengersForTour = async (maTourThucTe: string): Promise<Passenger[]> => {
+    const passRes = await hdvService.layDanhSachDoan(maTourThucTe);
+    return (passRes?.data || []).map(mapPassenger);
+  };
 
-            setPastTours(past.map((t: any) => ({
-              code: t.maTourThucTe,
-              name: t.tenTour || t.maTourThucTe, 
-              departureDate: new Date(t.ngayKhoiHanh).toLocaleDateString('vi-VN'),
-              destination: 'Chưa cập nhật',
-              guestsCount: 0,
-              status: t.trangThaiTour === 'DA_QUYET_TOAN' ? 'Đã quyết toán' : 'Kết thúc'
-            })));
+  const hydrateTourPassengers = async (tour: Tour): Promise<Tour> => {
+    try {
+      const tourPassengers = await loadPassengersForTour(tour.code);
+      return { ...tour, passengers: tourPassengers, guestsCount: tourPassengers.length };
+    } catch {
+      return tour;
+    }
+  };
 
-            if (ongoingTour) {
-              const mappedTour = mapAssignmentToTour(ongoingTour);
-              mappedTour.destination = 'Đang đi';
+  const loadHdvData = useCallback(async () => {
+    if (!isLoggedIn) return;
 
-              // Fetch đoàn
-              const passRes = await hdvService.layDanhSachDoan(ongoingTour.maTourThucTe);
-              if (passRes?.data) {
-                const mapped = passRes.data.map((p: any) => ({
-                  code: p.maKhachHang || p.maNguoiDongHanh,
-                  maKhachHang: p.maKhachHang || undefined,
-                  maNguoiDongHanh: p.maNguoiDongHanh || undefined,
-                  loaiKhach: p.loaiKhach,
-                  name: p.hoTenKhachHang || p.hoTen,
-                  phone: p.soDienThoai || 'N/A',
-                  rank: p.hangThanhVien || 'THANH_VIEN',
-                  healthNotes: p.ghiChu || '',
-                  status: p.trangThai || 'CHUA_DIEM_DANH',
-                  greenPoints: p.diemXanh || 0
-                }));
-                setPassengers(mapped);
-                mappedTour.guestsCount = mapped.length;
-              }
+    try {
+      const tours = await hdvService.layDanhSachTour();
+      const data = tours?.data || [];
+      const pending = data.filter((t: any) => t.trangThaiChapNhan === 'CHO_PHAN_HOI');
+      const accepted = data.filter((t: any) => t.trangThaiChapNhan === 'DA_DONG_Y');
+      const ongoingTour = accepted.find((t: any) => t.trangThaiTour === 'DANG_DIEN_RA');
+      const upcoming = accepted.filter((t: any) => ['CHO_KICH_HOAT', 'MO_BAN', 'SAP_DIEN_RA'].includes(t.trangThaiTour));
+      const past = accepted.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
 
-              // Fetch sự cố
-              const incRes = await hdvService.laySuCo(ongoingTour.maTourThucTe);
-              if (incRes?.data) {
-                const mappedInc = incRes.data.map((i: any) => ({
-                  id: i.maNhatKySuCo,
-                  type: i.loaiSuCo || 'Khác',
-                  severity: i.mucDo || 'Thấp',
-                  description: i.moTa,
-                  treatment: i.giaiPhap || '',
-                  result: i.giaiPhap || '',
-                  time: i.thoiGianBaoCao
-                }));
-                setIncidents(mappedInc);
-              }
+      setPendingTours(pending.map(mapAssignmentToTour));
+      setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
+      setPastTours(await Promise.all(past.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
 
-              // Fetch chi phí
-              const expRes = await hdvService.layChiPhi(ongoingTour.maTourThucTe);
-              if (expRes?.data) {
-                const mappedExp = expRes.data.map((e: any) => ({
-                  id: e.maChiPhi,
-                  category: e.danhMuc,
-                  amount: e.thanhTien,
-                  status: e.trangThaiDuyet,
-                  notes: e.danhMuc,
-                  date: e.ngayKhai,
-                  photoUrl: e.hoaDonAnh
-                }));
-                setExpenses(mappedExp);
-              }
-            } else {
-              setCurrentTour(null);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to fetch tour data", e);
+      if (ongoingTour) {
+        const mappedTour = await hydrateTourPassengers({ ...mapAssignmentToTour(ongoingTour), destination: 'Đang đi' });
+        setCurrentTour(mappedTour);
+        setPassengers(mappedTour.passengers || []);
+
+        const incRes = await hdvService.laySuCo(ongoingTour.maTourThucTe);
+        if (incRes?.data) {
+          const mappedInc = incRes.data.map((i: any) => ({
+            id: i.maNhatKySuCo,
+            type: i.loaiSuCo || 'Khác',
+            severity: i.mucDo || 'Thấp',
+            description: i.moTa,
+            treatment: i.giaiPhap || '',
+            result: i.giaiPhap || '',
+            time: i.thoiGianBaoCao
+          }));
+          setIncidents(mappedInc);
         }
-      };
-      fetchData();
+
+        const expRes = await hdvService.layChiPhi(ongoingTour.maTourThucTe);
+        if (expRes?.data) {
+          const mappedExp = expRes.data.map((e: any) => ({
+            id: e.maChiPhi,
+            category: e.danhMuc,
+            amount: e.thanhTien,
+            status: e.trangThaiDuyet,
+            notes: e.danhMuc,
+            date: e.ngayKhai,
+            photoUrl: e.hoaDonAnh
+          }));
+          setExpenses(mappedExp);
+        }
+      } else {
+        setCurrentTour(null);
+        setPassengers([]);
+        setExpenses([]);
+        setIncidents([]);
+      }
+    } catch (e) {
+      console.error("Failed to fetch tour data", e);
     }
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    loadHdvData();
+  }, [loadHdvData]);
 
   const handleAcceptAssignment = async (maPhanCong?: string) => {
     if (!maPhanCong) return;
     setAcceptingAssignmentIds(prev => [...prev, maPhanCong]);
     try {
       await hdvService.dongYPhanCong(maPhanCong);
-      const tours = await hdvService.layDanhSachTour();
-      const data = tours?.data || [];
-      setPendingTours(data.filter((t: any) => t.trangThaiChapNhan === 'CHO_PHAN_HOI').map(mapAssignmentToTour));
-      setUpcomingTours(data.filter((t: any) => t.trangThaiChapNhan === 'DA_DONG_Y' && ['CHO_KICH_HOAT', 'MO_BAN'].includes(t.trangThaiTour)).map(mapAssignmentToTour));
+      await loadHdvData();
     } catch (e) {
       console.error('Failed to accept assignment', e);
       alert('Không thể đồng ý phân công. Vui lòng thử lại.');
@@ -210,10 +195,7 @@ export default function App() {
     setRejectingAssignmentIds(prev => [...prev, maPhanCong]);
     try {
       await hdvService.tuChoiPhanCong(maPhanCong);
-      const tours = await hdvService.layDanhSachTour();
-      const data = tours?.data || [];
-      setPendingTours(data.filter((t: any) => t.trangThaiChapNhan === 'CHO_PHAN_HOI').map(mapAssignmentToTour));
-      setUpcomingTours(data.filter((t: any) => t.trangThaiChapNhan === 'DA_DONG_Y' && ['CHO_KICH_HOAT', 'MO_BAN'].includes(t.trangThaiTour)).map(mapAssignmentToTour));
+      await loadHdvData();
     } catch (e) {
       console.error('Failed to reject assignment', e);
       alert('Không thể từ chối phân công. Vui lòng thử lại.');
@@ -460,7 +442,7 @@ export default function App() {
 
           {activeTab === 'expense' && (
             <QuanLyChiPhi 
-              maTour={currentTour?.maTourThucTe}
+              maTour={currentTour?.code}
               expenses={expenses}
               setExpenses={setExpenses}
             />
@@ -468,7 +450,7 @@ export default function App() {
 
           {activeTab === 'incident' && (
             <BaoCaoSuCo 
-              maTour={currentTour?.maTourThucTe}
+              maTour={currentTour?.code}
               passengers={passengers}
               incidents={incidents}
               setIncidents={setIncidents}

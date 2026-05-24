@@ -3,12 +3,14 @@
 export interface Tour {
   code: string;
   maPhanCong?: string;
+  trangThaiChapNhan?: 'CHO_PHAN_HOI' | 'DA_DONG_Y' | 'TU_CHOI';
   name: string;
   departureDate: string;
   destination: string;
   guestsCount: number;
-  status: 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
-  image: string;
+  status: 'Chờ kích hoạt' | 'Mở bán' | 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
+  image?: string;
+  passengers?: Passenger[];
 }
 
 export interface Passenger {
