@@ -123,6 +123,7 @@ export interface CustomerTarget {
   tier: string;
   phone: string;
   hasVoucher?: boolean;
+  voucherStatus?: string;
 }
 
 export const mockVouchers: Voucher[] = [

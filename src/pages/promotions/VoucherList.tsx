@@ -33,7 +33,7 @@ const mapToUI = (api: VoucherResponse): Voucher => ({
   discountType: api.loaiUuDai?.toUpperCase() === 'PHAN_TRAM' || api.loaiUuDai?.toUpperCase() === 'PERCENT' ? 'percent' : 'amount',
   discountValue: api.giaTriGiam || 0,
   quantity: api.soLuotPhatHanh || 0,
-  distributed: api.soLuotDaPhanBo ?? api.soLuotDaDung ?? 0,
+  distributed: api.soLuotDaPhanBo ?? 0,
   startDate: api.ngayHieuLuc || '',
   expiryDate: api.ngayHetHan || '',
   status: api.trangThai || 'SAN_SANG',

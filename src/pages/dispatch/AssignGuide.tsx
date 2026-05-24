@@ -122,7 +122,7 @@ const AssignGuide: React.FC = () => {
 
   const handleCloseSuccess = () => {
     setSuccessData(null);
-    fetchTours(); // Refresh the list, which will remove the SAP_DIEN_RA tour
+    fetchTours(); // Refresh the list after assignment
   };
 
   const filteredData = data.filter(

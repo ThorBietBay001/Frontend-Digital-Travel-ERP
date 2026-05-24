@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -10,6 +11,7 @@ const Login: React.FC = () => {
   
   const [tenDangNhap, setTenDangNhap] = useState('');
   const [matKhau, setMatKhau] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -94,14 +96,25 @@ const Login: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Mật khẩu
             </label>
-            <input
-              type="password"
-              value={matKhau}
-              onChange={(e) => setMatKhau(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00668A] focus:border-[#00668A] transition-colors"
-              required
-              placeholder="Nhập mật khẩu"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={matKhau}
+                onChange={(e) => setMatKhau(e.target.value)}
+                className="w-full p-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00668A] focus:border-[#00668A] transition-colors"
+                required
+                placeholder="Nhập mật khẩu"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 transition-colors hover:text-[#00668A] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#00668A]"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <Button type="submit" variant="primary" className="w-full py-3 mt-4" disabled={loading}>

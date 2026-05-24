@@ -63,14 +63,32 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
       promotionsService.danhSachKhachHangDaPhanBo(voucher.id),
     ])
       .then(([res, distributedCustomers]) => {
-        const distributedIds = new Set(distributedCustomers.map((item) => item.maKhachHang).filter(Boolean));
+        if (mode === 'revoke') {
+          setCustomers(distributedCustomers.map((customer) => ({
+            id: customer.maKhachHang || '',
+            name: customer.hoTenKhachHang || '',
+            email: customer.emailKhachHang || '',
+            tier: '',
+            phone: customer.soDienThoaiKhachHang || '',
+            hasVoucher: true,
+            voucherStatus: customer.trangThai || 'CO_HIEU_LUC',
+          })).filter((customer) => customer.id));
+          return;
+        }
+
+        const distributedStatusByCustomer = new Map(
+          distributedCustomers
+            .filter((item) => item.maKhachHang)
+            .map((item) => [item.maKhachHang as string, item.trangThai || 'CO_HIEU_LUC'])
+        );
         setCustomers((res?.content || []).map((customer) => ({
           id: customer.maKhachHang || '',
           name: customer.hoTen || '',
           email: customer.email || '',
           tier: customer.hangThanhVien || '',
           phone: customer.soDienThoai || '',
-          hasVoucher: distributedIds.has(customer.maKhachHang || ''),
+          hasVoucher: distributedStatusByCustomer.has(customer.maKhachHang || ''),
+          voucherStatus: distributedStatusByCustomer.get(customer.maKhachHang || ''),
         })).filter((customer) => customer.id));
       })
       .catch((err: unknown) => {
@@ -78,7 +96,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
         setError(message);
       })
       .finally(() => setLoading(false));
-  }, [isOpen, voucher]);
+  }, [isOpen, mode, voucher]);
 
   if (!voucher) return null;
 
@@ -86,10 +104,36 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
   
   const filteredCustomers = customers.filter(c => filterTier === 'all' || c.tier === filterTier);
   const distributableCustomers = filteredCustomers.filter((customer) => !customer.hasVoucher);
-  const visibleCustomers = mode === 'revoke' ? filteredCustomers.filter((customer) => customer.hasVoucher) : distributableCustomers;
+  const distributedCustomers = filteredCustomers.filter((customer) => customer.hasVoucher);
+  const visibleCustomers = mode === 'revoke' ? distributedCustomers : filteredCustomers;
   const isRevokeMode = mode === 'revoke';
+  const revocableCustomers = visibleCustomers.filter((customer) => customer.voucherStatus === 'CO_HIEU_LUC');
+  const activeVoucherCount = distributedCustomers.filter((customer) => customer.voucherStatus === 'CO_HIEU_LUC').length;
+  const usedVoucherCount = distributedCustomers.filter((customer) => customer.voucherStatus === 'DA_SU_DUNG').length;
 
-  const checkboxCustomers = isRevokeMode ? visibleCustomers : distributableCustomers;
+  const checkboxCustomers = isRevokeMode ? revocableCustomers : distributableCustomers;
+
+  const renderVoucherStatus = (status?: string) => {
+    if (status === 'DA_SU_DUNG') {
+      return (
+        <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+          Đã sử dụng
+        </span>
+      );
+    }
+    if (status === 'CO_HIEU_LUC') {
+      return (
+        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          Có hiệu lực
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500">
+        Chưa nhận
+      </span>
+    );
+  };
 
   const columns: Column<CustomerTarget>[] = [
     {
@@ -110,7 +154,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
       render: (record) => (
         <input
           type="checkbox"
-          disabled={!isRevokeMode && record.hasVoucher}
+          disabled={isRevokeMode ? record.voucherStatus !== 'CO_HIEU_LUC' : record.hasVoucher}
           checked={selectedCustomers.includes(record.id)}
           onChange={(e) => {
             if (e.target.checked) {
@@ -145,6 +189,11 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
       }
     },
     { key: 'phone', title: 'SĐT', dataIndex: 'phone' } as Column<CustomerTarget>,
+    {
+      key: 'voucherStatus',
+      title: 'Trạng thái voucher',
+      render: (record) => renderVoucherStatus(record.voucherStatus),
+    },
     ...(isRevokeMode ? [
       {
         key: 'action',
@@ -153,10 +202,12 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
           <Button
             size="sm"
             variant="danger"
-            disabled={revokingCustomerId === record.id}
+            disabled={record.voucherStatus !== 'CO_HIEU_LUC' || revokingCustomerId === record.id}
             onClick={() => handleRevoke(record.id)}
           >
-            {revokingCustomerId === record.id ? 'Đang thu hồi...' : 'Thu hồi'}
+            {record.voucherStatus === 'DA_SU_DUNG'
+              ? 'Đã sử dụng'
+              : revokingCustomerId === record.id ? 'Đang thu hồi...' : 'Thu hồi'}
           </Button>
         ),
       } as Column<CustomerTarget>,
@@ -166,7 +217,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
   const refreshDistributedCount = async (fallbackCount: number) => {
     try {
       const latestVoucher = await promotionsService.chiTiet_2(voucher.id);
-      return latestVoucher?.soLuotDaPhanBo ?? latestVoucher?.soLuotDaDung ?? fallbackCount;
+      return latestVoucher?.soLuotDaPhanBo ?? fallbackCount;
     } catch {
       return fallbackCount;
     }
@@ -191,7 +242,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
 
         setDistributedCount(nextDistributedCount);
         setCustomers((prev) => prev.map((customer) => successfulIds.includes(customer.id)
-          ? { ...customer, hasVoucher: true }
+          ? { ...customer, hasVoucher: true, voucherStatus: 'CO_HIEU_LUC' }
           : customer
         ));
         setSelectedCustomers((prev) => prev.filter((id) => !successfulIds.includes(id)));
@@ -233,7 +284,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
       const nextDistributedCount = await refreshDistributedCount(Math.max(distributedCount - 1, 0));
       setDistributedCount(nextDistributedCount);
       setCustomers((prev) => prev.map((customer) => customer.id === maKhachHang
-        ? { ...customer, hasVoucher: false }
+        ? { ...customer, hasVoucher: false, voucherStatus: undefined }
         : customer
       ));
       alert('Thu hồi voucher thành công');
@@ -263,7 +314,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
         const nextDistributedCount = await refreshDistributedCount(Math.max(distributedCount - successCount, 0));
         setDistributedCount(nextDistributedCount);
         setCustomers((prev) => prev.map((customer) => revokedIds.includes(customer.id)
-          ? { ...customer, hasVoucher: false }
+          ? { ...customer, hasVoucher: false, voucherStatus: undefined }
           : customer
         ));
         setSelectedCustomers((prev) => prev.filter((id) => !revokedIds.includes(id)));
@@ -376,10 +427,21 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
           <AlertCircle size={16} />
           <span>
             {isRevokeMode
-              ? <>Đang có <strong>{distributedCount}</strong> khách hàng được phân bổ voucher</>
+              ? <>Đang có <strong>{distributedCount}</strong> khách hàng được phân bổ hoặc đã sử dụng voucher</>
               : <>Còn lại <strong>{availableQuantity}</strong> voucher để phân phối</>}
           </span>
         </div>
+
+        {isRevokeMode && (
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-700">
+              Có hiệu lực: <strong>{activeVoucherCount}</strong>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600">
+              Đã sử dụng: <strong>{usedVoucherCount}</strong>
+            </div>
+          </div>
+        )}
 
         {error && <div className="text-sm text-[#BA1A1A] bg-red-50 border border-red-100 p-3 rounded-lg">{error}</div>}
 
@@ -415,7 +477,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
                 columns={columns}
                 dataSource={visibleCustomers}
                 rowKey="id"
-                emptyText={isRevokeMode ? 'Chưa có khách hàng nào được phân bổ voucher' : 'Không có khách hàng phù hợp'}
+                emptyText={isRevokeMode ? 'Chưa có khách hàng nào được phân bổ hoặc sử dụng voucher' : 'Không có khách hàng phù hợp'}
               />
             )}
           </div>
