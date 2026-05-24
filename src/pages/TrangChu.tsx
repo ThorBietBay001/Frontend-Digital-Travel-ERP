@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, DollarSign, Star, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, MapPin, Calendar, DollarSign, Star, Users } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
 import { khService } from '../services/khService';
 import { mapPublicTour, unwrapPageContent } from '../services/apiHelpers';
 import type { Tour } from '../types';
 
 export default function TrangChu() {
+  const TOURS_PER_PAGE = 9;
   const [searchParams, setSearchParams] = useSearchParams();
   const [destination, setDestination] = useState('');
   const [departureDate, setDepartureDate] = useState('');
@@ -15,6 +16,7 @@ export default function TrangChu() {
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [tourPage, setTourPage] = useState(1);
 
   useEffect(() => {
     const fetchTours = async () => {
@@ -64,6 +66,7 @@ export default function TrangChu() {
     }
 
     setFilteredTours(results);
+    setTourPage(1);
     setSelectedDestination(null);
     setSelectedCategory(null);
 
@@ -83,6 +86,7 @@ export default function TrangChu() {
       tour.destination.toLowerCase().includes(destName.toLowerCase())
     );
     setFilteredTours(results);
+    setTourPage(1);
     cuonDenDanhSachTour();
   };
 
@@ -139,6 +143,7 @@ export default function TrangChu() {
     }
 
     setFilteredTours(results);
+    setTourPage(1);
     cuonDenDanhSachTour();
   };
 
@@ -149,6 +154,7 @@ export default function TrangChu() {
       tour.description.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredTours(results);
+    setTourPage(1);
     cuonDenDanhSachTour();
   };
 
@@ -170,6 +176,7 @@ export default function TrangChu() {
     setSelectedDestination(null);
     setSelectedCategory(null);
     setFilteredTours(allTours);
+    setTourPage(1);
     setSearchParams({});
   };
 
@@ -197,6 +204,43 @@ export default function TrangChu() {
     };
     return categories[categoryId] || 'Tour';
   };
+
+  const totalTourPages = Math.ceil(filteredTours.length / TOURS_PER_PAGE);
+  const tourPageStartIndex = (tourPage - 1) * TOURS_PER_PAGE;
+  const paginatedTours = filteredTours.slice(tourPageStartIndex, tourPageStartIndex + TOURS_PER_PAGE);
+  const pageItems = (() => {
+    if (totalTourPages <= 5) {
+      return Array.from({ length: totalTourPages }, (_, index) => index + 1);
+    }
+
+    const visiblePages = new Set(
+      [1, totalTourPages, tourPage - 1, tourPage, tourPage + 1].filter(
+        (page) => page >= 1 && page <= totalTourPages
+      )
+    );
+
+    return Array.from(visiblePages)
+      .sort((a, b) => a - b)
+      .reduce<(number | 'ellipsis')[]>((items, page, index, pages) => {
+        if (index > 0 && page - pages[index - 1] > 1) {
+          items.push('ellipsis');
+        }
+        items.push(page);
+        return items;
+      }, []);
+  })();
+
+  const chuyenTrangTour = (page: number) => {
+    const nextPage = Math.min(Math.max(page, 1), totalTourPages || 1);
+    setTourPage(nextPage);
+    setTimeout(() => cuonDenDanhSachTour(), 0);
+  };
+
+  useEffect(() => {
+    if (tourPage > totalTourPages && totalTourPages > 0) {
+      setTourPage(totalTourPages);
+    }
+  }, [tourPage, totalTourPages]);
 
   // Handle filters from URL after tours and filter handlers are ready.
   useEffect(() => {
@@ -329,7 +373,7 @@ export default function TrangChu() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {allTours
-              .filter(t => t.originalPrice)
+              .filter((t): t is Tour & { originalPrice: number } => typeof t.originalPrice === 'number')
               .sort((a, b) => {
                 const discountA = (a.originalPrice - a.price) / a.originalPrice;
                 const discountB = (b.originalPrice - b.price) / b.originalPrice;
@@ -426,7 +470,7 @@ export default function TrangChu() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredTours.length > 0 ? (
-            filteredTours.slice(0, 6).map((tour) => (
+            paginatedTours.map((tour) => (
               <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
             ))
           ) : (
@@ -436,6 +480,7 @@ export default function TrangChu() {
                 onClick={() => {
                   setSelectedDestination(null);
                   setFilteredTours(allTours);
+                  setTourPage(1);
                   setSearchParams({});
                 }}
                 className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -445,6 +490,60 @@ export default function TrangChu() {
             </div>
           )}
         </div>
+
+        {totalTourPages > 1 && (
+          <div className="mt-10 flex items-center justify-center">
+            <nav
+              aria-label="Phân trang tour"
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-2 py-2 shadow-sm"
+            >
+              <button
+                type="button"
+                onClick={() => chuyenTrangTour(tourPage - 1)}
+                disabled={tourPage === 1}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-35"
+                aria-label="Trang trước"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              {pageItems.map((item, index) => (
+                item === 'ellipsis' ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="flex h-9 min-w-7 items-center justify-center text-sm font-semibold text-gray-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => chuyenTrangTour(item)}
+                    className={`h-9 min-w-9 rounded-full px-3 text-sm font-semibold transition-colors ${
+                      item === tourPage
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                    aria-current={item === tourPage ? 'page' : undefined}
+                  >
+                    {item}
+                  </button>
+                )
+              ))}
+
+              <button
+                type="button"
+                onClick={() => chuyenTrangTour(tourPage + 1)}
+                disabled={tourPage === totalTourPages}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-35"
+                aria-label="Trang sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
 
       {/* How to Book */}

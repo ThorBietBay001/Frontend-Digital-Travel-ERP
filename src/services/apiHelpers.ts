@@ -69,9 +69,6 @@ const extractTourExcludes = (moTa: string): string[] => {
 
 const buildTourIntro = (tour: Tour): string => {
   const destination = tour.destination || tour.name;
-  const departure = tour.departureDate
-    ? ` khởi hành ${new Date(tour.departureDate).toLocaleDateString('vi-VN')}`
-    : '';
 
   return `Khám phá ${destination} theo cách trọn vẹn nhất cùng hành trình ${tour.name} – nơi mỗi điểm dừng không chỉ là một chuyến tham quan mà còn là trải nghiệm đáng nhớ về văn hóa, thiên nhiên và con người bản địa. Với lịch trình ${tour.duration}, tour được thiết kế hài hòa giữa nghỉ dưỡng, khám phá và các hoạt động trải nghiệm xanh, mang đến cảm giác thư thái nhưng vẫn đầy cảm hứng cho mọi du khách để bạn tận hưởng chuyến đi một cách tiện lợi, an toàn và đáng nhớ cùng Digital Travel.`;
 };
