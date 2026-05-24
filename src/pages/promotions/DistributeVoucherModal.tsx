@@ -9,8 +9,6 @@ import { customersService } from '../../services/customers';
 import { promotionsService } from '../../services/promotions';
 import { formatApiError } from '../../utils/apiHelpers';
 import { Select } from '../../components/ui/Select';
-import { Badge } from '../../components/ui/Badge';
-import { mapCustomerRank } from '../../utils/statusMapping';
 
 
 interface DistributeVoucherModalProps {

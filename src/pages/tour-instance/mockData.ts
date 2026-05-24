@@ -39,6 +39,7 @@ export interface TaoTourThucTeRequest {
   soKhachToiDa?: number;
   soKhachToiThieu?: number;
   giaHienHanh?: number;
+  trangThai?: string;
   maDichVuThem?: string[];
   maHanhDongXanh?: string[];
 }

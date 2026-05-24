@@ -260,15 +260,6 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
       if (createdTour && createdTour.maTourThucTe) {
         setCreatedTourId(createdTour.maTourThucTe);
         alert('Tạo tour thành công');
-        // Also update status if different from CHO_KICH_HOAT
-        if (formData.status !== 'CHO_KICH_HOAT') {
-          await tourInstanceService.capNhat(createdTour.maTourThucTe, {
-            giaHienHanh: formData.currentPrice,
-            soKhachToiDa: formData.maxSeats,
-            soKhachToiThieu: formData.minSeats || 1,
-            trangThai: formData.status
-          });
-        }
         setCurrentStep(2);
       }
     } catch (err: any) {

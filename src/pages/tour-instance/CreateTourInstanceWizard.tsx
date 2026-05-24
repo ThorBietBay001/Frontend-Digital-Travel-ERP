@@ -127,15 +127,10 @@ const CreateTourInstanceWizard: React.FC<CreateTourInstanceWizardProps> = ({ isO
       ngayKhoiHanh: formData.startDate,
       soKhachToiDa: formData.maxSeats,
       soKhachToiThieu: formData.minSeats,
-      giaHienHanh: formData.currentPrice
+      giaHienHanh: formData.currentPrice,
+      trangThai: formData.status
     };
-    const created = await tourInstanceService.taoMoi(payload);
-    if (created && formData.status && formData.status !== 'MO_BAN') {
-      await tourInstanceService.capNhat(created.maTourThucTe as string, {
-        trangThai: formData.status
-      } as CapNhatTourThucTeRequest);
-    }
-    return created;
+    return tourInstanceService.taoMoi(payload);
   };
 
   const handleStep1Continue = async () => {
