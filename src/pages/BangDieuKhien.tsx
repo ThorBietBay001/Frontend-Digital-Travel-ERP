@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, MapPin, Users, DollarSign, ChevronRight, X } from 'lucide-react';
+import { Check, MapPin, Users, DollarSign, ChevronRight, X, Eye } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
 
 interface DashboardProps {
@@ -178,6 +178,18 @@ export default function BangDieuKhien({
                       Khởi hành: {tour.departureDate} • Trạng thái tour: {tour.status}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedUpcomingTour(tour);
+                      setModalTab('ITINERARY');
+                    }}
+                    className="w-full h-9 rounded-xl bg-white text-sky-600 text-xs font-bold shadow-sm ring-1 ring-sky-100 transition active:scale-95 flex items-center justify-center gap-1.5"
+                    aria-label={`Xem chi tiết tour ${tour.code}`}
+                  >
+                    <Eye size={14} />
+                    Xem chi tiết tour
+                  </button>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -315,28 +327,30 @@ export default function BangDieuKhien({
             </div>
 
             {/* Ultra-Premium Segmented Tab Control */}
-            <div className="bg-slate-50 p-1 rounded-xl flex space-x-1 border border-slate-100">
-              <button
-                onClick={() => setModalTab('ITINERARY')}
-                className={`flex-1 py-1.5 text-[11px] rounded-lg font-bold transition-all duration-300 ${modalTab === 'ITINERARY'
-                  ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
-                  : 'bg-transparent text-slate-500 hover:text-slate-700'
-                  }`}
-              >
-                Chi tiết lịch trình
-              </button>
-              <button
-                onClick={() => setModalTab('PASSENGERS')}
-                className={`flex-1 py-1.5 text-[11px] rounded-lg font-bold transition-all duration-300 ${modalTab === 'PASSENGERS'
-                  ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
-                  : 'bg-transparent text-slate-500 hover:text-slate-700'
-                  }`}
-              >
-                Hành khách ({selectedUpcomingTour.guestsCount})
-              </button>
-            </div>
+            {selectedUpcomingTour.trangThaiChapNhan !== 'CHO_PHAN_HOI' && (
+              <div className="bg-slate-50 p-1 rounded-xl flex space-x-1 border border-slate-100">
+                <button
+                  onClick={() => setModalTab('ITINERARY')}
+                  className={`flex-1 py-1.5 text-[11px] rounded-lg font-bold transition-all duration-300 ${modalTab === 'ITINERARY'
+                    ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                  Chi tiết lịch trình
+                </button>
+                <button
+                  onClick={() => setModalTab('PASSENGERS')}
+                  className={`flex-1 py-1.5 text-[11px] rounded-lg font-bold transition-all duration-300 ${modalTab === 'PASSENGERS'
+                    ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                  Hành khách ({selectedUpcomingTour.guestsCount})
+                </button>
+              </div>
+            )}
 
-            {modalTab === 'PASSENGERS' ? (
+            {modalTab === 'PASSENGERS' && selectedUpcomingTour.trangThaiChapNhan !== 'CHO_PHAN_HOI' ? (
               <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
                   {(selectedUpcomingTour.passengers || []).map((guest) => (
@@ -371,18 +385,119 @@ export default function BangDieuKhien({
               </div>
             ) : (
               <div className="space-y-3">
+                {(selectedUpcomingTour.durationDays || selectedUpcomingTour.maxGuests || selectedUpcomingTour.availableSeats !== undefined || selectedUpcomingTour.currentPrice) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedUpcomingTour.durationDays && (
+                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Thời lượng</p>
+                        <p className="text-xs text-slate-800 font-black">{selectedUpcomingTour.durationDays} ngày</p>
+                      </div>
+                    )}
+                    {selectedUpcomingTour.maxGuests && (
+                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Sức chứa</p>
+                        <p className="text-xs text-slate-800 font-black">{selectedUpcomingTour.maxGuests} khách</p>
+                      </div>
+                    )}
+                    {selectedUpcomingTour.availableSeats !== undefined && (
+                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Còn lại</p>
+                        <p className="text-xs text-slate-800 font-black">{selectedUpcomingTour.availableSeats} chỗ</p>
+                      </div>
+                    )}
+                    {selectedUpcomingTour.currentPrice && (
+                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Giá hiện hành</p>
+                        <p className="text-xs text-slate-800 font-black">{formatCurrency(selectedUpcomingTour.currentPrice)}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-3.5 pl-3 relative border-l border-sky-100 max-h-[42vh] overflow-y-auto pr-1">
-                  <p className="text-xs text-slate-400 italic">Chưa cập nhật chi tiết lịch trình.</p>
+                  {(selectedUpcomingTour.itinerary || []).length > 0 ? (
+                    (selectedUpcomingTour.itinerary || []).map((item) => (
+                      <div key={`${selectedUpcomingTour.code}-${item.day}-${item.title}`} className="relative">
+                        <span className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400 ring-4 ring-sky-50"></span>
+                        <div className="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm">
+                          <p className="text-[10px] font-black text-sky-500 uppercase tracking-wider mb-1">Ngày {item.day}</p>
+                          <h4 className="text-xs font-black text-slate-800 leading-snug">{item.title}</h4>
+                          {item.description && (
+                            <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed">{item.description}</p>
+                          )}
+                          {item.menu && (
+                            <p className="mt-2 text-[11px] text-amber-600 font-semibold leading-relaxed">Thực đơn: {item.menu}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">Chưa cập nhật chi tiết lịch trình.</p>
+                  )}
                 </div>
+
+                {((selectedUpcomingTour.services || []).length > 0 || (selectedUpcomingTour.greenActions || []).length > 0) && (
+                  <div className="space-y-2">
+                    {(selectedUpcomingTour.services || []).length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider mb-1">Dịch vụ thêm</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(selectedUpcomingTour.services || []).map((service) => (
+                            <span key={service} className="text-[10px] font-bold text-sky-600 bg-sky-50 border border-sky-100 px-2 py-1 rounded-lg">{service}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(selectedUpcomingTour.greenActions || []).length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider mb-1">Hành động xanh</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(selectedUpcomingTour.greenActions || []).map((action) => (
+                            <span key={action} className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg">{action}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            <button
-              onClick={() => setSelectedUpcomingTour(null)}
-              className="w-full py-2 bg-sky-400 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md transition"
-            >
-              Đồng ý đóng
-            </button>
+            {selectedUpcomingTour.trangThaiChapNhan === 'CHO_PHAN_HOI' ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRejectAssignment(selectedUpcomingTour.maPhanCong);
+                    setSelectedUpcomingTour(null);
+                  }}
+                  disabled={rejectingAssignmentIds.includes(selectedUpcomingTour.maPhanCong || '') || acceptingAssignmentIds.includes(selectedUpcomingTour.maPhanCong || '')}
+                  className="h-10 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold shadow-sm ring-1 ring-rose-100 transition active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 flex items-center justify-center gap-1.5"
+                >
+                  <X size={14} />
+                  Từ chối
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAcceptAssignment(selectedUpcomingTour.maPhanCong);
+                    setSelectedUpcomingTour(null);
+                  }}
+                  disabled={rejectingAssignmentIds.includes(selectedUpcomingTour.maPhanCong || '') || acceptingAssignmentIds.includes(selectedUpcomingTour.maPhanCong || '')}
+                  className="h-10 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:bg-emerald-300 flex items-center justify-center gap-1.5"
+                >
+                  <Check size={14} />
+                  Đồng ý
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectedUpcomingTour(null)}
+                className="w-full py-2 bg-sky-400 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md transition"
+              >
+                Đóng
+              </button>
+            )}
           </div>
         </div>
       )}

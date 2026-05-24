@@ -11,6 +11,20 @@ export interface Tour {
   status: 'Chờ kích hoạt' | 'Mở bán' | 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
   image?: string;
   passengers?: Passenger[];
+  itinerary?: TourItinerarySummary[];
+  durationDays?: number;
+  maxGuests?: number;
+  availableSeats?: number;
+  currentPrice?: number;
+  services?: string[];
+  greenActions?: string[];
+}
+
+export interface TourItinerarySummary {
+  day: number;
+  title: string;
+  description?: string;
+  menu?: string;
 }
 
 export interface Passenger {

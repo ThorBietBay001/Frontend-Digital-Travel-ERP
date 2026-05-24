@@ -9,6 +9,7 @@ import {
   Bell, 
   LogOut,
   X, 
+  CheckCircle,
   Battery, 
   Wifi 
 } from 'lucide-react';
@@ -28,6 +29,15 @@ import { hdvService } from './services/hdvService';
 
 type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile';
 
+type AppNotification = {
+  id: string;
+  text: string;
+  time: string;
+  read: boolean;
+  type: 'ASSIGNMENT_CONFIRMATION' | 'ACTION_RESULT';
+  tour?: Tour;
+};
+
 export default function App() {
   // Authentication States
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !!localStorage.getItem('token'));
@@ -39,7 +49,7 @@ export default function App() {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incidents, setIncidents] = useState<IncidentType[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // UI States
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -50,6 +60,8 @@ export default function App() {
   const [pendingTours, setPendingTours] = useState<Tour[]>([]);
   const [acceptingAssignmentIds, setAcceptingAssignmentIds] = useState<string[]>([]);
   const [rejectingAssignmentIds, setRejectingAssignmentIds] = useState<string[]>([]);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+  const [dismissedAssignmentNotificationIds, setDismissedAssignmentNotificationIds] = useState<string[]>([]);
 
   const mapPassenger = (p: any): Passenger => ({
     code: p.maKhachHang || p.maNguoiDongHanh,
@@ -122,7 +134,7 @@ export default function App() {
       const upcoming = accepted.filter((t: any) => ['CHO_KICH_HOAT', 'MO_BAN', 'SAP_DIEN_RA'].includes(t.trangThaiTour));
       const past = accepted.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
 
-      setPendingTours(pending.map(mapAssignmentToTour));
+      setPendingTours(await Promise.all(pending.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
       setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
       setPastTours(await Promise.all(past.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
 
@@ -177,7 +189,19 @@ export default function App() {
     if (!maPhanCong) return;
     setAcceptingAssignmentIds(prev => [...prev, maPhanCong]);
     try {
+      const tour = pendingTours.find(item => item.maPhanCong === maPhanCong);
       await hdvService.dongYPhanCong(maPhanCong);
+      setNotifications(prev => [
+        {
+          id: `accepted-${maPhanCong}-${Date.now()}`,
+          text: `Bạn đã đồng ý nhận tour ${tour?.code || maPhanCong}${tour?.name ? ` - ${tour.name}` : ''}.`,
+          time: 'Vừa xong',
+          read: false,
+          type: 'ACTION_RESULT',
+          tour
+        },
+        ...prev
+      ]);
       await loadHdvData();
     } catch (e) {
       console.error('Failed to accept assignment', e);
@@ -194,7 +218,19 @@ export default function App() {
 
     setRejectingAssignmentIds(prev => [...prev, maPhanCong]);
     try {
+      const tour = pendingTours.find(item => item.maPhanCong === maPhanCong);
       await hdvService.tuChoiPhanCong(maPhanCong);
+      setNotifications(prev => [
+        {
+          id: `rejected-${maPhanCong}-${Date.now()}`,
+          text: `Bạn đã từ chối yêu cầu điều phối tour ${tour?.code || maPhanCong}${tour?.name ? ` - ${tour.name}` : ''}.`,
+          time: 'Vừa xong',
+          read: false,
+          type: 'ACTION_RESULT',
+          tour
+        },
+        ...prev
+      ]);
       await loadHdvData();
     } catch (e) {
       console.error('Failed to reject assignment', e);
@@ -221,17 +257,42 @@ export default function App() {
     setNotificationOpen(false);
   };
 
-  const handleMarkNotificationRead = (id: number) => {
+  const assignmentNotifications = useMemo<AppNotification[]>(() => {
+    return pendingTours
+      .filter(tour => !dismissedAssignmentNotificationIds.includes(`assignment-${tour.maPhanCong || tour.code}`))
+      .map(tour => {
+        const id = `assignment-${tour.maPhanCong || tour.code}`;
+        return {
+          id,
+          text: `Yêu cầu xác nhận điều phối tour ${tour.code} - ${tour.name}.`,
+          time: `Khởi hành ${tour.departureDate}`,
+          read: readNotificationIds.includes(id),
+          type: 'ASSIGNMENT_CONFIRMATION',
+          tour
+        };
+      });
+  }, [dismissedAssignmentNotificationIds, pendingTours, readNotificationIds]);
+
+  const allNotifications = useMemo(() => {
+    return [...assignmentNotifications, ...notifications];
+  }, [assignmentNotifications, notifications]);
+
+  const handleMarkNotificationRead = (id: string) => {
+    setReadNotificationIds(prev => prev.includes(id) ? prev : [...prev, id]);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   const handleClearAllNotifications = () => {
     setNotifications([]);
+    setDismissedAssignmentNotificationIds(prev => [
+      ...prev,
+      ...assignmentNotifications.map(notification => notification.id).filter(id => !prev.includes(id))
+    ]);
   };
 
   const unreadCount = useMemo(() => {
-    return notifications.filter(n => !n.read).length;
-  }, [notifications]);
+    return allNotifications.filter(n => !n.read).length;
+  }, [allNotifications]);
 
   // If not logged in, show the styled DangNhap component wrapped in a mobile layout
   if (!isLoggedIn) {
@@ -337,7 +398,7 @@ export default function App() {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  {notifications.length > 0 && (
+                  {allNotifications.length > 0 && (
                     <button 
                       onClick={handleClearAllNotifications}
                       className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition"
@@ -354,14 +415,14 @@ export default function App() {
                 </div>
               </div>
 
-              {notifications.length === 0 ? (
+              {allNotifications.length === 0 ? (
                 <div className="text-center py-6 space-y-2">
-                  <span className="text-3xl block">🔔</span>
+                  <Bell size={28} className="mx-auto text-slate-300" />
                   <p className="text-xs text-slate-400 italic">Không có thông báo mới nào dành cho bạn.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {notifications.map(n => (
+                  {allNotifications.map(n => (
                     <div 
                       key={n.id} 
                       onClick={() => handleMarkNotificationRead(n.id)}
@@ -373,6 +434,17 @@ export default function App() {
                       <div className="flex-1 space-y-1">
                         <p className="leading-relaxed">{n.text}</p>
                         <span className="text-[9px] text-slate-400 block font-mono">{n.time}</span>
+                        {n.type === 'ASSIGNMENT_CONFIRMATION' && (
+                          <span className="mt-2 inline-flex text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg">
+                            Chờ xác nhận
+                          </span>
+                        )}
+                        {n.type === 'ACTION_RESULT' && (
+                          <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg">
+                            <CheckCircle size={12} />
+                            Đã ghi nhận
+                          </span>
+                        )}
                       </div>
                       {!n.read && (
                         <button
