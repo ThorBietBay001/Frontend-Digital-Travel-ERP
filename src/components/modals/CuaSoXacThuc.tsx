@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Lock, Mail, Phone, User, X } from 'lucide-react';
+import { CheckCircle2, Eye, EyeOff, Lock, Mail, Phone, User, X } from 'lucide-react';
 import { khService } from '../../services/khService';
 import { mapProfile, unwrapData } from '../../services/apiHelpers';
 
@@ -17,6 +17,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [otp, setOtp] = useState('');
@@ -422,12 +423,21 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                   <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 focus-within:border-blue-500">
                     <Lock className="w-4 h-4 text-slate-400" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       className="w-full outline-none text-sm"
                       placeholder="Nhập mật khẩu"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                      title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </label>
               )}

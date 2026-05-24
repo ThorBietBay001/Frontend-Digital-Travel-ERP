@@ -1818,6 +1818,9 @@ export default function HoChieuSo() {
                                 <span className="text-slate-300">-</span>
                                 <span className="whitespace-nowrap">CCCD: {p.cccd || 'Chưa cập nhật'}</span>
                               </div>
+                              <div className="pl-3 text-[10px] text-rose-600 font-bold leading-snug">
+                                Lưu ý y tế: <span className="text-slate-600 font-semibold">{p.ghiChuYTe || p.ghiChu || 'Không có'}</span>
+                              </div>
                             </div>
                           </div>
                         ))}

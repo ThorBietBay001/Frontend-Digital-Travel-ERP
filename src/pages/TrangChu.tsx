@@ -8,7 +8,8 @@ import type { Tour } from '../types';
 export default function TrangChu() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [destination, setDestination] = useState('');
-  const [departureDate, setDepartureDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [allTours, setAllTours] = useState<Tour[]>([]);
@@ -55,8 +56,22 @@ export default function TrangChu() {
       );
     }
 
-    if (departureDate) {
-      results = results.filter(tour => tour.departureDate === departureDate);
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      results = results.filter(tour => {
+        if (!tour.departureDate) return false;
+        return new Date(tour.departureDate) >= start;
+      });
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      results = results.filter(tour => {
+        if (!tour.departureDate) return false;
+        return new Date(tour.departureDate) <= end;
+      });
     }
 
     if (maxPrice) {
@@ -237,7 +252,7 @@ export default function TrangChu() {
 
           {/* Search Box */}
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />
@@ -255,12 +270,37 @@ export default function TrangChu() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
-                  Ngày khởi hành
+                  Từ ngày
                 </label>
                 <input
                   type="date"
-                  value={departureDate}
-                  onChange={(e) => setDepartureDate(e.target.value)}
+                  value={startDate}
+                  max={endDate || undefined}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    if (endDate && e.target.value > endDate) {
+                      setEndDate('');
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Đến ngày
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || undefined}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    if (startDate && e.target.value < startDate) {
+                      setStartDate('');
+                    }
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 />
               </div>
