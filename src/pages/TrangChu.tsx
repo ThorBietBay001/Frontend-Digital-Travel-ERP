@@ -93,7 +93,7 @@ export default function TrangChu() {
       'phu quoc', 'nha trang', 'ha long', 'con dao', 'mui ne', 'phan thiet', 'vung tau', 
       'quy nhon', 'phu yen', 'tuy hoa', 'cu lao cham', 'co to', 'cat ba', 'ly son', 
       'binh thuan', 'khanh hoa', 'quang ninh', 'hai phong', 'sam son', 'cua lo', 
-      'quang binh', 'binh dinh', 'ninh thuan', 'phan rang', 'ba ria', 'kien giang', 'da nang', 'hoi an'
+      'quang binh', 'binh dinh', 'ninh thuan', 'phan rang', 'ba ria', 'kien giang'
     ];
     
     const mountainKeywords = [
