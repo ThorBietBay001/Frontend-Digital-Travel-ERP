@@ -45,6 +45,11 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [descParts, setDescParts] = useState({
+    short: '',
+    included: '',
+    notIncluded: ''
+  });
   const [activeTab, setActiveTab] = useState<'info' | 'services' | 'greenActions'>('info');
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
   const [editingDayData, setEditingDayData] = useState<DaySchedule | null>(null);
@@ -72,6 +77,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
       setActiveTab('info');
       setCreatedTourId(null);
       setErrors({});
+      setDescParts({ short: '', included: '', notIncluded: '' });
       return;
     }
     if (initialData && mode === 'edit') {
@@ -97,6 +103,22 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
                      meals
                    };
                  });
+
+                 let desc = templateDetail.moTa || '';
+                 let short = desc;
+                 let included = '';
+                 let notIncluded = '';
+                 const incMatch = desc.match(/Bao gồm:\s*\n([\s\S]*?)(?:Không bao gồm:\s*\n|$)/);
+                 const notIncMatch = desc.match(/Không bao gồm:\s*\n([\s\S]*)$/);
+                 if (incMatch) included = incMatch[1].trim();
+                 if (notIncMatch) notIncluded = notIncMatch[1].trim();
+                 const firstKeywordIndex = desc.search(/Bao gồm:\s*\n|Không bao gồm:\s*\n/);
+                 if (firstKeywordIndex !== -1) {
+                   short = desc.substring(0, firstKeywordIndex).trim();
+                 } else {
+                   short = desc.trim();
+                 }
+                 setDescParts({ short, included, notIncluded });
                }
              } catch (e) {
                console.error('Failed to load schedule from template', e);
@@ -177,6 +199,22 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
             meals
           };
         });
+
+        let desc = detail.moTa || '';
+        let short = desc;
+        let included = '';
+        let notIncluded = '';
+        const incMatch = desc.match(/Bao gồm:\s*\n([\s\S]*?)(?:Không bao gồm:\s*\n|$)/);
+        const notIncMatch = desc.match(/Không bao gồm:\s*\n([\s\S]*)$/);
+        if (incMatch) included = incMatch[1].trim();
+        if (notIncMatch) notIncluded = notIncMatch[1].trim();
+        const firstKeywordIndex = desc.search(/Bao gồm:\s*\n|Không bao gồm:\s*\n/);
+        if (firstKeywordIndex !== -1) {
+          short = desc.substring(0, firstKeywordIndex).trim();
+        } else {
+          short = desc.trim();
+        }
+        setDescParts({ short, included, notIncluded });
 
         setFormData((prev) => ({
           ...prev,
@@ -321,6 +359,47 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
               </span>
             </div>
           )}
+
+          {/* Read-only Template Description Parts */}
+          {(descParts.short || descParts.included || descParts.notIncluded) && (
+            <div className="flex flex-col gap-4 mt-2">
+              {descParts.short && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Mô tả ngắn</label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-4 py-2 border border-[#C5EAFF] bg-gray-50 rounded-lg text-sm focus:outline-none cursor-not-allowed resize-none"
+                    value={descParts.short}
+                    disabled
+                  ></textarea>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                {descParts.included && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Bao gồm</label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-4 py-2 border border-[#C5EAFF] bg-gray-50 rounded-lg text-sm focus:outline-none cursor-not-allowed resize-none"
+                      value={descParts.included}
+                      disabled
+                    ></textarea>
+                  </div>
+                )}
+                {descParts.notIncluded && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Không bao gồm</label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-4 py-2 border border-[#C5EAFF] bg-gray-50 rounded-lg text-sm focus:outline-none cursor-not-allowed resize-none"
+                      value={descParts.notIncluded}
+                      disabled
+                    ></textarea>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -402,6 +481,46 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
           {errors.currentPrice && <span className="text-xs text-red-500 mt-1 block">{errors.currentPrice}</span>}
         </div>
       </div>
+
+      {mode === 'edit' && (descParts.short || descParts.included || descParts.notIncluded) && (
+        <div className="flex flex-col gap-4 mt-2">
+          {descParts.short && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Mô tả ngắn</label>
+              <textarea
+                rows={3}
+                className="w-full px-4 py-2 border border-[#C5EAFF] bg-gray-50 rounded-lg text-sm focus:outline-none cursor-not-allowed resize-none"
+                value={descParts.short}
+                disabled
+              ></textarea>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            {descParts.included && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Bao gồm</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-2 border border-[#C5EAFF] bg-gray-50 rounded-lg text-sm focus:outline-none cursor-not-allowed resize-none"
+                  value={descParts.included}
+                  disabled
+                ></textarea>
+              </div>
+            )}
+            {descParts.notIncluded && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Không bao gồm</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-2 border border-[#C5EAFF] bg-gray-50 rounded-lg text-sm focus:outline-none cursor-not-allowed resize-none"
+                  value={descParts.notIncluded}
+                  disabled
+                ></textarea>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {formData.schedule && formData.schedule.length > 0 ? (
         <div className="mt-2">
@@ -687,3 +806,5 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
 };
 
 export default TourInstanceDetailModal;
+
+// trigger hmr

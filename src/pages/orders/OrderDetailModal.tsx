@@ -17,21 +17,28 @@ interface OrderDetailModalProps {
 }
 
 const mapStatus = (s?: string): Order['status'] => {
-  switch (s?.toUpperCase()) {
+  switch (s?.trim().toUpperCase()) {
     case 'DA_XAC_NHAN':
+    case 'CONFIRMED':
       return 'confirmed';
     case 'HOAN_THANH':
+    case 'COMPLETED':
       return 'completed';
     case 'CHO_HUY':
     case 'HUY':
+    case 'CANCELLED':
+    case 'DA_HUY':
+    case 'HET_HAN_GIU_CHO':
+    case 'THANH_TOAN_THAT_BAI':
       return 'cancelled';
+    case 'CHO_XAC_NHAN':
     default:
       return 'pending';
   }
 };
 
 const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
-  switch (s?.toUpperCase()) {
+  switch (s?.trim().toUpperCase()) {
     case 'CHO_XAC_NHAN':
       return 'pending_confirmation';
     case 'DA_XAC_NHAN':
@@ -39,6 +46,7 @@ const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
       return 'paid';
     case 'CHO_HUY':
     case 'HUY':
+    case 'DA_HUY':
       return 'refunded';
     default:
       return 'unpaid';

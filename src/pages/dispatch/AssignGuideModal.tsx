@@ -56,12 +56,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
   if (!tour) return null;
 
   const suggestedGuides = availableGuides.map((g) => {
-    const status =
-      g.trangThaiLamViec === 'HOAT_DONG'
-        ? 'available'
-        : g.trangThaiLamViec === 'BAN'
-        ? 'busy'
-        : 'resting';
+    const status = 'available';
 
     const cap = guideCaps[g.maNhanVien || ''] || {};
     
@@ -80,12 +75,6 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
   });
 
   const handleSelectGuide = async (guide: any) => {
-    // Mock conflict check
-    if (guide.status === 'busy') {
-      setConflictGuideId(guide.maNhanVien || null);
-      return;
-    }
-    
     setConflictGuideId(null);
     if (await confirm(`Phân công HDV ${guide.hoTen} cho tour ${tour.name}?`)) {
       onAssign(tour.id, guide.maNhanVien || '');

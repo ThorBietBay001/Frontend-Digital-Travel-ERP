@@ -34,15 +34,41 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
     status: 'HOAT_DONG',
     schedule: [{ ...defaultDaySchedule }],
   });
+  const [descParts, setDescParts] = useState({
+    short: '',
+    included: '',
+    notIncluded: ''
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isOpen) {
       setActiveTab('info');
       setErrors({});
+      setDescParts({ short: '', included: '', notIncluded: '' });
       return;
     }
     if (initialData) {
+      let desc = initialData.description || '';
+      let short = desc;
+      let included = '';
+      let notIncluded = '';
+
+      const incMatch = desc.match(/Bao gồm:\s*\n([\s\S]*?)(?:Không bao gồm:\s*\n|$)/);
+      const notIncMatch = desc.match(/Không bao gồm:\s*\n([\s\S]*)$/);
+
+      if (incMatch) included = incMatch[1].trim();
+      if (notIncMatch) notIncluded = notIncMatch[1].trim();
+
+      const firstKeywordIndex = desc.search(/Bao gồm:\s*\n|Không bao gồm:\s*\n/);
+      if (firstKeywordIndex !== -1) {
+        short = desc.substring(0, firstKeywordIndex).trim();
+      } else {
+        short = desc.trim();
+      }
+
+      setDescParts({ short, included, notIncluded });
+
       if (mode === 'copy') {
         setFormData({
           ...initialData,
@@ -53,6 +79,7 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
         setFormData({ ...initialData });
       }
     } else {
+      setDescParts({ short: '', included: '', notIncluded: '' });
       setFormData({
         title: '',
         description: '',
@@ -136,7 +163,15 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
       return;
     }
 
-    onSubmit(formData as TourTemplate);
+    const combinedDesc = [
+      descParts.short.trim(),
+      descParts.included.trim() ? `Bao gồm:\n${descParts.included.trim()}` : '',
+      descParts.notIncluded.trim() ? `Không bao gồm:\n${descParts.notIncluded.trim()}` : ''
+    ].filter(Boolean).join('\n\n');
+
+    const finalData = { ...formData, description: combinedDesc };
+
+    onSubmit(finalData as TourTemplate);
   };
 
   const renderTabs = () => (
@@ -203,8 +238,8 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
                   <textarea
                     rows={3}
                     className="w-full px-4 py-2 border border-[#C5EAFF] rounded-lg text-sm focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20 resize-none"
-                    value={formData.description || ''}
-                    onChange={(e) => handleChange('description', e.target.value)}
+                    value={descParts.short}
+                    onChange={(e) => setDescParts(prev => ({ ...prev, short: e.target.value }))}
                     placeholder="Mô tả tóm tắt về tour..."
                   ></textarea>
                 </div>
@@ -240,6 +275,29 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
                       onChange={(e) => handleChange('basePrice', parseInt(e.target.value) || 0)}
                     />
                     {errors.basePrice && <span className="text-xs text-red-500 mt-1 block">{errors.basePrice}</span>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Bao gồm</label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-4 py-2 border border-[#C5EAFF] rounded-lg text-sm focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20 resize-none"
+                      value={descParts.included}
+                      onChange={(e) => setDescParts(prev => ({ ...prev, included: e.target.value }))}
+                      placeholder={"- Xe đưa đón\n- Vé tham quan..."}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Không bao gồm</label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-4 py-2 border border-[#C5EAFF] rounded-lg text-sm focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20 resize-none"
+                      value={descParts.notIncluded}
+                      onChange={(e) => setDescParts(prev => ({ ...prev, notIncluded: e.target.value }))}
+                      placeholder={"- Chi phí cá nhân\n- VAT..."}
+                    ></textarea>
                   </div>
                 </div>
               </div>
@@ -320,3 +378,5 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
 };
 
 export default TourTemplateDetailModal;
+
+// trigger hmr

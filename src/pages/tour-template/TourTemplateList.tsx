@@ -97,13 +97,13 @@ const TourTemplateList: React.FC = () => {
         const daysCount = detail.thoiLuong || tour.duration.days || 1;
         const fullTour: TourTemplate = {
           ...tour,
-          description: detail.moTa || tour.description,
+          description: detail?.moTa || tour.description,
           duration: {
             days: daysCount,
             nights: Math.max(0, daysCount - 1)
           },
           schedule: Array.from({ length: daysCount }).map((_, index) => {
-            const lt = (detail.lichTrinh || []).find((l: any) => l.ngayThu === index + 1);
+            const lt = (detail?.lichTrinh || []).find((l: any) => l.ngayThu === index + 1);
             if (lt) {
               return {
                 id: lt.maLichTrinhTour,
