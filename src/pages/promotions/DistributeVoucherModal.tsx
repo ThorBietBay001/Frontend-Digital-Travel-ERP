@@ -8,6 +8,9 @@ import type { Column } from '../../components/ui/Table';
 import { customersService } from '../../services/customers';
 import { promotionsService } from '../../services/promotions';
 import { formatApiError } from '../../utils/apiHelpers';
+import { Select } from '../../components/ui/Select';
+import { Badge } from '../../components/ui/Badge';
+import { mapCustomerRank } from '../../utils/statusMapping';
 
 
 interface DistributeVoucherModalProps {
@@ -15,7 +18,7 @@ interface DistributeVoucherModalProps {
   onClose: () => void;
   voucher: Voucher | null;
   mode?: 'distribute' | 'revoke';
-  onSuccess?: () => void;
+  onSuccess?: (newDistributedCount: number) => void;
 }
 
 const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen, onClose, voucher, mode = 'distribute', onSuccess }) => {
@@ -26,6 +29,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
   const [error, setError] = useState<string | null>(null);
   const [distributedCount, setDistributedCount] = useState(0);
   const [revokingCustomerId, setRevokingCustomerId] = useState<string | null>(null);
+  const [filterTier, setFilterTier] = useState<string>('all');
 
   const mapDistributeError = (message: string) => {
     if (message.includes('Khach hang nay da co voucher nay roi') || message.includes('Khách hàng này đã có voucher này rồi')) {
@@ -80,8 +84,10 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
   if (!voucher) return null;
 
   const availableQuantity = Math.max(voucher.quantity - distributedCount, 0);
-  const distributableCustomers = customers.filter((customer) => !customer.hasVoucher);
-  const visibleCustomers = mode === 'revoke' ? customers.filter((customer) => customer.hasVoucher) : customers;
+  
+  const filteredCustomers = customers.filter(c => filterTier === 'all' || c.tier === filterTier);
+  const distributableCustomers = filteredCustomers.filter((customer) => !customer.hasVoucher);
+  const visibleCustomers = mode === 'revoke' ? filteredCustomers.filter((customer) => customer.hasVoucher) : distributableCustomers;
   const isRevokeMode = mode === 'revoke';
 
   const checkboxCustomers = isRevokeMode ? visibleCustomers : distributableCustomers;
@@ -120,20 +126,31 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     },
     { key: 'name', title: 'Họ tên', dataIndex: 'name' },
     { key: 'email', title: 'Email', dataIndex: 'email' },
-    { key: 'tier', title: 'Hạng thẻ', dataIndex: 'tier' },
-    ...(!isRevokeMode ? [
-      { key: 'phone', title: 'SĐT', dataIndex: 'phone' } as Column<CustomerTarget>,
-      {
-        key: 'voucherStatus',
-        title: 'Voucher',
-        render: (record) => record.hasVoucher
-          ? <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100 rounded-full px-2 py-1">Đã phân bổ</span>
-          : <span className="text-xs text-gray-500">Chưa phân bổ</span>,
-      } as Column<CustomerTarget>,
+    { 
+      key: 'tier', 
+      title: 'Hạng thẻ', 
+      render: (record) => {
+        const tierColors: Record<string, string> = {
+          'DONG': 'bg-[#f4e6de] text-[#8b5a2b] border-[#d2b48c]',
+          'BAC': 'bg-gray-100 text-gray-600 border-gray-300',
+          'VANG': 'bg-yellow-50 text-yellow-700 border-yellow-300',
+          'KIM_CUONG': 'bg-blue-50 text-blue-700 border-blue-300',
+          'THANH_VIEN': 'bg-gray-50 text-gray-500 border-gray-200'
+        };
+        const tierLabels: Record<string, string> = {
+          'DONG': 'Đồng', 'BAC': 'Bạc', 'VANG': 'Vàng', 'KIM_CUONG': 'Kim cương', 'THANH_VIEN': 'Thành viên'
+        };
+        const colorClass = tierColors[record.tier] || tierColors['THANH_VIEN'];
+        const label = tierLabels[record.tier] || record.tier;
+        return <span className={`inline-flex items-center rounded-full font-semibold px-2.5 py-1 text-xs border ${colorClass}`}>{label}</span>;
+      }
+    },
+    { key: 'phone', title: 'SĐT', dataIndex: 'phone' } as Column<CustomerTarget>,
+    ...(isRevokeMode ? [
       {
         key: 'action',
         title: 'Thao tác',
-        render: (record) => record.hasVoucher ? (
+        render: (record) => (
           <Button
             size="sm"
             variant="danger"
@@ -142,7 +159,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
           >
             {revokingCustomerId === record.id ? 'Đang thu hồi...' : 'Thu hồi'}
           </Button>
-        ) : null,
+        ),
       } as Column<CustomerTarget>,
     ] : []),
   ];
@@ -179,11 +196,12 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
           : customer
         ));
         setSelectedCustomers((prev) => prev.filter((id) => !successfulIds.includes(id)));
-        onSuccess?.();
+        onSuccess?.(nextDistributedCount);
       }
 
       if (failedResults.length === 0) {
         alert(`Phân phối voucher thành công cho ${successCount} khách hàng`);
+        onClose();
         return;
       }
 
@@ -220,7 +238,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
         : customer
       ));
       alert('Thu hồi voucher thành công');
-      onSuccess?.();
+      onSuccess?.(nextDistributedCount);
     } catch (err: unknown) {
       const message = mapDistributeError(formatApiError(err, 'Lỗi thu hồi voucher'));
       setError(message);
@@ -250,7 +268,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
           : customer
         ));
         setSelectedCustomers((prev) => prev.filter((id) => !revokedIds.includes(id)));
-        onSuccess?.();
+        onSuccess?.(nextDistributedCount);
       }
 
       if (failedResults.length === 0) {
@@ -276,12 +294,17 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     }
   };
 
+  const dieuKien = voucher.name || '';
+  const splitIndex = dieuKien.toLowerCase().indexOf('đơn tối thiểu');
+  const programName = splitIndex !== -1 ? dieuKien.substring(0, splitIndex).replace(/[.\s]+$/, '') : dieuKien;
+  const minOrder = splitIndex !== -1 ? dieuKien.substring(splitIndex) : '';
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={`${isRevokeMode ? 'Thu hồi Voucher' : 'Phân phối Voucher'} - ${voucher.code}`}
-      size="lg"
+      size="xl"
       footer={
         <div className="flex justify-between w-full">
           <div></div>
@@ -312,28 +335,41 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     >
       <div className="space-y-6 pb-6">
         {/* Thông tin Voucher */}
-        <div className="bg-[#F4F9FF] p-4 rounded-lg border border-[#E1F1FF] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <p className="text-gray-500 text-xs">Tên chương trình</p>
-            <p className="font-semibold text-sm">{voucher.name}</p>
+        <div className="bg-[#F4F9FF] p-5 rounded-xl border border-[#E1F1FF] flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <div>
+                <p className="text-gray-500 text-xs mb-1">Tên chương trình</p>
+                <p className="font-medium text-sm">{programName}</p>
+                {minOrder && <p className="text-xs text-gray-500 mt-1">{minOrder}</p>}
+             </div>
+             <div>
+                <p className="text-gray-500 text-xs mb-1">Loại giảm giá</p>
+                <p className="font-medium text-sm">
+                  {voucher.discountType === 'percent' ? `Phần trăm` : `Số tiền`}
+                </p>
+             </div>
+             <div>
+                <p className="text-gray-500 text-xs mb-1">Giá trị giảm</p>
+                <p className="font-medium text-sm">
+                  {voucher.discountType === 'percent' ? `${voucher.discountValue}%` : `${voucher.discountValue.toLocaleString()} VNĐ`}
+                </p>
+             </div>
           </div>
-          <div>
-            <p className="text-gray-500 text-xs">Loại giảm giá</p>
-            <p className="font-semibold text-sm">
-              {voucher.discountType === 'percent' ? `Giảm ${voucher.discountValue}%` : `Giảm ${voucher.discountValue.toLocaleString()}đ`}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-xs">Đã phát/Tổng</p>
-            <p className="font-semibold text-sm">{distributedCount}/{voucher.quantity}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-xs">Ngày bắt đầu</p>
-            <p className="font-semibold text-sm">{voucher.startDate || '-'}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-xs">Hạn sử dụng</p>
-            <p className="font-semibold text-sm">{voucher.expiryDate || '-'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <div>
+                <p className="text-gray-500 text-xs mb-1">Đã phát / Tổng số</p>
+                <p className="font-medium text-sm">
+                   {distributedCount} / {voucher.quantity}
+                </p>
+             </div>
+             <div>
+                <p className="text-gray-500 text-xs mb-1">Ngày bắt đầu</p>
+                <p className="font-medium text-sm">{voucher.startDate || '-'}</p>
+             </div>
+             <div>
+                <p className="text-gray-500 text-xs mb-1">Hạn sử dụng</p>
+                <p className="font-medium text-sm">{voucher.expiryDate || '-'}</p>
+             </div>
           </div>
         </div>
 
@@ -354,7 +390,23 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
             <h3 className="font-semibold text-sm text-[#00668A]">
               {isRevokeMode ? 'Khách hàng đã được phân bổ voucher' : 'Danh sách khách hàng mục tiêu'}
             </h3>
-            {!isRevokeMode && <span className="text-sm text-gray-500">Đã chọn: {selectedCustomers.length}</span>}
+            <div className="flex items-center gap-4">
+              <div className="w-[200px]">
+                <Select 
+                  options={[
+                    { value: 'all', label: 'Tất cả hạng thẻ' },
+                    { value: 'THANH_VIEN', label: 'Thành viên' },
+                    { value: 'DONG', label: 'Đồng' },
+                    { value: 'BAC', label: 'Bạc' },
+                    { value: 'VANG', label: 'Vàng' },
+                    { value: 'KIM_CUONG', label: 'Kim cương' }
+                  ]} 
+                  value={filterTier} 
+                  onChange={setFilterTier} 
+                />
+              </div>
+              {!isRevokeMode && <span className="text-sm text-gray-500 whitespace-nowrap">Đã chọn: {selectedCustomers.length}</span>}
+            </div>
           </div>
           <div className="max-h-[300px] overflow-y-auto">
             {loading ? (

@@ -173,17 +173,17 @@ const VoucherList: React.FC = () => {
         <div className="grid grid-cols-3 justify-items-center gap-2 min-w-[104px]">
           <button
             onClick={(e) => { e.stopPropagation(); setDistributeVoucher(record); }}
-            disabled={record.status !== 'SAN_SANG'}
+            disabled={record.status !== 'SAN_SANG' || record.distributed >= record.quantity}
             className="p-2 text-gray-500 hover:text-[#00668A] hover:bg-[#E1F1FF] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
-            title={record.status === 'SAN_SANG' ? 'Phân phối' : 'Chỉ phân phối voucher sẵn sàng'}
+            title={record.status !== 'SAN_SANG' ? 'Chỉ phân phối voucher sẵn sàng' : record.distributed >= record.quantity ? 'Đã phân phối đủ số lượng' : 'Phân phối'}
           >
             <Send size={18} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleBanVoucher(record); }}
-            disabled={record.status !== 'SAN_SANG'}
+            disabled={record.status === 'VO_HIEU_HOA' || record.status === 'HET_HAN'}
             className="p-2 text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500"
-            title={record.status === 'SAN_SANG' ? 'Vô hiệu hóa' : 'Voucher không ở trạng thái sẵn sàng'}
+            title={record.status === 'VO_HIEU_HOA' || record.status === 'HET_HAN' ? 'Không thể vô hiệu hóa' : 'Vô hiệu hóa'}
           >
             <Ban size={18} />
           </button>
@@ -252,7 +252,12 @@ const VoucherList: React.FC = () => {
         onClose={() => setDistributeVoucher(null)}
         voucher={distributeVoucher}
         mode="distribute"
-        onSuccess={getAll}
+        onSuccess={(newDistributedCount) => {
+          if (distributeVoucher) {
+            setVouchers(prev => prev.map(v => v.id === distributeVoucher.id ? { ...v, distributed: newDistributedCount } : v));
+          }
+          getAll();
+        }}
       />
 
       <DistributeVoucherModal
@@ -260,7 +265,12 @@ const VoucherList: React.FC = () => {
         onClose={() => setRevokeVoucher(null)}
         voucher={revokeVoucher}
         mode="revoke"
-        onSuccess={getAll}
+        onSuccess={(newDistributedCount) => {
+          if (revokeVoucher) {
+            setVouchers(prev => prev.map(v => v.id === revokeVoucher.id ? { ...v, distributed: newDistributedCount } : v));
+          }
+          getAll();
+        }}
       />
     </MainLayout>
   );

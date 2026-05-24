@@ -37,7 +37,7 @@ export const promotionsService = {
         return response.data.data;
     },
     voHieuVoucher: async (maVoucher: string) => {
-        const response = await api.put<ApiResponseVoucherResponse>(`/api/kinh-doanh/voucher/${maVoucher}/vo-hieu`, {});
+        const response = await api.put<ApiResponseVoucherResponse>(`/api/kinh-doanh/voucher/${maVoucher}/vo-hieu-hoa`, {});
         return response.data.data;
     },
     danhSach_4: async (params?: PageQueryParams) => {
