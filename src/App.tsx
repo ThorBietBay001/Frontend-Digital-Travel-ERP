@@ -30,7 +30,7 @@ type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | '
 
 export default function App() {
   // Authentication States
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !!localStorage.getItem('token'));
   const [loginCode, setLoginCode] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -40,6 +40,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incidents, setIncidents] = useState<IncidentType[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [guideProfile, setGuideProfile] = useState<any>(null);
 
   // UI States
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -96,6 +97,9 @@ export default function App() {
     if (isLoggedIn) {
       const fetchData = async () => {
         try {
+          const profileRes = await hdvService.layHoSo();
+          if (profileRes?.data) setGuideProfile(profileRes.data);
+
           const tours = await hdvService.layDanhSachTour();
           if (tours?.data?.length > 0) {
             const pending = tours.data.filter((t: any) => t.trangThaiChapNhan === 'CHO_PHAN_HOI');
@@ -168,6 +172,8 @@ export default function App() {
           console.error("Failed to fetch tour data", e);
         }
       };
+      
+      // Initial fetch
       fetchData();
       const refreshId = window.setInterval(fetchData, 30000);
       return () => window.clearInterval(refreshId);
@@ -201,9 +207,11 @@ export default function App() {
   }, [passengers]);
 
   const xuLyDangXuat = () => {
+    localStorage.removeItem('token');
     setIsLoggedIn(false);
     setActiveTab('dashboard');
     setLoginError(null);
+    setNotificationOpen(false);
   };
 
   const handleMarkNotificationRead = (id: number) => {
@@ -217,6 +225,8 @@ export default function App() {
   const unreadCount = useMemo(() => {
     return notifications.filter(n => !n.read).length;
   }, [notifications]);
+
+  const guideInitials = guideProfile?.hoTen ? guideProfile.hoTen.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase() : 'HD';
 
   // If not logged in, show the styled DangNhap component wrapped in a mobile layout
   if (!isLoggedIn) {
@@ -275,7 +285,7 @@ export default function App() {
                 className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 text-sky-600 font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shrink-0"
                 title="Xem hồ sơ"
               >
-                AN
+                {guideInitials}
               </button>
               <div>
                 <h1 className="text-xs font-black text-slate-800 tracking-wider leading-none">DIGITAL TRAVEL</h1>
@@ -311,7 +321,7 @@ export default function App() {
 
         {/* --- GLOBAL POPUP: Notification Center List (Glassmorphism Modal) --- */}
         {notificationOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
+          <div className="absolute inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex justify-center p-4">
             {/* Centered Modal Content */}
             <div className="glass-modal max-w-sm w-full mt-14 p-4 rounded-3xl animate-slide-up max-h-[50vh] overflow-y-auto space-y-4 shadow-2xl h-fit border border-sky-100">
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -360,7 +370,14 @@ export default function App() {
                         <span className="text-[9px] text-slate-400 block font-mono">{n.time}</span>
                       </div>
                       {!n.read && (
-                        <button className="text-[10px] text-sky-500 font-extrabold hover:underline shrink-0">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleMarkNotificationRead(n.id);
+                          }}
+                          className="text-[10px] text-sky-500 font-extrabold hover:underline shrink-0"
+                        >
                           Đọc
                         </button>
                       )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, Compass, Lock, User } from 'lucide-react';
 import { hdvService } from '../services/hdvService';
 
@@ -29,6 +29,34 @@ export default function DangNhap({
   const [otpArray, setOtpArray] = useState<string[]>(['', '', '', '', '', '']);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [expectedOtp, setExpectedOtp] = useState<string>('');
+  const [otpCountdown, setOtpCountdown] = useState<number>(60);
+
+  useEffect(() => {
+    let timer: any;
+    if (mode === 'OTP_FORGOT' && !isOtpVerified && otpCountdown > 0) {
+      timer = setInterval(() => {
+        setOtpCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [mode, isOtpVerified, otpCountdown]);
+
+  const handleResendOtp = async () => {
+    try {
+      const res = await hdvService.quenMatKhau(forgotEmail);
+      setResetToken(res.data);
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setExpectedOtp(generatedOtp);
+      setOtpCountdown(60);
+      setOtpArray(['', '', '', '', '', '']);
+      setErrorMsg(null);
+      setSuccessMsg(`Mã OTP mới của bạn là: ${generatedOtp}.`);
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
+    }
+  };
 
   const displayError = errorMsg || loginError;
 
@@ -74,26 +102,26 @@ export default function DangNhap({
             <Compass size={32} className="stroke-[1.8px]" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-slate-800 tracking-wider text-center">DIGITAL TRAVEL ERP</h1>
-            <p className="text-xs text-sky-500 font-bold uppercase tracking-widest mt-0.5">Nghiệp vụ Hướng dẫn viên</p>
+            <h1 className="text-2xl font-black text-slate-800 tracking-wider text-center">DIGITAL TRAVEL ERP</h1>
+            <p className="text-sm text-sky-500 font-bold uppercase tracking-widest mt-0.5">Nghiệp vụ Hướng dẫn viên</p>
           </div>
         </div>
 
         {mode === 'LOGIN' && (
           <div className="glass-panel p-5 rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-100/50 space-y-4 animate-slide-up">
             <div className="text-center">
-              <h3 className="font-black text-slate-800 text-sm text-center">Đăng nhập hệ thống</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5 text-center">Vui lòng sử dụng tài khoản hướng dẫn viên được cấp.</p>
+              <h3 className="font-black text-slate-800 text-base text-center">Đăng nhập hệ thống</h3>
+              <p className="text-xs text-slate-400 mt-0.5 text-center">Vui lòng sử dụng tài khoản hướng dẫn viên được cấp.</p>
             </div>
 
             {successMsg && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-semibold rounded-xl text-center">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-semibold rounded-xl text-center">
                 {successMsg}
               </div>
             )}
 
             {displayError && (
-              <div className="p-2.5 bg-rose-50 border border-rose-100 text-rose-600 text-[10.5px] font-semibold rounded-xl flex items-center space-x-1.5 animate-shake">
+              <div className="p-2.5 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold rounded-xl flex items-center space-x-1.5 animate-shake">
                 <AlertTriangle size={14} className="shrink-0" />
                 <span>{displayError}</span>
               </div>
@@ -117,7 +145,7 @@ export default function DangNhap({
               className="space-y-3.5"
             >
               <div>
-                <label className="text-[9px] font-bold text-slate-400 block mb-1 uppercase">Mã hướng dẫn viên</label>
+                <label className="text-xs font-bold text-slate-400 block mb-1 uppercase">Mã hướng dẫn viên</label>
                 <div className="relative">
                   <span className="absolute left-3 top-3 text-slate-400"><User size={15} /></span>
                   <input
@@ -125,14 +153,16 @@ export default function DangNhap({
                     placeholder="Ví dụ: hdv01"
                     value={loginCode}
                     onChange={(e) => setLoginCode(e.target.value)}
-                    className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
+                    className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
                     required
+                    onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng điền mã hướng dẫn viên.')}
+                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[9px] font-bold text-slate-400 block mb-1 uppercase">Mật khẩu nghiệp vụ</label>
+                <label className="text-xs font-bold text-slate-400 block mb-1 uppercase">Mật khẩu nghiệp vụ</label>
                 <div className="relative">
                   <span className="absolute left-3 top-3 text-slate-400"><Lock size={15} /></span>
                   <input
@@ -140,13 +170,15 @@ export default function DangNhap({
                     placeholder="Nhập mật khẩu..."
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
+                    className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition bg-white/70 select-text"
                     required
+                    onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập mật khẩu.')}
+                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] text-slate-500">
+              <div className="flex justify-between items-center text-xs text-slate-500">
                 <label className="flex items-center space-x-1.5 cursor-pointer">
                   <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded text-sky-400 border-slate-300" />
                   <span>Ghi nhớ thiết bị</span>
@@ -161,7 +193,7 @@ export default function DangNhap({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-200 transition active:scale-98"
+                className="w-full py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-sky-200 transition active:scale-98"
               >
                 Đăng Nhập Ngay
               </button>
@@ -172,44 +204,56 @@ export default function DangNhap({
         {mode === 'FORGOT' && (
           <div className="glass-panel p-5 rounded-3xl border border-sky-100/50 shadow-xl shadow-sky-100/50 space-y-4 animate-slide-up">
             <div className="text-center">
-              <h3 className="font-black text-slate-800 text-sm text-center">Khôi phục mật khẩu</h3>
+              <h3 className="font-black text-slate-800 text-base text-center">Khôi phục mật khẩu</h3>
             </div>
 
             {displayError && (
-              <div className="p-2 bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-semibold rounded-xl flex items-center space-x-1.5 animate-shake">
+              <div className="p-2 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold rounded-xl flex items-center space-x-1.5 animate-shake">
                 <AlertTriangle size={14} className="shrink-0" />
                 <span>{displayError}</span>
               </div>
             )}
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (!forgotEmail.trim()) {
                   setErrorMsg('Vui lòng nhập email đã đăng ký.');
                   return;
                 }
-                setErrorMsg(null);
-                setSuccessMsg('Mã OTP xác thực khôi phục mật khẩu đã được gửi!');
-                setMode('OTP_FORGOT');
+                try {
+                  const res = await hdvService.quenMatKhau(forgotEmail);
+                  setResetToken(res.data);
+                  const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                  setExpectedOtp(generatedOtp);
+                  setOtpCountdown(60);
+                  setOtpArray(['', '', '', '', '', '']);
+                  setErrorMsg(null);
+                  setSuccessMsg(`Mã OTP khôi phục của bạn là: ${generatedOtp}. Vui lòng nhập để tiếp tục.`);
+                  setMode('OTP_FORGOT');
+                } catch (err: any) {
+                  setErrorMsg(err.response?.data?.message || 'Không thể gửi yêu cầu!');
+                }
               }}
               className="space-y-4"
             >
               <div>
-                <label className="text-[9px] font-bold text-slate-400 block mb-1 uppercase">Địa chỉ email đăng ký</label>
+                <label className="text-xs font-bold text-slate-400 block mb-1 uppercase">Địa chỉ email đăng ký</label>
                 <input
                   type="email"
                   placeholder="email@digitaltravel.vn"
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70 select-text"
+                  className="w-full text-sm px-3 py-2.5 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70 select-text"
                   required
+                  onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập email hợp lệ.')}
+                  onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-200 transition active:scale-98"
+                className="w-full py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-sky-200 transition active:scale-98"
               >
                 Gửi Yêu Cầu OTP
               </button>
@@ -221,7 +265,7 @@ export default function DangNhap({
                   switchMode('LOGIN');
                   setIsOtpVerified(false);
                 }}
-                className="text-[10px] text-sky-500 font-bold hover:underline cursor-pointer"
+                className="text-xs text-sky-500 font-bold hover:underline cursor-pointer"
               >
                 Quay lại đăng nhập
               </span>
@@ -235,21 +279,21 @@ export default function DangNhap({
               <h3 className="font-black text-slate-800 text-base text-center">
                 {!isOtpVerified ? 'Xác thực mã OTP' : 'Đặt lại mật khẩu'}
               </h3>
-              <p className="text-[10px] text-slate-500 text-center font-medium leading-relaxed">
+              <p className="text-xs text-slate-500 text-center font-medium leading-relaxed">
                 {!isOtpVerified
-                  ? 'Vui lòng nhập mã OTP'
+                  ? 'Vui lòng nhập mã OTP đã được gửi đến email để xác minh'
                   : 'Xác thực thành công! Hãy đặt mật khẩu mới bên dưới.'}
               </p>
             </div>
 
             {successMsg && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-semibold rounded-xl text-center">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-semibold rounded-xl text-center">
                 {successMsg}
               </div>
             )}
 
             {displayError && (
-              <div className="p-2 bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-semibold rounded-xl flex items-center space-x-1.5 animate-shake">
+              <div className="p-2 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold rounded-xl flex items-center space-x-1.5 animate-shake">
                 <AlertTriangle size={14} className="shrink-0" />
                 <span>{displayError}</span>
               </div>
@@ -260,8 +304,8 @@ export default function DangNhap({
                 onSubmit={(e) => {
                   e.preventDefault();
                   const enteredOtp = otpArray.join('');
-                  if (enteredOtp !== '123456') {
-                    setErrorMsg('Mã OTP không chính xác! Vui lòng nhập 123456.');
+                  if (enteredOtp !== expectedOtp) {
+                    setErrorMsg('Mã OTP không chính xác. Vui lòng kiểm tra lại.');
                     return;
                   }
                   setErrorMsg(null);
@@ -285,19 +329,31 @@ export default function DangNhap({
                       onKeyDown={(e) => handleOtpKeyDown(e, index)}
                       className="w-11 h-11 text-center text-lg font-black text-slate-800 bg-white/80 border-2 border-slate-200 focus:border-sky-500 focus:bg-sky-50/20 rounded-xl outline-none transition-all duration-200 shadow-sm font-mono"
                       required
+                      onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập mã OTP.')}
+                      onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                     />
                   ))}
                 </div>
 
-                <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-                  Bạn chưa nhận được mã? <span className="text-sky-500 font-bold hover:underline cursor-pointer">Gửi lại OTP (01:57)</span>
+                <p className="text-xs text-slate-400 text-center leading-relaxed mt-4">
+                  Bạn chưa nhận được mã?{' '}
+                  {otpCountdown > 0 ? (
+                    <span className="text-sky-500 font-bold">
+                      Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
+                    </span>
+                  ) : (
+                    <span
+                      onClick={handleResendOtp}
+                      className="text-sky-500 font-bold hover:underline cursor-pointer"
+                    >
+                      Gửi lại OTP
+                    </span>
+                  )}
                 </p>
-
-                <p className="text-[8px] text-slate-400 text-center -mt-2">OTP mặc định: <code className="bg-slate-100 px-1 rounded font-bold text-slate-700">123456</code></p>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-sky-100 transition active:scale-95 uppercase tracking-wider"
+                  className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-sky-100 transition active:scale-95 uppercase tracking-wider"
                 >
                   XÁC NHẬN
                 </button>
@@ -305,7 +361,7 @@ export default function DangNhap({
                 <div className="text-center pt-1">
                   <span
                     onClick={() => switchMode('FORGOT')}
-                    className="text-[10px] text-sky-500 font-bold hover:underline cursor-pointer"
+                    className="text-xs text-sky-500 font-bold hover:underline cursor-pointer"
                   >
                     Quay lại gửi yêu cầu
                   </span>
@@ -313,50 +369,63 @@ export default function DangNhap({
               </form>
             ) : (
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   if (forgotNewPassword !== forgotConfirmPassword) {
                     setErrorMsg('Mật khẩu mới không trùng khớp!');
                     return;
                   }
-                  setErrorMsg(null);
-                  setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.');
-                  setForgotEmail('');
-                  setForgotNewPassword('');
-                  setForgotConfirmPassword('');
-                  setOtpArray(['', '', '', '', '', '']);
-                  setIsOtpVerified(false);
-                  setMode('LOGIN');
+                  try {
+                    await hdvService.datLaiMatKhau({
+                      resetToken,
+                      matKhauMoi: forgotNewPassword,
+                      xacNhanMatKhau: forgotConfirmPassword
+                    });
+                    setErrorMsg(null);
+                    setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.');
+                    setForgotEmail('');
+                    setForgotNewPassword('');
+                    setForgotConfirmPassword('');
+                    setOtpArray(['', '', '', '', '', '']);
+                    setIsOtpVerified(false);
+                    setMode('LOGIN');
+                  } catch (err: any) {
+                    setErrorMsg(err.response?.data?.message || 'Không thể đặt lại mật khẩu!');
+                  }
                 }}
                 className="space-y-3.5 animate-slide-up"
               >
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase">Mật khẩu mới</label>
+                  <label className="text-xs font-bold text-slate-400 block mb-0.5 uppercase">Mật khẩu mới</label>
                   <input
                     type="password"
                     placeholder="Mật khẩu mới..."
                     value={forgotNewPassword}
                     onChange={(e) => setForgotNewPassword(e.target.value)}
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70"
+                    className="w-full text-sm px-3 py-2 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70"
                     required
+                    onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập mật khẩu mới.')}
+                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                   />
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 block mb-0.5 uppercase">Xác nhận mật khẩu</label>
+                  <label className="text-xs font-bold text-slate-400 block mb-0.5 uppercase">Xác nhận mật khẩu</label>
                   <input
                     type="password"
                     placeholder="Xác nhận mật khẩu mới..."
                     value={forgotConfirmPassword}
                     onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70"
+                    className="w-full text-sm px-3 py-2 rounded-xl border border-slate-200 focus:border-sky-400 outline-none transition bg-white/70"
                     required
+                    onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng xác nhận mật khẩu mới.')}
+                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-750 text-white font-bold text-xs rounded-xl shadow-lg transition active:scale-98 animate-pulse-subtle"
+                  className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-750 text-white font-bold text-sm rounded-xl shadow-lg transition active:scale-98 animate-pulse-subtle"
                 >
                   Cập nhật mật khẩu mới
                 </button>
@@ -367,25 +436,18 @@ export default function DangNhap({
       </div>
 
       <div className="z-10 text-center space-y-4 w-full animate-slide-up mt-auto" style={{ animationDelay: '200ms' }}>
-        {mode === 'LOGIN' && (
-          <div className="bg-sky-50/50 p-2.5 rounded-2xl border border-sky-100/50 inline-block max-w-[280px] mx-auto">
-            <p className="text-[10px] text-sky-700 leading-snug text-center">
-              <strong>Tài khoản seed</strong>:<br />
-              Ví dụ: <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">hdv01</code> | Mật khẩu <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">password</code>
-            </p>
-          </div>
-        )}
+
 
         <footer className="mt-6 text-center space-y-2 w-full pb-2">
-          <div className="flex items-center justify-center space-x-3 text-[10px] text-slate-400 font-medium">
-            <a href="#" className="hover:text-sky-500 transition">Hỗ trợ</a>
+          <div className="flex items-center justify-center space-x-3 text-xs text-slate-400 font-medium">
+            <a href="mailto:support@digitaltravel.vn" className="hover:text-sky-500 transition">Hỗ trợ</a>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-sky-500 transition">Bảo mật</a>
+            <button type="button" onClick={() => setSuccessMsg('Thông tin bảo mật đang được cập nhật.')} className="hover:text-sky-500 transition">Bảo mật</button>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-sky-500 transition">Điều khoản</a>
+            <button type="button" onClick={() => setSuccessMsg('Điều khoản sử dụng đang được cập nhật.')} className="hover:text-sky-500 transition">Điều khoản</button>
           </div>
 
-          <div className="flex items-center justify-center space-x-2 text-[9px] text-slate-400">
+          <div className="flex items-center justify-center space-x-2 text-xs text-slate-400">
             <span>© 2026 Digital Travel ERP</span>
             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
             <div className="flex items-center space-x-1">
