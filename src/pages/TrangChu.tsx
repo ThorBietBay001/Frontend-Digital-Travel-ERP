@@ -89,30 +89,51 @@ export default function TrangChu() {
   const xuLyLocDanhMuc = (categoryId: string) => {
     let results = [...allTours];
 
+    const beachKeywords = [
+      'phu quoc', 'nha trang', 'ha long', 'con dao', 'mui ne', 'phan thiet', 'vung tau', 
+      'quy nhon', 'phu yen', 'tuy hoa', 'cu lao cham', 'co to', 'cat ba', 'ly son', 
+      'binh thuan', 'khanh hoa', 'quang ninh', 'hai phong', 'sam son', 'cua lo', 
+      'quang binh', 'binh dinh', 'ninh thuan', 'phan rang', 'ba ria', 'kien giang', 'da nang', 'hoi an'
+    ];
+    
+    const mountainKeywords = [
+      'sapa', 'da lat', 'moc chau', 'ha giang', 'cao bang', 'bac kan', 'lang son', 
+      'tuyen quang', 'thai nguyen', 'phu tho', 'bac giang', 'lai chau', 'dien bien', 
+      'son la', 'yen bai', 'hoa binh', 'kon tum', 'gia lai', 'dak lak', 'dak nong', 
+      'lam dong', 'buon ma thuot', 'pleiku', 'mang den', 'ta xua', 'bao loc'
+    ];
+    
+    const cityKeywords = [
+      'ha noi', 'ho chi minh', 'sai gon', 'da nang', 'hai phong', 'can tho', 'hue', 
+      'hoi an', 'ninh binh', 'vinh', 'thanh hoa', 'nam dinh', 'thai binh', 'hai duong', 
+      'hung yen', 'vinh phuc', 'bac ninh', 'dong nai', 'bien hoa', 'binh duong', 'thu dau mot'
+    ];
+    
+    const countrysideKeywords = [
+      'can tho', 'vinh long', 'long an', 'tien giang', 'ben tre', 'tra vinh', 'dong thap', 
+      'an giang', 'kien giang', 'hau giang', 'soc trang', 'bac lieu', 'ca mau', 'my tho', 
+      'chau doc', 'ha tien'
+    ];
+
     switch (categoryId) {
       case 'beach':
         results = results.filter(tour =>
-          tour.destination.includes('Phú Quốc') ||
-          tour.destination.includes('Nha Trang') ||
-          tour.destination.includes('Hạ Long')
+          beachKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
       case 'mountain':
         results = results.filter(tour =>
-          tour.destination.includes('Sapa') ||
-          tour.destination.includes('Đà Lạt')
+          mountainKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
       case 'city':
         results = results.filter(tour =>
-          tour.destination.includes('Đà Nẵng') ||
-          tour.destination.includes('Hội An')
+          cityKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
       case 'countryside':
         results = results.filter(tour =>
-          tour.destination.includes('Cần Thơ') ||
-          tour.destination.includes('Vĩnh Long')
+          countrysideKeywords.some(keyword => chuanHoaVanBan(tour.destination).includes(keyword))
         );
         break;
     }
@@ -307,7 +328,15 @@ export default function TrangChu() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {allTours.filter(t => t.originalPrice).slice(0, 3).map((tour) => (
+            {allTours
+              .filter(t => t.originalPrice)
+              .sort((a, b) => {
+                const discountA = (a.originalPrice - a.price) / a.originalPrice;
+                const discountB = (b.originalPrice - b.price) / b.originalPrice;
+                return discountB - discountA;
+              })
+              .slice(0, 3)
+              .map((tour) => (
               <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
             ))}
           </div>
