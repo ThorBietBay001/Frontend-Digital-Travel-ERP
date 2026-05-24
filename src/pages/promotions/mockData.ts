@@ -46,6 +46,7 @@ export interface VoucherResponse {
   dieuKienApDung?: string;
   soLuotPhatHanh?: number;
   soLuotDaDung?: number;
+  soLuotDaPhanBo?: number;
   ngayHieuLuc?: string;
   ngayHetHan?: string;
   trangThai?: string;
