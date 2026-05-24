@@ -28,6 +28,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
   useEffect(() => {
     if (!isOpen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCode(initialData?.code || '');
     setName(initialData?.name || '');
     setQuantity(initialData?.quantity || '');
@@ -82,7 +83,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
       setMaxDiscount('');
       setMinOrderValue('');
       setErrors({});
-    } catch (err) {
+    } catch {
       // Error is handled in the parent, or we can handle it here if we pass the service
     }
   };

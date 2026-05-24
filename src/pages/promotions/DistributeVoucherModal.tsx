@@ -55,6 +55,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
 
   useEffect(() => {
     if (!isOpen || !voucher) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedCustomers([]);
     setError(null);
     setDistributedCount(voucher.distributed);
@@ -167,7 +168,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
   const refreshDistributedCount = async (fallbackCount: number) => {
     try {
       const latestVoucher = await promotionsService.chiTiet_2(voucher.id);
-      return latestVoucher?.soLuotDaDung ?? fallbackCount;
+      return latestVoucher?.soLuotDaPhanBo ?? latestVoucher?.soLuotDaDung ?? fallbackCount;
     } catch {
       return fallbackCount;
     }

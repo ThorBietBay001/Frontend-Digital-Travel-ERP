@@ -33,7 +33,7 @@ const mapToUI = (api: VoucherResponse): Voucher => ({
   discountType: api.loaiUuDai?.toUpperCase() === 'PHAN_TRAM' || api.loaiUuDai?.toUpperCase() === 'PERCENT' ? 'percent' : 'amount',
   discountValue: api.giaTriGiam || 0,
   quantity: api.soLuotPhatHanh || 0,
-  distributed: api.soLuotDaDung || 0,
+  distributed: api.soLuotDaPhanBo ?? api.soLuotDaDung ?? 0,
   startDate: api.ngayHieuLuc || '',
   expiryDate: api.ngayHetHan || '',
   status: api.trangThai || 'SAN_SANG',
@@ -54,7 +54,7 @@ const VoucherList: React.FC = () => {
   const { user } = useAuth();
   const { confirm } = useNotification();
 
-  const getAll = async () => {
+  const getAll = React.useCallback(async () => {
     if (!hasAccess(user?.maVaiTro, 'promotions')) return;
     setLoading(true);
     setError(null);
@@ -77,9 +77,12 @@ const VoucherList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.maVaiTro]);
 
-  React.useEffect(() => { getAll(); }, [user]);
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    getAll();
+  }, [getAll]);
 
   const handleCreateVoucher = async (payload: VoucherRequest) => {
     try {
