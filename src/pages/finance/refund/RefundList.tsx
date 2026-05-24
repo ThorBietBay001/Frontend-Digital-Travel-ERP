@@ -7,7 +7,7 @@ import { Select } from '../../../components/ui/Select';
 import { Pagination } from '../../../components/ui/Pagination';
 import { Table } from '../../../components/ui/Table';
 import RefundProcessingModal from './RefundProcessingModal';
-import { Download, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import type { Column } from '../../../components/ui/Table';
 import type { RefundRequest } from './mockData';
 import type { RefundData } from './RefundProcessingModal';
@@ -47,7 +47,7 @@ const RefundList: React.FC = () => {
     try {
       const res = await financeService.danhSachChoHoanTien();
       const mapped = (res?.content || []).map((t: ThanhToanResponse): RefundRequest => {
-        let status: any = t.trangThai || 'CHO_THANH_TOAN';
+        const status: RefundRequest['status'] = (t.trangThai as RefundRequest['status']) || 'CHO_THANH_TOAN';
 
         return {
           id: t.maGiaoDich || '',
@@ -82,13 +82,13 @@ const RefundList: React.FC = () => {
           if (action === 'complete') {
             return {
               ...refund,
-              status: 'DA_HOAN_TIEN' as any,
+              status: 'DA_HOAN_TIEN',
               refundMethod: data?.method,
               bankAccount: data?.bankAccount,
               transactionCode: data?.transactionCode,
             };
           }
-          return { ...refund, status: 'TU_CHOI' as any };
+          return { ...refund, status: 'TU_CHOI' };
         })
       );
     } catch (e) {

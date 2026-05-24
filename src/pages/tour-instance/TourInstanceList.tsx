@@ -12,7 +12,7 @@ import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
 import type { TourInstance } from './mockData';
 import { mockTourInstances } from './mockData';
-import type { TourThucTeResponse, TaoTourThucTeRequest, CapNhatTourThucTeRequest } from '../../services/tour-instance';
+import type { TourThucTeResponse, CapNhatTourThucTeRequest } from '../../services/tour-instance';
 import { tourInstanceService } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
@@ -117,8 +117,9 @@ const TourInstanceList: React.FC = () => {
   };
 
   const handleFormSubmit = async (tourData: TourInstance) => {
+    const wasCreate = modalState.mode === 'create';
     try {
-      if (modalState.mode === 'create') {
+      if (wasCreate) {
         // Wizard handles API creation directly.
         return;
       } else if (modalState.mode === 'edit') {
@@ -134,7 +135,7 @@ const TourInstanceList: React.FC = () => {
       }
       closeModal();
       await getAll();
-      alert(modalState.mode === 'create' ? 'Thành công' : 'Cập nhật tour thành công');
+      alert(wasCreate ? 'Thành công' : 'Cập nhật tour thành công');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Xảy ra lỗi';
       alert('Lỗi: ' + msg);
@@ -226,7 +227,7 @@ const TourInstanceList: React.FC = () => {
       title: 'Hành động',
       align: 'center',
       render: (record) => {
-        const canEditOrDelete = ['CHO_KICH_HOAT', 'SAP_DIEN_RA'].includes(record.status);
+        const canEditOrDelete = record.status === 'CHO_KICH_HOAT';
         const canBan = record.status === 'MO_BAN';
 
         return (
@@ -310,7 +311,6 @@ const TourInstanceList: React.FC = () => {
                 { label: 'Tất cả', value: 'all' },
                 { label: 'Chờ kích hoạt', value: 'CHO_KICH_HOAT' },
                 { label: 'Mở bán', value: 'MO_BAN' },
-                { label: 'Sắp diễn ra', value: 'SAP_DIEN_RA' },
                 { label: 'Đang diễn ra', value: 'DANG_DIEN_RA' },
                 { label: 'Kết thúc', value: 'KET_THUC' },
                 { label: 'Đã quyết toán', value: 'DA_QUYET_TOAN' },

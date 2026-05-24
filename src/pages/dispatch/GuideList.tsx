@@ -43,7 +43,6 @@ const GuideList: React.FC = () => {
   const [data, setData] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refTourCode, setRefTourCode] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSkill, setFilterSkill] = useState('all');
@@ -74,7 +73,6 @@ const GuideList: React.FC = () => {
           setData([]);
           return;
         }
-        setRefTourCode(refTour.maTourThucTe);
         guides = await dispatchService.hdvKhaDung({ maTourThucTe: refTour.maTourThucTe });
       }
 

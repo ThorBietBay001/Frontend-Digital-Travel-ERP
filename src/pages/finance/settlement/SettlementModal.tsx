@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Table } from '../../../components/ui/Table';
 import { AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
-import type { Column } from '../../../components/ui/Table';
 import type { SettlementTour } from './mockData';
 import { useNotification } from '../../../context/NotificationContext';
 

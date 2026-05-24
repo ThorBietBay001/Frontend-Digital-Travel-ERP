@@ -6,6 +6,7 @@ export interface SearchInputProps {
   value?: string;
   onChange?: (value: string) => void;
   onSearch?: (value: string) => void;
+  onFocus?: () => void;
   className?: string;
 }
 
@@ -14,6 +15,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   value,
   onChange,
   onSearch,
+  onFocus,
   className = '',
 }) => {
   // Quản lý state nội bộ nếu component không bị điều khiển (uncontrolled)
@@ -55,6 +57,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         value={internalValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onFocus={onFocus}
         className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#C5EAFF] rounded-[8px] text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#89D4FF] focus:ring-2 focus:ring-[#89D4FF]/20 transition-all"
       />
     </div>

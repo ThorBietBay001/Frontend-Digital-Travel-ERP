@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Trash2, Pencil, Plus } from 'lucide-react';
-import { servicesService, type DichVuThemResponse } from '../../services/services';
+import { servicesService } from '../../services/services';
 import type { Service } from '../services/mockData';
 import { Modal } from '../../components/ui/Modal';
 import ServiceForm from '../services/ServiceForm';
@@ -27,7 +27,7 @@ const TourTemplateServiceTab: React.FC<TourTemplateServiceTabProps> = ({ selecte
     try {
       // The backend API doesn't actually support 'ten' query, but we fetch all and filter on frontend
       const res = await servicesService.danhSachDichVuThem();
-      const mapped = res.map((r) => ({
+      const mapped: Service[] = res.map((r) => ({
         id: r.maDichVuThem || '',
         code: r.maDichVuThem || '',
         name: r.ten || '',

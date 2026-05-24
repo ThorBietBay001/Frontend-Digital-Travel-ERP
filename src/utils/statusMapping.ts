@@ -17,7 +17,6 @@ export const mapTourInstanceStatus = (status?: string): StatusMapping => {
   switch (status) {
     case 'CHO_KICH_HOAT': return { label: 'Chờ kích hoạt', variant: 'warning' };
     case 'MO_BAN': return { label: 'Mở bán', variant: 'success' };
-    case 'SAP_DIEN_RA': return { label: 'Sắp diễn ra', variant: 'info' };
     case 'DANG_DIEN_RA': return { label: 'Đang diễn ra', variant: 'info' };
     case 'KET_THUC': return { label: 'Kết thúc', variant: 'neutral' };
     case 'HUY': return { label: 'Hủy', variant: 'error' };

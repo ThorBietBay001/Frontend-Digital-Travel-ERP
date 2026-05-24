@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
-import { User, Phone, Mail, MapPin, CreditCard, Leaf, Cake, AlertCircle, MapPinned } from 'lucide-react';
+import { Phone, Mail, CreditCard, Leaf, Cake, AlertCircle, MapPinned } from 'lucide-react';
 import type { Customer } from './mockData';
 import { customersService } from '../../services/customers';
 import api from '../../services/api';

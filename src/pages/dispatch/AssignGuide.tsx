@@ -17,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
 
-const PENDING_STATUSES = new Set(['CHO_KICH_HOAT', 'MO_BAN']);
+const PENDING_STATUSES = new Set(['CHO_KICH_HOAT']);
 
 const calcDurationDays = (start?: string, end?: string): string => {
   if (!start || !end) return '—';
@@ -186,7 +186,7 @@ const AssignGuide: React.FC = () => {
       <div className="flex flex-col h-full gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-[32px] font-bold text-[#121C2C]">Danh sách chờ phân bổ</h1>
-          <p className="text-gray-500 text-sm">Tour trạng thái CHO_KICH_HOAT / MO_BAN — lọc theo OpenAPI.</p>
+          <p className="text-gray-500 text-sm">Chỉ điều phối HDV cho tour ở trạng thái CHO_KICH_HOAT.</p>
         </div>
 
         <div className="bg-white p-4 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-center justify-between">
