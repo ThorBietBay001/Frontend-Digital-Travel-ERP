@@ -1,25 +1,476 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { useAuth } from '../../context/AuthContext';
-import { getRoleLabel } from '../../config/rolePermissions';
+import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map, CheckCircle2, XCircle, Clock, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../../components/ui/Button';
+
+// API Services
+import { customersService } from '../../services/customers';
+import { ordersService } from '../../services/orders';
+import { tourInstanceService } from '../../services/tour-instance';
+import { tourTemplateService } from '../../services/tour-template';
+import { logsService } from '../../services/system/logs';
+import type { TourThucTeResponse } from '../../pages/tour-instance/mockData';
+import type { NhatKyHeThongResponse } from '../../pages/system/logs/mockData';
+import PowerBIConnectionModal from './PowerBIConnectionModal';
+
+const revenueData = [
+  { name: 'T1', value: 120000000 },
+  { name: 'T2', value: 250000000 },
+  { name: 'T3', value: 380000000 },
+  { name: 'T4', value: 500000000 },
+  { name: 'T5', value: 420000000 },
+  { name: 'T6', value: 650000000 },
+  { name: 'T7', value: 800000000 },
+  { name: 'T8', value: 950000000 },
+  { name: 'T9', value: 720000000 },
+  { name: 'T10', value: 550000000 },
+  { name: 'T11', value: 680000000 },
+  { name: 'T12', value: 1250000000 },
+];
+
+const pieData = [
+  { name: 'Đã xác nhận', value: 65, color: '#3B82F6' },
+  { name: 'Đang xử lý', value: 25, color: '#60A5FA' },
+  { name: 'Đã hủy', value: 10, color: '#93C5FD' },
+];
+
+const topDestinations = [
+  { name: 'Hội An, Quảng Nam', percent: 45 },
+  { name: 'Đà Lạt, Lâm Đồng', percent: 30 },
+  { name: 'Nha Trang, Khánh Hòa', percent: 15 },
+  { name: 'Phú Quốc, Kiên Giang', percent: 10 },
+];
+
+function formatVietnameseCurrencyShort(value: number) {
+  if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1).replace('.0', '') + 'B VNĐ';
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1).replace('.0', '') + 'M VNĐ';
+  if (value >= 1_000) return (value / 1_000).toFixed(1).replace('.0', '') + 'K VNĐ';
+  return value + ' VNĐ';
+}
+
+function getTimeAgo(dateString: string | undefined): string {
+  if (!dateString) return 'Vừa xong';
+  const time = new Date(dateString).getTime();
+  const now = new Date().getTime();
+  const diffMinutes = Math.floor((now - time) / 60000);
+
+  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  return `${Math.floor(diffHours / 24)} ngày trước`;
+}
+
+function formatTrangThaiTour(status: string | undefined): string {
+  if (!status) return '---';
+  switch (status) {
+    case 'MO_BAN': return 'Mở bán';
+    case 'DANG_THUC_HIEN': return 'Đang thực hiện';
+    case 'DA_HOAN_THANH': return 'Đã hoàn thành';
+    case 'DA_QUYET_TOAN': return 'Đã quyết toán';
+    case 'HUY': return 'Đã hủy';
+    case 'DA_DONG': return 'Đã đóng';
+    default: return status;
+  }
+}
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const roleLabel = getRoleLabel(user?.maVaiTro || '');
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    customers: 834245,
+    orders: 31684,
+    tours: 256,
+    revenue: 124850
+  });
+
+  const [featuredTours, setFeaturedTours] = useState<TourThucTeResponse[]>([]);
+  const [destinations, setDestinations] = useState<{ name: string, percent: number }[]>([]);
+  const [recentLogs, setRecentLogs] = useState<NhatKyHeThongResponse[]>([]);
+  const [isPowerBiModalOpen, setIsPowerBiModalOpen] = useState(false);
+  const [selectedTour, setSelectedTour] = useState<TourThucTeResponse | null>(null);
+
+  useEffect(() => {
+    // Fetch actual data from backend
+    const fetchStats = async () => {
+      try {
+        const [customers, orders, tours, templates, logs] = await Promise.all([
+          customersService.timKiemKhachHang({ page: 0, size: 1 }).catch(() => null),
+          ordersService.danhSachTatCa({ page: 0, size: 1 }).catch(() => null),
+          tourInstanceService.danhSach({ page: 0, size: 1 }).catch(() => null),
+          tourTemplateService.danhSach({ page: 0, size: 10, sort: 'DanhGia,desc' }).catch(() => null),
+          logsService.nhatKyHeThong({ size: 3 }).catch(() => null)
+        ]);
+
+        setStats(prev => ({
+          ...prev,
+          customers: customers?.totalElements || prev.customers,
+          orders: orders?.totalElements || prev.orders,
+          tours: tours?.totalElements || prev.tours
+        }));
+
+        if (tours && tours.content) {
+          setFeaturedTours(tours.content.slice(0, 3));
+        }
+
+        if (templates && templates.content) {
+          // Top điểm đến (Lấy từ tiêu đề tour mẫu và tạo phần trăm giả lập dựa trên số đánh giá)
+          const dests = templates.content.slice(3, 7).map((t, idx) => {
+            const fullName = t.tieuDe || 'Điểm đến ' + (idx + 1);
+            const shortName = fullName.split('-')[0].trim();
+            return {
+              name: shortName,
+              percent: Math.floor(Math.random() * 41) + 50 // 50% to 90%
+            };
+          });
+          if (dests.length > 0) {
+            setDestinations(dests.sort((a, b) => b.percent - a.percent));
+          } else {
+            setDestinations(topDestinations);
+          }
+        } else {
+          setDestinations(topDestinations);
+        }
+
+        if (logs && logs.content) {
+          setRecentLogs(logs.content.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats", err);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
   return (
-    <MainLayout
-      activeMenu="Tổng quan"
-      breadcrumb={[{ label: 'Tổng quan' }]}
-    >
-      <div className="flex flex-col items-center justify-center h-full bg-white rounded-[16px] shadow-sm border border-blue-50">
-        <h1 className="text-[40px] font-bold text-[#00668A] mb-4">
-          Chào mừng bạn, {user?.hoTen || 'Người dùng'}!
-        </h1>
-        <p className="text-gray-500 text-lg">
-          Hệ thống Quản lý Điều hành Tour. Bạn đã đăng nhập với vai trò: {roleLabel}
-        </p>
+    <MainLayout activeMenu="Tổng quan" breadcrumb={[{ label: 'Tổng quan' }]}>
+      <div className="flex flex-col gap-6 animate-fadeIn pb-10">
+        {/* HEADER ACTIONS */}
+        <div className="flex justify-end gap-3">
+          <Button variant="primary" className="py-2.5 px-6 text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2" onClick={() => setIsPowerBiModalOpen(true)}>
+            <BarChart3 size={18} />
+            Phân tích dữ liệu
+          </Button>
+        </div>
+
+        {/* TOP SECTION */}
+        <div className="grid grid-cols-12 gap-6 items-stretch">
+          {/* Left: 4 Metrics */}
+          <div className="col-span-9 grid grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-8">
+                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                    <Wallet size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                    <ArrowUpRight size={14} strokeWidth={3} />
+                    <span>12.5%</span>
+                  </div>
+                </div>
+                <div className="mt-auto">
+                  <p className="text-gray-600 text-sm font-medium mb-1">Doanh thu</p>
+                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={`${stats.revenue.toLocaleString('vi-VN')} VNĐ`}>{formatVietnameseCurrencyShort(stats.revenue)}</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-8">
+                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                    <ShoppingCart size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                    <ArrowUpRight size={14} strokeWidth={3} />
+                    <span>8.2%</span>
+                  </div>
+                </div>
+                <div className="mt-auto">
+                  <p className="text-gray-600 text-sm font-medium mb-1">Đơn hàng</p>
+                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={stats.orders.toLocaleString('vi-VN')}>{stats.orders.toLocaleString('vi-VN')}</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-8">
+                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                    <Users size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                    <ArrowUpRight size={14} strokeWidth={3} />
+                    <span>15.3%</span>
+                  </div>
+                </div>
+                <div className="mt-auto">
+                  <p className="text-gray-600 text-sm font-medium mb-1">Khách hàng</p>
+                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={stats.customers.toLocaleString('vi-VN')}>{stats.customers.toLocaleString('vi-VN')}</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+              <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-8">
+                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                    <Map size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="flex items-center gap-1 text-red-500 bg-red-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                    <ArrowDownRight size={14} strokeWidth={3} />
+                    <span>2.1%</span>
+                  </div>
+                </div>
+                <div className="mt-auto">
+                  <p className="text-gray-600 text-sm font-medium mb-1">Tổng Tour</p>
+                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={`${stats.tours.toLocaleString('vi-VN')} Tours`}>{stats.tours.toLocaleString('vi-VN')}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Calendar */}
+          <div className="col-span-3">
+            <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 h-full flex flex-col justify-center">
+              <div className="flex justify-between items-center mb-4">
+                <button className="text-gray-400 hover:text-gray-800">&lt;</button>
+                <h3 className="font-bold text-gray-800">Tháng 5, 2026</h3>
+                <button className="text-gray-400 hover:text-gray-800">&gt;</button>
+              </div>
+              <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-400 mb-2">
+                <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+              </div>
+              <div className="grid grid-cols-7 gap-y-2 text-center text-sm">
+                <div className="text-gray-300">27</div><div className="text-gray-300">28</div><div className="text-gray-300">29</div><div className="text-gray-300">30</div>
+                {days.slice(0, 3).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
+                {days.slice(3, 10).map(d => (
+                  <div key={d} className={`py-1 ${d === 6 ? 'bg-blue-400 text-white rounded-full mx-1' : 'text-gray-700'}`}>
+                    {d}
+                  </div>
+                ))}
+                {days.slice(10, 17).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
+                {days.slice(17, 24).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
+                {days.slice(24, 31).map(d => <div key={d} className="py-1 text-gray-700">{d}</div>)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* MIDDLE SECTION */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left: Featured Tours (Expanded horizontally) */}
+          <div className="col-span-9">
+            <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 h-full">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-lg text-gray-800">Gói Tour Nổi Bật</h3>
+              </div>
+              <div className="grid grid-cols-3 gap-6">
+                {featuredTours.length > 0 ? featuredTours.map((tour, idx) => {
+                  const days = tour.ngayKhoiHanh && tour.ngayKetThuc ? Math.max(1, Math.round((new Date(tour.ngayKetThuc).getTime() - new Date(tour.ngayKhoiHanh).getTime()) / (1000 * 3600 * 24))) : 1;
+                  const natureImages = [
+                    'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&q=80', // mountain
+                    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=80', // forest
+                    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=80'  // landscape
+                  ];
+                  return (
+                    <div key={idx} className="flex flex-col gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setSelectedTour(tour)}>
+                      <div className="h-40 bg-gray-200 rounded-xl bg-cover bg-center relative" style={{ backgroundImage: `url('${natureImages[idx % natureImages.length]}')` }}>
+                        {idx === 0 && <span className="absolute top-2 right-2 bg-white px-2 py-0.5 rounded text-xs font-bold text-gray-800">HOT</span>}
+                      </div>
+                      <p className="font-semibold text-sm text-gray-800 truncate" title={tour.tieuDeTour}>{tour.tieuDeTour || 'Tour Thực Tế'}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1"><CalendarIcon size={12} /> {days} Ngày {Math.max(0, days - 1)} Đêm</p>
+                      <p className="font-bold text-sm text-blue-600 mt-1">₫{(tour.giaHienHanh || 0).toLocaleString('vi-VN')}</p>
+                    </div>
+                  );
+                }) : (
+                  <div className="col-span-3 text-center py-10 text-gray-500">Đang tải dữ liệu...</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Top Destinations */}
+          <div className="col-span-3">
+            <div className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 h-full flex flex-col justify-center">
+              <h3 className="font-bold text-lg text-gray-800 mb-6">Top Điểm Đến</h3>
+              <div className="flex flex-col gap-4">
+                {destinations.map((dest, idx) => (
+                  <div key={idx}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium text-gray-700 truncate pr-2">{dest.name}</span>
+                      <span className="text-gray-500 shrink-0">{dest.percent}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className="bg-blue-400 h-2 rounded-full" style={{ width: `${dest.percent}%` }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION */}
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-9 grid grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 col-span-1">
+              <h3 className="font-bold text-lg text-gray-800 mb-4">Tổng quan Đơn hàng</h3>
+              <div className="h-48 relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-gray-800" title={stats.orders.toString()}>
+                    {stats.orders > 1000 ? (stats.orders / 1000).toFixed(1).replace('.0', '') + 'k' : stats.orders}
+                  </span>
+                  <span className="text-xs text-gray-500">Tổng</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 mt-4 text-sm">
+                {pieData.map((entry, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                      <span className="text-gray-600">{entry.name}</span>
+                    </div>
+                    <span className="font-medium text-gray-800">{entry.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 col-span-2 flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-lg text-gray-800">Doanh thu năm 2025</h3>
+              </div>
+              <div className="flex-1 min-h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={revenueData}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} dy={10} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      cursor={{ stroke: '#E5E7EB', strokeWidth: 2 }}
+                      formatter={(value: number) => [formatVietnameseCurrencyShort(value), 'Doanh thu']}
+                    />
+                    <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={4} dot={false} activeDot={{ r: 8, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-span-3">
+            <div className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 h-full flex flex-col justify-start">
+              <h3 className="font-bold text-lg text-gray-800 mb-6">Hoạt động Gần đây</h3>
+              <div className="flex flex-col gap-6">
+                {recentLogs.length > 0 ? recentLogs.map((log, idx) => {
+                  let Icon = CheckCircle2;
+                  let colorClass = 'text-blue-500';
+                  if (log.hanhDong === 'THEM') {
+                    Icon = CheckCircle2;
+                    colorClass = 'text-blue-500';
+                  } else if (log.hanhDong === 'CAP_NHAT') {
+                    Icon = Clock;
+                    colorClass = 'text-orange-400';
+                  } else if (log.hanhDong === 'XOA') {
+                    Icon = XCircle;
+                    colorClass = 'text-red-500';
+                  }
+
+                  return (
+                    <div key={idx} className="flex gap-3">
+                      <div className={`mt-0.5 ${colorClass}`}><Icon size={18} /></div>
+                      <div>
+                        <p className="text-sm text-gray-800">
+                          <span className="font-semibold">{log.tenDangNhap || log.maTaiKhoan || 'System'}</span> {log.hanhDong === 'THEM' ? 'đã thêm' : log.hanhDong === 'CAP_NHAT' ? 'đã cập nhật' : log.hanhDong === 'XOA' ? 'đã xóa' : log.hanhDong} {log.doiTuong || 'dữ liệu'} <span className="font-medium text-gray-600">{log.maDoiTuong || ''}</span>
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">{getTimeAgo(log.thoiGian)}</p>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="text-sm text-gray-500 text-center py-4">Chưa có hoạt động nào</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Power BI Modal */}
+      <PowerBIConnectionModal
+        isOpen={isPowerBiModalOpen}
+        onClose={() => setIsPowerBiModalOpen(false)}
+      />
+
+      {/* Tour Detail Popup */}
+      {selectedTour && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col relative animate-slideUp">
+            <button
+              className="absolute top-4 right-4 bg-white/50 hover:bg-white p-2 rounded-full text-gray-800 transition-colors z-10 backdrop-blur-sm shadow-sm"
+              onClick={() => setSelectedTour(null)}
+            >
+              <XCircle size={24} />
+            </button>
+            <div className="h-48 bg-gray-200 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80')" }}></div>
+            <div className="p-6 overflow-y-auto">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full uppercase tracking-wider">{formatTrangThaiTour(selectedTour.trangThai)}</span>
+              <h2 className="text-2xl font-bold text-gray-900 mt-3 mb-2 leading-tight">{selectedTour.tieuDeTour || 'Tour Thực Tế'}</h2>
+              <p className="text-gray-500 flex items-center gap-2 text-sm mb-6"><MapPin size={16} /> Mã Tour: {selectedTour.maTourThucTe}</p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 mb-1">Ngày khởi hành</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CalendarIcon size={14} className="text-blue-500"/> {selectedTour.ngayKhoiHanh ? new Date(selectedTour.ngayKhoiHanh).toLocaleDateString('vi-VN') : '---'}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 mb-1">Giá hiện hành</p>
+                  <p className="font-bold text-blue-600 flex items-center gap-1.5"><Wallet size={14}/> ₫{(selectedTour.giaHienHanh || 0).toLocaleString('vi-VN')}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 mb-1">Chỗ còn lại</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><Users size={14} className="text-emerald-500"/> {selectedTour.choConLai || 0} / {selectedTour.soKhachToiDa || 0}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 mb-1">Trạng thái tour</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CheckCircle2 size={14} className="text-orange-500"/> {formatTrangThaiTour(selectedTour.trangThai)}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4 border-t border-gray-100">
+                <Button variant="primary" className="flex-1" onClick={() => setSelectedTour(null)}>Đóng</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 };
