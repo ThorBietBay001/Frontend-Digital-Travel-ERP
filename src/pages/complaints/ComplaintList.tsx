@@ -237,6 +237,10 @@ const ComplaintList: React.FC = () => {
         const lastAction = updatedComplaint.timeline[updatedComplaint.timeline.length - 1]?.action || '';
         const noiDung = lastAction.includes(':') ? lastAction.split(':').slice(1).join(':').trim() : lastAction;
         await complaintsService.yeuCauHdvGiaiTrinh(updatedComplaint.id, noiDung || 'Vui lòng giải trình yêu cầu hỗ trợ này.');
+      } else if (updatedComplaint.status === 'pending_info') {
+        const lastAction = updatedComplaint.timeline[updatedComplaint.timeline.length - 1]?.action || '';
+        const noiDung = lastAction.includes(':') ? lastAction.split(':').slice(1).join(':').trim() : lastAction;
+        await complaintsService.yeuCauKhachHangBoSung(updatedComplaint.id, noiDung || 'Vui lòng bổ sung thông tin cho yêu cầu hỗ trợ này.');
       } else {
         await complaintsService.xuLyYeuCauHoTro(updatedComplaint.id, payload);
       }

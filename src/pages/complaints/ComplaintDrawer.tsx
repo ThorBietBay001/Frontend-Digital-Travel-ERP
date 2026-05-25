@@ -19,7 +19,8 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
   const formatComplaintContent = (content: string) => {
     return content
       .replace(/lúc (\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?/g, 'lúc $1 $2')
-      .replace(/(\[(?:Yêu cầu HDV giải trình|HDV giải trình) lúc [^\]]+\]:)\s*/g, '$1 \n');
+      .replace(/(\[(?:Yêu cầu HDV giải trình|HDV giải trình|Yêu cầu KH bổ sung) lúc [^\]]+\]:)\s*/g, '$1 \n')
+      .replace(/(\[Bổ sung ngày [^\]]+\]:)\s*/g, '$1\n');
   };
   
   useEffect(() => {
