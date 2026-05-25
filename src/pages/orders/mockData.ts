@@ -153,7 +153,7 @@ export interface Order {
   transactionCode?: string;
   paymentMethod?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  paymentStatus: 'paid' | 'unpaid' | 'pending_confirmation' | 'partial' | 'refunded';
+  paymentStatus: 'paid' | 'unpaid' | 'failed' | 'refunded';
   passengerCount: number;
   passengers?: Passenger[];
   isExpired?: boolean;

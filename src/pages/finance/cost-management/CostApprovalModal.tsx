@@ -46,16 +46,20 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
         });
       }
 
-      if ((!cost.guidePhone || cost.guidePhone === 'Đang tải...') && cost.guideId) {
-        accountsService.chiTietNhanVien(cost.guideId).then(res => {
-          if (res && res.soDienThoai) {
-            setExtraDetails(prev => ({ ...prev, guidePhone: res.soDienThoai || 'Chưa cập nhật' }));
-          } else {
-            setExtraDetails(prev => ({ ...prev, guidePhone: 'Chưa cập nhật' }));
-          }
-        }).catch(() => {
-          setExtraDetails(prev => ({ ...prev, guidePhone: 'Chưa cập nhật' }));
-        });
+      if (!cost.guidePhone || cost.guidePhone === 'Đang tải...') {
+        if (cost.guideId && cost.guideId !== 'N/A') {
+          accountsService.chiTietNhanVien(cost.guideId).then(res => {
+            if (res && res.soDienThoai) {
+              setExtraDetails(prev => ({ ...prev, guidePhone: res.soDienThoai! }));
+            } else {
+              setExtraDetails(prev => ({ ...prev, guidePhone: 'Không có' }));
+            }
+          }).catch(() => {
+            setExtraDetails(prev => ({ ...prev, guidePhone: 'Không có' }));
+          });
+        } else {
+          setExtraDetails(prev => ({ ...prev, guidePhone: 'Không xác định' }));
+        }
       }
     }
   }, [isOpen, cost?.id]);

@@ -13,7 +13,7 @@ export const ROLE_MENU_ACCESS: Record<string, string[]> = {
   SALES: ['dashboard', 'orders', 'customers', 'complaints', 'promotions'],
   DIEUHANH: ['dashboard', 'tour-instance', 'dispatch', 'hr'],
   MANAGER: ['dashboard', 'tour-instance', 'dispatch', 'hr'],
-  KETOAN: ['dashboard', 'finance'],
+  KETOAN: ['dashboard', 'orders', 'finance'],
 };
 
 export const hasAccess = (role: string | undefined, menuKey: string): boolean => {

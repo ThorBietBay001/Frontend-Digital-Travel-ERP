@@ -9,7 +9,9 @@ import { customersService } from '../../services/customers';
 import { ordersService } from '../../services/orders';
 import { tourInstanceService } from '../../services/tour-instance';
 import { tourTemplateService } from '../../services/tour-template';
-import { logsService, type NhatKyHeThongResponse } from '../../services/system/logs';
+import { incidentService } from '../../services/incidents';
+import type { NhatKySuCoResponse } from '../../services/incidents';
+import { ChevronLeft, ChevronRight, AlertTriangle, Info } from 'lucide-react';
 import type { TourThucTeResponse } from '../../pages/tour-instance/mockData';
 import PowerBIConnectionModal from './PowerBIConnectionModal';
 
@@ -48,9 +50,17 @@ function formatVietnameseCurrencyShort(value: number) {
   return value.toLocaleString('vi-VN') + ' VNĐ';
 }
 
-function getTimeAgo(dateString: string | undefined): string {
-  if (!dateString) return 'Vừa xong';
-  const time = new Date(dateString).getTime();
+function getTimeAgo(dateInput: any): string {
+  if (!dateInput) return 'Vừa xong';
+  
+  let time: number;
+  if (Array.isArray(dateInput)) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = dateInput;
+    time = new Date(year, month - 1, day, hour, minute, second).getTime();
+  } else {
+    time = new Date(dateInput).getTime();
+  }
+
   const now = new Date().getTime();
   const diffMinutes = Math.floor((now - time) / 60000);
 
@@ -84,20 +94,21 @@ const Dashboard: React.FC = () => {
 
   const [featuredTours, setFeaturedTours] = useState<TourThucTeResponse[]>([]);
   const [destinations, setDestinations] = useState<{ name: string, percent: number }[]>([]);
-  const [recentLogs, setRecentLogs] = useState<NhatKyHeThongResponse[]>([]);
+  const [recentIncidents, setRecentIncidents] = useState<NhatKySuCoResponse[]>([]);
   const [isPowerBiModalOpen, setIsPowerBiModalOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<TourThucTeResponse | null>(null);
+  const [currentFeaturedIndex, setCurrentFeaturedIndex] = useState(0);
 
   useEffect(() => {
     // Fetch actual data from backend
     const fetchStats = async () => {
       try {
-        const [customers, orders, tours, templates, logs] = await Promise.all([
+        const [customers, orders, tours, templates, incidents] = await Promise.all([
           customersService.timKiemKhachHang({ page: 0, size: 1 }).catch(() => null),
           ordersService.danhSachTatCa({ page: 0, size: 1 }).catch(() => null),
           tourInstanceService.danhSach({ page: 0, size: 1 }).catch(() => null),
           tourTemplateService.danhSach({ page: 0, size: 10, sort: 'DanhGia,desc' }).catch(() => null),
-          logsService.nhatKyHeThong({ size: 3 }).catch(() => null)
+          incidentService.lichSuSuCoCuaHdv().catch(() => null)
         ]);
 
         setStats(prev => ({
@@ -107,12 +118,31 @@ const Dashboard: React.FC = () => {
           tours: tours?.totalElements || prev.tours
         }));
 
-        if (tours && tours.content) {
-          setFeaturedTours(tours.content.slice(0, 3));
+        // Fetch larger batch for featured calculation
+        const allToursResp = await tourInstanceService.danhSach({ page: 0, size: 200 }).catch(() => null);
+        if (allToursResp && allToursResp.content) {
+          // Lọc các tour đang mở bán và còn chỗ
+          const activeTours = allToursResp.content.filter(t => t.trangThai === 'MO_BAN' && typeof t.choConLai === 'number' && t.choConLai > 0);
+          
+          // Sắp xếp theo chỗ còn lại tăng dần (gần full nhất lên đầu)
+          activeTours.sort((a, b) => (a.choConLai || 0) - (b.choConLai || 0));
+
+          // Loại bỏ các tour trùng mẫu để đa dạng
+          const uniqueFeatured: TourThucTeResponse[] = [];
+          const seenMau = new Set<string>();
+          for (const t of activeTours) {
+            if (t.maTourMau && !seenMau.has(t.maTourMau)) {
+              seenMau.add(t.maTourMau);
+              uniqueFeatured.push(t);
+            }
+          }
+
+          // Chỉ lấy 12 tour
+          setFeaturedTours(uniqueFeatured.slice(0, 12));
         }
 
         if (templates && templates.content) {
-          // Top điểm đến (Lấy từ tiêu đề tour mẫu và tạo phần trăm giả lập dựa trên số đánh giá)
+          // Top Điểm đến (Lấy từ tiêu đề tour mẫu và tạo phần trăm giả lập dựa trên số đánh giá)
           const dests = templates.content.slice(3, 7).map((t, idx) => {
             const fullName = t.tieuDe || 'Điểm đến ' + (idx + 1);
             const shortName = fullName.split('-')[0].trim();
@@ -126,12 +156,10 @@ const Dashboard: React.FC = () => {
           } else {
             setDestinations(topDestinations);
           }
-        } else {
-          setDestinations(topDestinations);
         }
 
-        if (logs && logs.content) {
-          setRecentLogs(logs.content.slice(0, 3));
+        if (incidents) {
+          setRecentIncidents(incidents.slice(0, 4));
         }
       } catch (err) {
         console.error("Failed to fetch dashboard stats", err);
@@ -182,83 +210,75 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-12 gap-6 items-stretch">
           {/* Left: 4 Metrics */}
           <div className="col-span-9 grid grid-cols-4 gap-4">
-            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-center h-full relative overflow-hidden min-h-[160px]">
               <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
 
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
-                    <Wallet size={20} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
-                    <ArrowUpRight size={14} strokeWidth={3} />
-                    <span>12.5%</span>
-                  </div>
+              <div className="relative z-10 flex items-center justify-center gap-2 w-full">
+                <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                  <Wallet size={20} strokeWidth={2.5} />
                 </div>
-                <div className="mt-auto">
-                  <p className="text-gray-600 text-sm font-medium mb-1">Doanh thu</p>
-                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={`${stats.revenue.toLocaleString('vi-VN')} VNĐ`}>{formatVietnameseCurrencyShort(stats.revenue)}</h3>
+                <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                  <ArrowUpRight size={14} strokeWidth={3} />
+                  <span>12.5%</span>
                 </div>
+              </div>
+              <div className="relative z-10 flex flex-col items-center text-center w-full mt-4">
+                <p className="text-gray-600 text-sm font-medium mb-1">Doanh thu</p>
+                <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={`${stats.revenue.toLocaleString('vi-VN')} VNĐ`}>{formatVietnameseCurrencyShort(stats.revenue)}</h3>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-center h-full relative overflow-hidden min-h-[160px]">
               <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
 
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
-                    <ShoppingCart size={20} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
-                    <ArrowUpRight size={14} strokeWidth={3} />
-                    <span>8.2%</span>
-                  </div>
+              <div className="relative z-10 flex items-center justify-center gap-2 w-full">
+                <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                  <ShoppingCart size={20} strokeWidth={2.5} />
                 </div>
-                <div className="mt-auto">
-                  <p className="text-gray-600 text-sm font-medium mb-1">Đơn hàng</p>
-                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={stats.orders.toLocaleString('vi-VN')}>{stats.orders.toLocaleString('vi-VN')}</h3>
+                <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                  <ArrowUpRight size={14} strokeWidth={3} />
+                  <span>8.2%</span>
                 </div>
+              </div>
+              <div className="relative z-10 flex flex-col items-center text-center w-full mt-4">
+                <p className="text-gray-600 text-sm font-medium mb-1">Đơn hàng</p>
+                <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={stats.orders.toLocaleString('vi-VN')}>{stats.orders.toLocaleString('vi-VN')}</h3>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-center h-full relative overflow-hidden min-h-[160px]">
               <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
 
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
-                    <Users size={20} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
-                    <ArrowUpRight size={14} strokeWidth={3} />
-                    <span>15.3%</span>
-                  </div>
+              <div className="relative z-10 flex items-center justify-center gap-2 w-full">
+                <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                  <Users size={20} strokeWidth={2.5} />
                 </div>
-                <div className="mt-auto">
-                  <p className="text-gray-600 text-sm font-medium mb-1">Khách hàng</p>
-                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={stats.customers.toLocaleString('vi-VN')}>{stats.customers.toLocaleString('vi-VN')}</h3>
+                <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                  <ArrowUpRight size={14} strokeWidth={3} />
+                  <span>15.3%</span>
                 </div>
+              </div>
+              <div className="relative z-10 flex flex-col items-center text-center w-full mt-4">
+                <p className="text-gray-600 text-sm font-medium mb-1">Khách hàng</p>
+                <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={stats.customers.toLocaleString('vi-VN')}>{stats.customers.toLocaleString('vi-VN')}</h3>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-center h-full relative overflow-hidden min-h-[160px]">
               <div className="absolute -top-12 -left-12 w-40 h-40 bg-blue-50 rounded-full opacity-60 z-0 pointer-events-none"></div>
 
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
-                    <Map size={20} strokeWidth={2.5} />
-                  </div>
-                  <div className="flex items-center gap-1 text-red-500 bg-red-50 px-2.5 py-1 rounded-full text-xs font-bold">
-                    <ArrowDownRight size={14} strokeWidth={3} />
-                    <span>2.1%</span>
-                  </div>
+              <div className="relative z-10 flex items-center justify-center gap-2 w-full">
+                <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
+                  <Map size={20} strokeWidth={2.5} />
                 </div>
-                <div className="mt-auto">
-                  <p className="text-gray-600 text-sm font-medium mb-1">Tổng Tour</p>
-                  <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={`${stats.tours.toLocaleString('vi-VN')} Tours`}>{stats.tours.toLocaleString('vi-VN')}</h3>
+                <div className="flex items-center gap-1 text-red-500 bg-red-50 px-2.5 py-1 rounded-full text-xs font-bold">
+                  <ArrowDownRight size={14} strokeWidth={3} />
+                  <span>2.1%</span>
                 </div>
+              </div>
+              <div className="relative z-10 flex flex-col items-center text-center w-full mt-4">
+                <p className="text-gray-600 text-sm font-medium mb-1">Tổng Tour</p>
+                <h3 className="text-3xl font-bold text-gray-900 break-words leading-tight" title={`${stats.tours.toLocaleString('vi-VN')} Tours`}>{stats.tours.toLocaleString('vi-VN')}</h3>
               </div>
             </div>
           </div>
@@ -298,39 +318,75 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-12 gap-6">
           {/* Left: Featured Tours (Expanded horizontally) */}
           <div className="col-span-9">
-            <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 h-full">
-              <div className="flex justify-between items-center mb-4">
+            <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 h-full flex flex-col">
+              <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-lg text-gray-800">Gói Tour Nổi Bật</h3>
               </div>
-              <div className="grid grid-cols-3 gap-6">
-                {featuredTours.length > 0 ? featuredTours.map((tour, idx) => {
-                  const days = tour.ngayKhoiHanh && tour.ngayKetThuc ? Math.max(1, Math.round((new Date(tour.ngayKetThuc).getTime() - new Date(tour.ngayKhoiHanh).getTime()) / (1000 * 3600 * 24))) : 1;
-                  const natureImages = [
-                    'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&q=80', // mountain
-                    'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=80', // forest
-                    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=80'  // landscape
-                  ];
-                  return (
-                    <div key={idx} className="flex flex-col gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setSelectedTour(tour)}>
-                      <div className="h-40 bg-gray-200 rounded-xl bg-cover bg-center relative" style={{ backgroundImage: `url('${natureImages[idx % natureImages.length]}')` }}>
-                        {idx === 0 && <span className="absolute top-2 right-2 bg-white px-2 py-0.5 rounded text-xs font-bold text-gray-800">HOT</span>}
-                      </div>
+              <div className="relative flex items-center group flex-1">
+                <button 
+                  onClick={() => setCurrentFeaturedIndex(prev => Math.max(0, prev - 1))}
+                  disabled={currentFeaturedIndex === 0}
+                  className="absolute left-0 -ml-4 z-10 p-2 bg-white border border-gray-100 rounded-full shadow-md text-gray-600 disabled:opacity-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                <div className="overflow-hidden w-full px-2 py-1">
+                  <div 
+                    className="flex gap-4 transition-transform duration-500 ease-in-out w-full"
+                    style={{ transform: `translateX(calc(-${currentFeaturedIndex * 100}% - ${currentFeaturedIndex * 16}px))` }}
+                  >
+                  {featuredTours.length > 0 ? featuredTours.map((tour, idx) => {
+                    const days = tour.ngayKhoiHanh && tour.ngayKetThuc ? Math.max(1, Math.round((new Date(tour.ngayKetThuc).getTime() - new Date(tour.ngayKhoiHanh).getTime()) / (1000 * 3600 * 24))) : 1;
+                    const natureImages = [
+                      'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&q=80',
+                      'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=80',
+                      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=80',
+                      'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=400&q=80'
+                    ];
+                    return (
+                      <div key={idx} className="w-[calc(25%-12px)] shrink-0 flex flex-col gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setSelectedTour(tour)}>
+                        <div className="h-32 bg-gray-200 rounded-xl bg-cover bg-center relative shadow-sm" style={{ backgroundImage: `url('${natureImages[idx % natureImages.length]}')` }}>
+                        </div>
                       <p className="font-semibold text-sm text-gray-800 truncate" title={tour.tieuDeTour}>{tour.tieuDeTour || 'Tour Thực Tế'}</p>
                       <p className="text-xs text-gray-500 flex items-center gap-1"><CalendarIcon size={12} /> {days} Ngày {Math.max(0, days - 1)} Đêm</p>
                       <p className="font-bold text-sm text-blue-600 mt-1">₫{(tour.giaHienHanh || 0).toLocaleString('vi-VN')}</p>
                     </div>
                   );
                 }) : (
-                  <div className="col-span-3 text-center py-10 text-gray-500">Đang tải dữ liệu...</div>
+                  <div className="w-full text-center py-10 text-gray-500">Đang tải dữ liệu...</div>
                 )}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setCurrentFeaturedIndex(prev => Math.min(Math.ceil(featuredTours.length / 4) - 1, prev + 1))}
+                  disabled={featuredTours.length <= 4 || currentFeaturedIndex >= Math.ceil(featuredTours.length / 4) - 1}
+                  className="absolute right-0 -mr-4 z-10 p-2 bg-white border border-gray-100 rounded-full shadow-md text-gray-600 disabled:opacity-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+                >
+                  <ChevronRight size={20} />
+                </button>
               </div>
+
+              {/* Pagination Dots */}
+              {featuredTours.length > 4 && (
+                <div className="flex justify-center gap-1.5 mt-4">
+                  {Array.from({ length: Math.ceil(featuredTours.length / 4) }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentFeaturedIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-colors ${idx === currentFeaturedIndex ? 'bg-blue-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right: Top Destinations */}
           <div className="col-span-3">
             <div className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 h-full flex flex-col justify-center">
-              <h3 className="font-bold text-lg text-gray-800 mb-6">Top Điểm Đến</h3>
+              <h3 className="font-bold text-lg text-gray-800 mb-6 text-center">Top Điểm Đến</h3>
               <div className="flex flex-col gap-4">
                 {destinations.map((dest, idx) => (
                   <div key={idx}>
@@ -349,12 +405,12 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* BOTTOM SECTION */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-6 items-start mt-2">
           <div className="col-span-9 grid grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 col-span-1">
-              <h3 className="font-bold text-lg text-gray-800 mb-4">Tổng quan Đơn hàng</h3>
-              <div className="h-48 relative">
-                <ResponsiveContainer width="100%" height="100%">
+              <h3 className="font-bold text-lg text-gray-800 mb-4 text-center">Tổng quan Đơn hàng</h3>
+              <div className="h-48 relative" style={{ minWidth: 0, minHeight: 0 }}>
+                <ResponsiveContainer width="99%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -391,10 +447,10 @@ const Dashboard: React.FC = () => {
 
             <div className="bg-white p-6 rounded-[20px] shadow-sm border border-gray-100 col-span-2 flex flex-col">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-lg text-gray-800">Doanh thu năm 2025</h3>
+                <h3 className="font-bold text-lg text-gray-800 text-center w-full">Doanh thu năm 2025</h3>
               </div>
-              <div className="flex-1 min-h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="flex-1 min-h-[200px]" style={{ minWidth: 0, minHeight: 0 }}>
+                <ResponsiveContainer width="99%" height="100%">
                   <LineChart data={revenueData}>
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} dy={10} />
                     <Tooltip
@@ -411,35 +467,26 @@ const Dashboard: React.FC = () => {
 
           <div className="col-span-3">
             <div className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 h-full flex flex-col justify-start">
-              <h3 className="font-bold text-lg text-gray-800 mb-6">Hoạt động Gần đây</h3>
+              <h3 className="font-bold text-lg text-gray-800 mb-6 text-center">Báo cáo sự cố</h3>
               <div className="flex flex-col gap-6">
-                {recentLogs.length > 0 ? recentLogs.map((log, idx) => {
-                  let Icon = CheckCircle2;
-                  let colorClass = 'text-blue-500';
-                  if (log.hanhDong === 'THEM') {
-                    Icon = CheckCircle2;
-                    colorClass = 'text-blue-500';
-                  } else if (log.hanhDong === 'CAP_NHAT') {
-                    Icon = Clock;
-                    colorClass = 'text-orange-400';
-                  } else if (log.hanhDong === 'XOA') {
-                    Icon = XCircle;
-                    colorClass = 'text-red-500';
-                  }
-
+                {recentIncidents.length > 0 ? recentIncidents.map((incident, idx) => {
+                  const isSOS = incident.mucDo === 'SOS';
                   return (
-                    <div key={idx} className="flex gap-3">
-                      <div className={`mt-0.5 ${colorClass}`}><Icon size={18} /></div>
-                      <div>
-                        <p className="text-sm text-gray-800">
-                          <span className="font-semibold">{log.tenDangNhap || 'System'}</span> {log.hanhDong === 'THEM' ? 'đã thêm' : log.hanhDong === 'CAP_NHAT' ? 'đã cập nhật' : log.hanhDong === 'XOA' ? 'đã xóa' : log.hanhDong} {log.noiDung || 'dữ liệu'}
+                    <div key={idx} className="flex gap-3 items-start">
+                      <div className={`mt-0.5 shrink-0 ${isSOS ? 'text-orange-500' : 'text-blue-500'}`}>
+                        {isSOS ? <AlertTriangle size={18} fill="currentColor" className="text-orange-100" /> : <Info size={18} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-800 break-words">
+                          <span className="font-semibold">{incident.maHdvBaoCao || 'HDV'}</span> đã báo cáo sự cố 
+                          <span className="font-medium text-gray-600 block mt-0.5 italic">"{incident.moTa || incident.loaiSuCo || 'Không có nội dung'}"</span>
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">{getTimeAgo(log.thoiDiemTao)}</p>
+                        <p className="text-xs text-gray-400 mt-1">{incident.thoiGianBaoCao ? getTimeAgo(incident.thoiGianBaoCao) : 'Vừa xong'}</p>
                       </div>
                     </div>
                   );
                 }) : (
-                  <div className="text-sm text-gray-500 text-center py-4">Chưa có hoạt động nào</div>
+                  <p className="text-sm text-gray-500 text-center py-4">Không có báo cáo sự cố nào gần đây.</p>
                 )}
               </div>
             </div>
@@ -465,8 +512,7 @@ const Dashboard: React.FC = () => {
             </button>
             <div className="h-48 bg-gray-200 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80')" }}></div>
             <div className="p-6 overflow-y-auto">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full uppercase tracking-wider">{formatTrangThaiTour(selectedTour.trangThai)}</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-3 mb-2 leading-tight">{selectedTour.tieuDeTour || 'Tour Thực Tế'}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">{selectedTour.tieuDeTour || 'Tour Thực Tế'}</h2>
               <p className="text-gray-500 flex items-center gap-2 text-sm mb-6"><MapPin size={16} /> Mã Tour: {selectedTour.maTourThucTe}</p>
 
               <div className="grid grid-cols-2 gap-4 mb-6">

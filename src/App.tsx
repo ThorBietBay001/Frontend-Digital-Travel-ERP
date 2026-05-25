@@ -19,15 +19,16 @@ import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import GuideSchedule from './pages/guide/GuideSchedule'
 
-const ROLES_DASHBOARD = ['ADMIN', 'SANPHAM', 'KINHDOANH', 'DIEUHANH', 'KETOAN', 'HDV', 'KHACHHANG'];
-const ROLES_SANPHAM = ['SANPHAM'];
-const ROLES_KINHDOANH = ['KINHDOANH'];
-const ROLES_DIEUHANH = ['DIEUHANH'];
-const ROLES_TOUR_INSTANCE = ['DIEUHANH', 'SANPHAM'];
-const ROLES_KETOAN = ['KETOAN'];
-const ROLES_HDV = ['HDV'];
+const ROLES_DASHBOARD = ['ADMIN', 'SANPHAM', 'KINHDOANH', 'SALES', 'DIEUHANH', 'MANAGER', 'KETOAN', 'HDV', 'KHACHHANG'];
+const ROLES_SANPHAM = ['SANPHAM', 'ADMIN'];
+const ROLES_KINHDOANH = ['KINHDOANH', 'SALES', 'ADMIN'];
+const ROLES_ORDERS = ['KINHDOANH', 'SALES', 'KETOAN', 'ADMIN'];
+const ROLES_DIEUHANH = ['DIEUHANH', 'MANAGER', 'ADMIN'];
+const ROLES_TOUR_INSTANCE = ['DIEUHANH', 'MANAGER', 'SANPHAM', 'ADMIN'];
+const ROLES_KETOAN = ['KETOAN', 'ADMIN'];
+const ROLES_HDV = ['HDV', 'ADMIN'];
 const ROLES_ADMIN = ['ADMIN'];
-const ROLES_HR = ['ADMIN', 'DIEUHANH'];
+const ROLES_HR = ['ADMIN', 'DIEUHANH', 'MANAGER'];
 
 function App() {
   return (
@@ -54,7 +55,7 @@ function App() {
 
       {/* Kinh doanh */}
       <Route path="/orders" element={
-        <ProtectedRoute allowedRoles={ROLES_KINHDOANH}>
+        <ProtectedRoute allowedRoles={ROLES_ORDERS}>
           <OrderList />
         </ProtectedRoute>
       } />

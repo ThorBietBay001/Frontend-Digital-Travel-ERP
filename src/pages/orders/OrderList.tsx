@@ -41,10 +41,12 @@ const mapStatus = (s?: string): Order['status'] => {
 const mapPaymentStatus = (s?: string, daBaoChuyenKhoan?: boolean): Order['paymentStatus'] => {
   switch (s?.trim().toUpperCase()) {
     case 'CHO_XAC_NHAN':
-      return daBaoChuyenKhoan ? 'pending_confirmation' : 'unpaid';
+      return daBaoChuyenKhoan ? 'paid' : 'unpaid';
     case 'DA_XAC_NHAN':
     case 'HOAN_THANH':
       return 'paid';
+    case 'THANH_TOAN_THAT_BAI':
+      return 'failed';
     case 'CHO_HUY':
     case 'HUY':
     case 'DA_HUY':
@@ -116,7 +118,7 @@ const OrderList: React.FC = () => {
     setModalOpen(true);
   };
 
-  const canApprovePayment = (order: Order) => order.paymentStatus === 'pending_confirmation';
+  const canApprovePayment = (order: Order) => order.status === 'pending' && order.paymentStatus === 'paid';
 
   const handleApprovePayment = async (order: Order) => {
     const confirmed = await confirm(`Duyệt thanh toán cho đơn ${order.orderCode}?`);
@@ -217,15 +219,13 @@ const OrderList: React.FC = () => {
       render: (record) => {
         switch (record.paymentStatus) {
           case 'paid':
-            return <Badge label="Đã Thanh Toán" variant="success" />;
+            return <Badge label="Thành công" variant="success" />;
           case 'unpaid':
-            return <Badge label="Chưa Thanh Toán" variant="warning" />;
-          case 'pending_confirmation':
-            return <Badge label="Chờ Xác Nhận" variant="info" />;
-          case 'partial':
-            return <Badge label="Thanh Toán 1 phần" variant="info" />;
+            return <Badge label="Chờ thanh toán" variant="warning" />;
+          case 'failed':
+            return <Badge label="Thất bại" variant="error" />;
           case 'refunded':
-            return <Badge label="Đã Hoàn Tiền" variant="neutral" />;
+            return <Badge label="Đã hoàn tiền" variant="neutral" />;
           default:
             return null;
         }
@@ -306,10 +306,10 @@ const OrderList: React.FC = () => {
             <Select
               options={[
                 { label: 'Tất cả TT', value: 'all' },
-                { label: 'Đã thanh toán', value: 'paid' },
-                { label: 'Chờ xác nhận', value: 'pending_confirmation' },
-                { label: 'Chưa thanh toán', value: 'unpaid' },
-                { label: 'Hoàn tiền', value: 'refunded' },
+                { label: 'Thành công', value: 'paid' },
+                { label: 'Chờ thanh toán', value: 'unpaid' },
+                { label: 'Thất bại', value: 'failed' },
+                { label: 'Đã hoàn tiền', value: 'refunded' },
               ]}
               value={paymentFilter}
               onChange={setPaymentFilter}

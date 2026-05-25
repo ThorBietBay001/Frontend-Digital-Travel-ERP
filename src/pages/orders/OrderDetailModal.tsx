@@ -40,10 +40,12 @@ const mapStatus = (s?: string): Order['status'] => {
 const mapPaymentStatus = (s?: string, daBaoChuyenKhoan?: boolean): Order['paymentStatus'] => {
   switch (s?.trim().toUpperCase()) {
     case 'CHO_XAC_NHAN':
-      return daBaoChuyenKhoan ? 'pending_confirmation' : 'unpaid';
+      return daBaoChuyenKhoan ? 'paid' : 'unpaid';
     case 'DA_XAC_NHAN':
     case 'HOAN_THANH':
       return 'paid';
+    case 'THANH_TOAN_THAT_BAI':
+      return 'failed';
     case 'CHO_HUY':
     case 'HUY':
     case 'DA_HUY':
@@ -113,13 +115,11 @@ const formatDateTime = (value?: string): string => {
 const getPaymentStatusLabel = (status: Order['paymentStatus']) => {
   switch (status) {
     case 'paid':
-      return 'Đã thanh toán';
+      return 'Thành công';
     case 'unpaid':
-      return 'Chưa thanh toán';
-    case 'pending_confirmation':
-      return 'Chờ xác nhận';
-    case 'partial':
-      return 'Thanh toán 1 phần';
+      return 'Chờ thanh toán';
+    case 'failed':
+      return 'Thất bại';
     case 'refunded':
       return 'Đã hoàn tiền';
     default:
@@ -218,13 +218,11 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
   const renderPaymentBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge label="Đã thanh toán" variant="success" />;
+        return <Badge label="Thành công" variant="success" />;
       case 'unpaid':
-        return <Badge label="Chưa thanh toán" variant="warning" />;
-      case 'pending_confirmation':
-        return <Badge label="Chờ xác nhận" variant="info" />;
-      case 'partial':
-        return <Badge label="Thanh toán 1 phần" variant="info" />;
+        return <Badge label="Chờ thanh toán" variant="warning" />;
+      case 'failed':
+        return <Badge label="Thất bại" variant="error" />;
       case 'refunded':
         return <Badge label="Đã hoàn tiền" variant="neutral" />;
       default:
@@ -243,7 +241,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
     </div>
   );
 
-  const canApprovePayment = order?.paymentStatus === 'pending_confirmation';
+  const canApprovePayment = order?.status === 'pending' && order?.paymentStatus === 'paid';
 
   const handleApprovePayment = async () => {
     if (!order) return;
