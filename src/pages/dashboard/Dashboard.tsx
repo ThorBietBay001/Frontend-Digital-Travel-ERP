@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map, CheckCircle2, XCircle, Clock, BarChart3 } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 // API Services

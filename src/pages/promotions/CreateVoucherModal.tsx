@@ -47,6 +47,9 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     if (!code.trim()) newErrors.code = 'Mã code không được để trống';
     if (!name.trim()) newErrors.name = 'Tên chương trình không được để trống';
     if (!discountValue || discountValue <= 0) newErrors.discountValue = 'Giá trị giảm phải > 0';
+    if (discountType === 'percent' && (!maxDiscount || maxDiscount <= 0)) {
+      newErrors.maxDiscount = 'Mức giảm tối đa phải > 0 để tính điểm quy đổi';
+    }
     if (!quantity || quantity <= 0) newErrors.quantity = 'Số lượng phát hành phải > 0';
     if (!startDate) newErrors.startDate = 'Ngày hiệu lực không được để trống';
     if (!endDate) newErrors.endDate = 'Ngày hết hạn không được để trống';
@@ -64,6 +67,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
       maCode: code.trim(),
       loaiUuDai: discountType === 'percent' ? 'PHAN_TRAM' : 'SO_TIEN',
       giaTriGiam: Number(discountValue),
+      mucGiamToiDa: discountType === 'percent' ? Number(maxDiscount) : undefined,
       dieuKienApDung: name,
       soLuotPhatHanh: Math.floor(Number(quantity)),
       ngayHieuLuc: startDate || new Date().toISOString().split('T')[0],
@@ -87,6 +91,10 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
       // Error is handled in the parent, or we can handle it here if we pass the service
     }
   };
+
+  const requiredGreenPoints = discountType === 'percent'
+    ? Math.ceil((Number(maxDiscount) || 0) * (Number(discountValue) || 0) * 2 / 100)
+    : Number(discountValue) || 0;
 
   return (
     <Modal
@@ -226,10 +234,11 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
                   type="number"
                   value={maxDiscount}
                   onChange={(e) => setMaxDiscount(Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-[#C5EAFF] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-12"
+                  className={`w-full px-4 py-2 border ${errors.maxDiscount ? 'border-[#BA1A1A]' : 'border-[#C5EAFF]'} rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#89D4FF] focus:border-transparent pr-12`}
                 />
                 <span className="absolute right-3 top-2 text-gray-500">VNĐ</span>
               </div>
+              {errors.maxDiscount && <p className="text-[#BA1A1A] text-xs mt-1">{errors.maxDiscount}</p>}
             </>
           ) : null}
         </div>
@@ -244,6 +253,10 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
             className="w-4 h-4 text-[#89D4FF] focus:ring-[#89D4FF] border-[#C5EAFF] rounded"
           />
           <label htmlFor="isActive" className="text-[#00668A] text-sm font-semibold">Kích hoạt ngay</label>
+        </div>
+        <div className="flex items-center justify-between rounded-[8px] bg-green-50 border border-green-200 px-4 py-2 text-sm">
+          <span className="font-semibold text-green-800">Điểm xanh cần quy đổi</span>
+          <span className="font-bold text-green-700">{requiredGreenPoints.toLocaleString('vi-VN')} điểm</span>
         </div>
       </div>
     </Modal>

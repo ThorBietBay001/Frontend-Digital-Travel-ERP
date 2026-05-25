@@ -12,6 +12,7 @@ export interface VoucherRequest {
   maCode: string;
   loaiUuDai: string;
   giaTriGiam: number;
+  mucGiamToiDa?: number;
   dieuKienApDung?: string;
   soLuotPhatHanh: number;
   ngayHieuLuc: string;
@@ -43,6 +44,8 @@ export interface VoucherResponse {
   maCode?: string;
   loaiUuDai?: string;
   giaTriGiam?: number;
+  mucGiamToiDa?: number;
+  diemCanDoi?: number;
   dieuKienApDung?: string;
   soLuotPhatHanh?: number;
   soLuotDaDung?: number;
