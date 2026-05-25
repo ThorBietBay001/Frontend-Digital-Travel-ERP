@@ -192,10 +192,10 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
 
   return (
     <div className="space-y-4 animate-fade-in pb-6">
-      
+
       {/* Sticky Header with horizontal line and back button */}
       <div className="sticky -top-4 bg-slate-50/95 backdrop-blur-md z-20 pb-3 pt-4 border-b border-slate-200/60 -mx-4 px-4 flex items-center space-x-2.5">
-        <button 
+        <button
           onClick={onBack}
           className="p-1 rounded-full hover:bg-slate-200/60 text-slate-600 transition"
           title="Quay lại"
@@ -215,7 +215,7 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
           {initials}
           <span className="absolute bottom-1 right-1 w-4.5 h-4.5 bg-emerald-500 border-3 border-white rounded-full"></span>
         </div>
-        
+
         <div className="flex flex-col items-center justify-center space-y-1.5">
           <h4 className="font-black text-slate-800 text-lg leading-none">{profile.hoTen}</h4>
           <span className="text-[10px] bg-sky-50 text-sky-600 font-bold px-2.5 py-0.5 rounded-full border border-sky-100 uppercase tracking-wider">
@@ -240,13 +240,13 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
         <div className="glass-card p-3 rounded-2xl border border-slate-100 shadow-sm bg-white">
           <div className="flex justify-center text-sky-400 mb-1"><Compass size={16} /></div>
           <span className="text-[11px] text-slate-400 font-bold uppercase block">Số chuyến</span>
-          <span className="text-xs font-black text-slate-800">{pastToursCount} tour dẫn</span>
+          <span className="text-xs font-black text-slate-800">{pastToursCount} tour</span>
         </div>
       </div>
 
       {/* Main HoSoCaNhan Info Cards */}
       <div className="space-y-3.5">
-        
+
         {/* Personal Details: Completely Left-Aligned with Normal Colors & Muted Values */}
         <div className="glass-card p-4 rounded-3xl border border-slate-100 space-y-3 shadow-sm bg-white">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
@@ -347,7 +347,7 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
             <LockKeyhole size={13} />
             Đổi mật khẩu
           </button>
-          <button 
+          <button
             onClick={onLogout}
             className="w-full max-w-[240px] py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-full transition active:scale-95 border border-rose-200/60 text-center shadow-sm"
           >

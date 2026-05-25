@@ -40,17 +40,14 @@ const isMedicalIncident = (type: string) => {
   return normalized === 'Y_TE' || type === 'Y tế';
 };
 
+
 const formatIncidentTime = (time?: string) => {
   if (!time) return 'Chưa cập nhật';
   const date = new Date(time);
   if (Number.isNaN(date.getTime())) return time;
-  return date.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const formattedTime = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const formattedDate = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `${formattedTime} - ${formattedDate}`;
 };
 
 const buildHealthNotes = (p: any): string => {
@@ -130,11 +127,10 @@ function PaginationTabs({ currentPage, totalPages, onPageChange }: PaginationTab
           key={page}
           type="button"
           onClick={() => onPageChange(page)}
-          className={`size-8 rounded-lg border bg-white text-[11px] font-semibold transition active:scale-95 ${
-            currentPage === page
-              ? 'border-sky-500 bg-sky-50 text-sky-700 ring-1 ring-sky-500'
-              : 'border-slate-100 text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700'
-          }`}
+          className={`size-8 rounded-lg border bg-white text-[11px] font-semibold transition active:scale-95 ${currentPage === page
+            ? 'border-sky-500 bg-sky-50 text-sky-700 ring-1 ring-sky-500'
+            : 'border-slate-100 text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700'
+            }`}
           aria-label={`Trang ${page}`}
           aria-current={currentPage === page ? 'page' : undefined}
         >
@@ -326,7 +322,7 @@ export default function BaoCaoSuCo({
               <AlertTriangle size={14} className="mr-1.5 text-rose-500" />
               Sổ tay sự cố y tế
             </h3>
-            <p className="text-[10px] text-slate-400 mt-1">Mặc định tour hiện tại; cho phép tour đã dẫn trong vòng 3 ngày</p>
+            <p className="text-[10px] text-slate-400 mt-1">Chỉ cho phép báo cáo trong vòng 3 ngày</p>
           </div>
           <select
             value={selectedTourCode}

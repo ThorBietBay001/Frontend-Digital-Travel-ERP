@@ -40,6 +40,15 @@ const isTourInReportWindow = (tour: Tour) => {
   return new Date() <= deadline;
 };
 
+const formatExpenseDateTime = (value?: string) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const time = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const day = date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  return `${time} - ${day}`;
+};
+
 export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expenses, setExpenses }: ExpenseTrackerProps) {
   // Expense State
   const [expenseForm, setExpenseForm] = useState({
@@ -136,7 +145,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
       };
 
       const res = await hdvService.taoChiPhi(selectedTourCode, data);
-      
+
       if (res.data) {
         const eRes = res.data;
         const newExpense: Expense = {
@@ -206,7 +215,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
         </div>
 
         <p className="text-[10px] text-slate-400 font-semibold">
-          Mặc định là tour hiện tại; có thể bổ sung chi phí cho tour đã dẫn trong vòng 3 ngày.
+          Báo cáo chi phí cho tour đã dẫn trong vòng 3 ngày.
         </p>
 
         <div className="space-y-1.5">
@@ -268,7 +277,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
                     <span className="text-[10px] font-bold px-1 py-px rounded bg-slate-50 border border-slate-100 text-slate-500 font-mono">{e.tourCode || 'N/A'}</span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-snug">{e.notes}</p>
-                  <span className="text-[10px] text-slate-400 block font-medium">{e.date}</span>
+                  <span className="text-[10px] text-slate-400 block font-medium">{formatExpenseDateTime(e.date)}</span>
                 </div>
 
                 <div className="text-right space-y-1.5 shrink-0 ml-2">
@@ -302,7 +311,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
                     <span className="text-slate-200 font-normal">|</span>
                     <span>{e.tourCode || selectedTourCode || 'N/A'}</span>
                     <span className="text-slate-200 font-normal">|</span>
-                    <span>{e.date}</span>
+                    <span>{formatExpenseDateTime(e.date)}</span>
                   </div>
 
                   {/* Delete action button inside details (Ultra-Premium, Modern & Fluid Hover) */}
@@ -346,11 +355,10 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
                 onClick={() => setExpensePage(page)}
                 aria-label={`Trang ${page}`}
                 aria-current={expensePage === page ? 'page' : undefined}
-                className={`size-8 rounded-lg border bg-white text-[11px] font-semibold transition ${
-                  expensePage === page
+                className={`size-8 rounded-lg border bg-white text-[11px] font-semibold transition ${expensePage === page
                     ? 'border-sky-500 bg-sky-50 text-sky-700 ring-1 ring-sky-500'
                     : 'border-slate-100 text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700'
-                }`}
+                  }`}
               >
                 {page}
               </button>
