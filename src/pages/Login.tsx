@@ -4,6 +4,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
+import digitalTravelLogo from '../assets/digital-travel-logo.svg';
 
 const Login: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
@@ -67,6 +68,8 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 bg-[url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&q=80')] bg-cover bg-center">
       <div className="bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-xl w-full max-w-md">
         <div className="text-center mb-8">
+          <img src={digitalTravelLogo} alt="Digital Travel" className="w-16 h-16 mx-auto mb-4" />
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-600 mb-2">Digital Travel Admin</p>
           <h1 className="text-3xl font-bold text-[#00668A] mb-2">Đăng Nhập</h1>
           <p className="text-gray-600">Quản trị Hệ thống Du Lịch</p>
         </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  PlaneTakeoff,
   LayoutDashboard,
   Map,
   ClipboardList,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import digitalTravelLogo from '../../assets/digital-travel-logo.svg';
 
 export interface SidebarProps {
   activeMenu?: string;
@@ -125,13 +125,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="fixed left-0 top-0 w-[260px] h-screen bg-white border-r border-[#E1F1FF] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-col z-50">
       {/* Logo Section */}
-      <div className="flex items-center px-6 py-6 gap-3 border-b border-[#E1F1FF]">
-        <div className="flex items-center justify-center w-10 h-10 rounded-[12px] bg-[#F4F9FF]">
-          <PlaneTakeoff color="#89D4FF" size={24} />
-        </div>
+      <div className="flex items-center px-5 py-6 gap-3 border-b border-[#E1F1FF]">
+        <img src={digitalTravelLogo} alt="Digital Travel" className="w-10 h-10 shrink-0" />
         <div>
-          <h1 className="text-[20px] font-bold text-[#00668A] leading-tight">TourAdmin</h1>
-          <p className="text-[12px] text-gray-500 font-medium leading-tight">Hệ thống quản lý</p>
+          <h1 className="text-[17px] font-bold text-[#00668A] leading-tight">Digital Travel</h1>
+          <p className="text-[12px] text-gray-500 font-medium leading-tight">Admin</p>
         </div>
       </div>
 
