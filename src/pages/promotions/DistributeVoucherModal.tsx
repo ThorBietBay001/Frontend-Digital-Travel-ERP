@@ -256,29 +256,6 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     }
   };
 
-  const handleRevoke = async (maKhachHang: string) => {
-    if (!voucher) return;
-    setRevokingCustomerId(maKhachHang);
-    setError(null);
-    try {
-      await promotionsService.thuHoi(voucher.id, maKhachHang);
-      const nextDistributedCount = await refreshDistributedCount(Math.max(distributedCount - 1, 0));
-      setDistributedCount(nextDistributedCount);
-      setCustomers((prev) => prev.map((customer) => customer.id === maKhachHang
-        ? { ...customer, hasVoucher: false, voucherStatus: undefined }
-        : customer
-      ));
-      alert('Thu hồi voucher thành công');
-      onSuccess?.(nextDistributedCount);
-    } catch (err: unknown) {
-      const message = mapDistributeError(formatApiError(err, 'Lỗi thu hồi voucher'));
-      setError(message);
-      alert(`Lỗi: ${message}`);
-    } finally {
-      setRevokingCustomerId(null);
-    }
-  };
-
   const handleRevokeSelected = async () => {
     if (!voucher || selectedCustomers.length === 0) return;
     setRevokingCustomerId('bulk');

@@ -248,7 +248,7 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
                   )}
 
                   <div className="pt-4 border-t border-gray-100 flex justify-end">
-                    <Button variant="outline" onClick={handleCopy} className="flex items-center gap-2">
+                    <Button variant="secondary" onClick={handleCopy} className="flex items-center gap-2">
                       {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                       {copied ? 'Đã sao chép' : 'Sao chép thông tin'}
                     </Button>

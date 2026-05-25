@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { FileText, Ban, CheckCircle, Upload, AlertTriangle } from 'lucide-react';
+import { FileText, Ban, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { RefundRequest } from './mockData';
 import { ordersService } from '../../../services/orders';
 import { useNotification } from '../../../context/NotificationContext';

@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Briefcase, Cake, Leaf, Mail, MapPin, Phone, Star, User } from 'lucide-react';
+import { Briefcase, Cake, Mail, Phone, Star, User } from 'lucide-react';
 import type { Competency, Staff, TourHistory } from './mockData';
 import { mockStaff } from './mockData';
 import { hrService } from '../../../services/system/hr';
@@ -112,12 +112,6 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
     product: 'info',
     guide: 'success',
     sales: 'warning',
-  };
-
-  const competencyVariantMap: Record<Competency['type'], 'success' | 'warning' | 'error' | 'info'> = {
-    'Ngôn ngữ': 'info',
-    'Chứng chỉ': 'success',
-    'Thế mạnh': 'warning',
   };
 
   const tourStatusMap: Record<TourHistory['status'], { label: string; variant: 'success' | 'error' | 'warning' | 'info' }> = {

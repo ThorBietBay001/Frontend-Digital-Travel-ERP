@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../../components/layouts/MainLayout';
-import { useAuth } from '../../context/AuthContext';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map, CheckCircle2, XCircle, Clock, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 
 // API Services
@@ -11,9 +9,8 @@ import { customersService } from '../../services/customers';
 import { ordersService } from '../../services/orders';
 import { tourInstanceService } from '../../services/tour-instance';
 import { tourTemplateService } from '../../services/tour-template';
-import { logsService } from '../../services/system/logs';
+import { logsService, type NhatKyHeThongResponse } from '../../services/system/logs';
 import type { TourThucTeResponse } from '../../pages/tour-instance/mockData';
-import type { NhatKyHeThongResponse } from '../../pages/system/logs/mockData';
 import PowerBIConnectionModal from './PowerBIConnectionModal';
 
 const revenueData = [
@@ -78,8 +75,6 @@ function formatTrangThaiTour(status: string | undefined): string {
 }
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     customers: 834245,
     orders: 31684,
@@ -405,7 +400,7 @@ const Dashboard: React.FC = () => {
                     <Tooltip
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       cursor={{ stroke: '#E5E7EB', strokeWidth: 2 }}
-                      formatter={(value: number) => [formatVietnameseCurrencyShort(value), 'Doanh thu']}
+                      formatter={(value) => [formatVietnameseCurrencyShort(Number(value ?? 0)), 'Doanh thu']}
                     />
                     <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={4} dot={false} activeDot={{ r: 8, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }} />
                   </LineChart>
@@ -437,9 +432,9 @@ const Dashboard: React.FC = () => {
                       <div className={`mt-0.5 ${colorClass}`}><Icon size={18} /></div>
                       <div>
                         <p className="text-sm text-gray-800">
-                          <span className="font-semibold">{log.tenDangNhap || log.maTaiKhoan || 'System'}</span> {log.hanhDong === 'THEM' ? 'đã thêm' : log.hanhDong === 'CAP_NHAT' ? 'đã cập nhật' : log.hanhDong === 'XOA' ? 'đã xóa' : log.hanhDong} {log.doiTuong || 'dữ liệu'} <span className="font-medium text-gray-600">{log.maDoiTuong || ''}</span>
+                          <span className="font-semibold">{log.tenDangNhap || 'System'}</span> {log.hanhDong === 'THEM' ? 'đã thêm' : log.hanhDong === 'CAP_NHAT' ? 'đã cập nhật' : log.hanhDong === 'XOA' ? 'đã xóa' : log.hanhDong} {log.noiDung || 'dữ liệu'}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">{getTimeAgo(log.thoiGian)}</p>
+                        <p className="text-xs text-gray-400 mt-1">{getTimeAgo(log.thoiDiemTao)}</p>
                       </div>
                     </div>
                   );

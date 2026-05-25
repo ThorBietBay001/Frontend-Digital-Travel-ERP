@@ -127,14 +127,13 @@ const SettlementList: React.FC = () => {
 
       // Luôn gọi taoQuyetToan để upsert (cập nhật ghi chú và các con số mới nhất)
       const draft = await financeService.taoQuyetToan(tour.code, { 
-        maTour: tour.code,
         ghiChu: note || '' 
       });
-      let quyetToanId = draft.maQuyetToan || tour.id;
+      let quyetToanId = draft?.maQuyetToan || tour.id;
 
       if (status === 'completed') {
         const res = await financeService.chotQuyetToan(quyetToanId);
-        notify(`Quyết toán thành công! Mã: ${res.maQuyetToan}, Lợi nhuận: ${res.loiNhuan?.toLocaleString()} VND`, { type: 'success' });
+        notify(`Quyết toán thành công! Mã: ${res?.maQuyetToan || quyetToanId}, Lợi nhuận: ${res?.loiNhuan?.toLocaleString() || '0'} VND`, { type: 'success' });
       } else if (status === 'pending_info') {
         notify('Đã yêu cầu Hướng dẫn viên bổ sung chứng từ giải trình. Tour được chuyển sang trạng thái "Chờ bổ sung".', { type: 'info' });
       } else if (status === 'over_budget') {

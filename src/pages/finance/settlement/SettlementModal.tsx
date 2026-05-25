@@ -4,7 +4,6 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
 import type { SettlementTour } from './mockData';
-import { useNotification } from '../../../context/NotificationContext';
 import { tourInstanceService } from '../../../services/tour-instance';
 import { financeService } from '../../../services/finance';
 
@@ -28,7 +27,6 @@ export interface SettlementModalProps {
 }
 
 const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour, onSettle, readonly = false }) => {
-  const { confirm } = useNotification();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState('');
