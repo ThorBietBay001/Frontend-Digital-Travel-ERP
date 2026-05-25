@@ -499,9 +499,19 @@ export default function BangDieuKhien({
                         <div className="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm">
                           <p className="text-[10px] font-black text-sky-500 uppercase tracking-wider mb-1">Ngày {item.day}</p>
                           <h4 className="text-xs font-black text-slate-800 leading-snug">{item.title}</h4>
-                          {item.description && (
-                            <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed">{item.description}</p>
-                          )}
+                          <div className="mt-2 space-y-2">
+                            {(item.activities || []).map((hoatDong, index) => (
+                              <div key={index} className="flex items-start gap-2 text-[11px] leading-relaxed">
+                                {hoatDong.time && (
+                                  <span className="rounded-lg border border-sky-100 bg-sky-50 px-1.5 py-0.5 font-mono font-bold text-sky-600 shrink-0">
+                                    {hoatDong.time}
+                                  </span>
+                                )}
+                                <span className="pt-0.5 text-slate-500">{hoatDong.activity}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {item.description && <p className="mt-2 text-[11px] italic text-slate-400">{item.description}</p>}
                           {item.menu && (
                             <p className="mt-2 text-[11px] text-amber-600 font-semibold leading-relaxed">Thực đơn: {item.menu}</p>
                           )}

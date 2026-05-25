@@ -27,6 +27,7 @@ export interface TourItinerarySummary {
   title: string;
   description?: string;
   menu?: string;
+  activities?: ItineraryItem[];
 }
 
 export interface Passenger {

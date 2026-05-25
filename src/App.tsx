@@ -28,6 +28,20 @@ import { hdvService } from './services/hdvService';
 
 type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile';
 
+const tachTimelineHoatDong = (giaTri?: string) => {
+  return (giaTri || '')
+    .split(/\\n|\r?\n|<br\s*\/?>/)
+    .map((dong) => dong.trim())
+    .filter(Boolean)
+    .map((dong) => {
+      const cleanedDong = dong.replace(/^[-–—•\s]+/, '').trim();
+      const khop = cleanedDong.match(/^(\d{2}:\d{2})\s*[-–—]\s*(.+)$/);
+      return khop
+        ? { time: khop[1], activity: khop[2] }
+        : { time: '', activity: cleanedDong };
+    });
+};
+
 type AppNotification = {
   id: string;
   text: string;
@@ -176,12 +190,31 @@ export default function App() {
 
     if (detailResult.status === 'fulfilled') {
       const lichTrinh = Array.isArray(detailResult.value?.data) ? detailResult.value.data : [];
-      hydratedTour.itinerary = lichTrinh.map((item: any) => ({
-        day: item.ngayThu,
-        title: item.hoatDong || 'Chưa cập nhật hoạt động',
-        description: item.moTa || undefined,
-        menu: item.thucDon || undefined
-      }));
+      hydratedTour.itinerary = lichTrinh.map((item: any) => {
+        const hoatDongStr = item.hoatDong || '';
+        const isTimeline = /\d{2}:\d{2}\s*[-–—]/.test(hoatDongStr);
+        const isMultiline = /\\n|\n|<br/.test(hoatDongStr);
+
+        let title = item.tieuDe || 'Lịch trình trong ngày';
+        let activitiesStr = hoatDongStr;
+
+        if (!item.tieuDe && !isTimeline && !isMultiline && hoatDongStr.length > 0 && hoatDongStr.length < 150) {
+          title = hoatDongStr;
+          activitiesStr = '';
+        } else if (!item.tieuDe && (isTimeline || isMultiline)) {
+          title = 'Lịch trình trong ngày';
+        } else if (!item.tieuDe && hoatDongStr) {
+          title = hoatDongStr.substring(0, 50) + (hoatDongStr.length > 50 ? '...' : '');
+        }
+
+        return {
+          day: item.ngayThu,
+          title,
+          description: item.moTa || undefined,
+          menu: item.thucDon || undefined,
+          activities: tachTimelineHoatDong(activitiesStr)
+        };
+      });
     }
 
     return hydratedTour;
