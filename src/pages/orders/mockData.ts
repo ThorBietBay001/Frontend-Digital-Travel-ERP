@@ -148,6 +148,10 @@ export interface Order {
   greenPoints?: number;
   greenNote?: string;
   additionalServices?: string[];
+  additionalServicesAmount?: number;
+  adultCount?: number;
+  transactionCode?: string;
+  paymentMethod?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   paymentStatus: 'paid' | 'unpaid' | 'pending_confirmation' | 'partial' | 'refunded';
   passengerCount: number;
