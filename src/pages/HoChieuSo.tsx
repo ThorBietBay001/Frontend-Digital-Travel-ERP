@@ -1724,9 +1724,19 @@ export default function HoChieuSo() {
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg">👨‍💼</div>
                         <div>
                           <p className="font-extrabold text-sm text-gray-900">{selectedBookingForDetail.guideName || 'Chưa phân công'}</p>
-                          <p className="text-[10px] text-gray-500 font-bold leading-snug">
-                            Thông tin đánh giá HDV sẽ hiển thị khi có đánh giá thực tế từ khách đi tour.
-                          </p>
+                          {selectedBookingForDetail.guideRating && selectedBookingForDetail.guideRating > 0 ? (
+                            <p className="flex items-center gap-1 text-[11px] text-amber-600 font-bold mt-0.5">
+                              <Star className="w-3 h-3 fill-current" />
+                              <span>{selectedBookingForDetail.guideRating.toFixed(1)}</span>
+                              <span className="text-gray-500 font-medium">
+                                ({selectedBookingForDetail.guideReviewCount || 0} đánh giá)
+                              </span>
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-gray-500 font-bold leading-snug">
+                              Chưa có đánh giá thực tế từ khách đi tour.
+                            </p>
+                          )}
                           <p className="text-[10px] text-blue-600 font-bold mt-1">
                             {selectedBookingForDetail.guidePhone ? (
                               <a href={`tel:${selectedBookingForDetail.guidePhone}`} className="hover:underline">SĐT: {selectedBookingForDetail.guidePhone}</a>

@@ -13,9 +13,11 @@ type HeaderNotification = {
   desc: string;
   time: string;
   unread: boolean;
-  type?: 'BOOKING' | 'SUPPORT_NEED_INFO';
+  type?: 'BOOKING' | 'COMPLAINT' | 'SUPPORT_NEED_INFO';
   supportRequest?: any;
 };
+
+const READ_NOTIFICATIONS_KEY = 'kh-read-notifications';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,6 +43,18 @@ export default function Header() {
     { id: 'city', name: 'Thành Phố', icon: '🏙️' },
     { id: 'countryside', name: 'Miền Tây', icon: '🌾' },
   ];
+
+  const layThongBaoDaDoc = (): string[] => {
+    try {
+      return JSON.parse(localStorage.getItem(READ_NOTIFICATIONS_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const luuThongBaoDaDoc = (ids: string[]) => {
+    localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify(Array.from(new Set(ids))));
+  };
 
   useEffect(() => {
     const handleSessionCleared = () => {
@@ -79,12 +93,14 @@ export default function Header() {
     }
 
     try {
-      const [res, profileResponse, supportResponse] = await Promise.all([
-        khService.getMyBookings({ size: 5 }),
+      const [res, profileResponse, supportResponse, complaintResponse] = await Promise.all([
+        khService.getMyBookings({ size: 50 }),
         khService.layHoChieuSo(),
-        khService.layYeuCauCanBoSung().catch(() => ({ data: [] }))
+        khService.layYeuCauCanBoSung().catch(() => ({ data: [] })),
+        khService.layYeuCauHoTro({ loaiYeuCau: 'KHIEU_NAI', size: 50 }).catch(() => ({ data: { content: [] } }))
       ]);
       localStorage.setItem('userProfile', JSON.stringify(mapProfile(unwrapData(profileResponse))));
+      const readNotificationIds = layThongBaoDaDoc();
       const bookingItems: HeaderNotification[] = unwrapPageContent(res).map((booking: any) => {
         const statusMap: Record<string, string> = {
           'CHO_XAC_NHAN': 'Chờ xác nhận',
@@ -93,28 +109,55 @@ export default function Header() {
           'HOAN_THANH': 'Hoàn thành'
         };
         const trangThaiText = statusMap[booking.trangThai] || booking.trangThai;
+        const id = `booking-${booking.maDatTour}-${booking.trangThai || 'NONE'}`;
 
         return {
-          id: booking.maDatTour,
+          id,
           title: 'Cập nhật đơn đặt tour',
           desc: `${booking.tieuDeTour || booking.maTourThucTe}: ${trangThaiText}`,
           time: booking.ngayDat ? new Date(booking.ngayDat).toLocaleDateString('vi-VN') : '',
-          unread: booking.trangThai === 'CHO_XAC_NHAN' && Boolean(booking.daBaoChuyenKhoan),
+          unread: !readNotificationIds.includes(id),
           type: 'BOOKING'
         };
       });
 
-      const supportItems: HeaderNotification[] = (supportResponse?.data || []).map((request: any) => ({
-        id: `support-${request.maYeuCau}`,
-        title: 'Yêu cầu bổ sung thông tin',
-        desc: `${request.maYeuCau}${request.maDatTour ? ` · ${request.maDatTour}` : ''}`,
-        time: 'Chờ bạn phản hồi',
-        unread: true,
-        type: 'SUPPORT_NEED_INFO',
-        supportRequest: request
-      }));
+      const supportItems: HeaderNotification[] = (supportResponse?.data || []).map((request: any) => {
+        const id = `support-${request.maYeuCau}-${request.trangThai}-${request.noiDung || ''}`;
+        return {
+          id,
+          title: 'Yêu cầu bổ sung thông tin',
+          desc: `${request.maYeuCau}${request.maDatTour ? ` · ${request.maDatTour}` : ''}`,
+          time: 'Chờ bạn phản hồi',
+          unread: !readNotificationIds.includes(id),
+          type: 'SUPPORT_NEED_INFO',
+          supportRequest: request
+        };
+      });
 
-      setNotifications([...supportItems, ...bookingItems]);
+      const complaintStatusMap: Record<string, string> = {
+        CHUA_XU_LY: 'Đang chờ xử lý',
+        CHO_BO_SUNG: 'Cần bổ sung thông tin',
+        CHO_GIAI_TRINH: 'Đang chờ giải trình',
+        CHO_DUYET: 'Đang chờ duyệt',
+        DA_XU_LY: 'Đã giải quyết',
+        TU_CHOI: 'Đã từ chối'
+      };
+      const supportRequestIds = new Set(supportItems.map(item => item.supportRequest?.maYeuCau));
+      const complaintItems: HeaderNotification[] = unwrapPageContent(complaintResponse)
+        .filter((complaint: any) => !supportRequestIds.has(complaint.maYeuCau))
+        .map((complaint: any) => {
+          const id = `complaint-${complaint.maYeuCau}-${complaint.trangThai}-${complaint.noiDung || ''}`;
+          return {
+            id,
+            title: 'Cập nhật khiếu nại',
+            desc: `${complaint.maYeuCau}: ${complaintStatusMap[complaint.trangThai] || complaint.trangThai}`,
+            time: complaint.maDatTour || '',
+            unread: !readNotificationIds.includes(id),
+            type: 'COMPLAINT'
+          };
+        });
+
+      setNotifications([...supportItems, ...complaintItems, ...bookingItems]);
     } catch {
       setNotifications([]);
     }
@@ -122,6 +165,17 @@ export default function Header() {
 
   useEffect(() => {
     taiThongBao();
+    const refreshInterval = window.setInterval(taiThongBao, 30000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        taiThongBao();
+      }
+    };
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
   }, [taiThongBao]);
 
   // Close dropdown when clicking outside
@@ -169,10 +223,12 @@ export default function Header() {
   };
 
   const danhDauTatCaDaDoc = () => {
+    luuThongBaoDaDoc([...layThongBaoDaDoc(), ...notifications.map(notif => notif.id)]);
     setNotifications(prev => prev.map(notif => ({ ...notif, unread: false })));
   };
 
   const moThongBaoDatTour = (id: string) => {
+    luuThongBaoDaDoc([...layThongBaoDaDoc(), id]);
     setNotifications(prev => prev.map(notif => notif.id === id ? { ...notif, unread: false } : notif));
   };
 
@@ -347,25 +403,26 @@ export default function Header() {
                           <div
                             key={notif.id}
                             onClick={() => notif.type === 'SUPPORT_NEED_INFO' ? moYeuCauBoSung(notif) : moThongBaoDatTour(notif.id)}
-                            className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-50 cursor-pointer ${notif.unread ? 'bg-blue-50/50' : ''}`}
+                            className={`relative px-4 py-3 pr-9 hover:bg-gray-50 border-b border-gray-50 cursor-pointer ${notif.type === 'SUPPORT_NEED_INFO' ? 'pb-4 pr-14' : ''} ${notif.unread ? 'bg-blue-50/50' : ''}`}
                           >
-                            <div className="flex justify-between items-start mb-1">
+                            <div className="mb-1">
                               <h4 className={`text-sm font-medium ${notif.unread ? 'text-gray-900' : 'text-gray-700'}`}>{notif.title}</h4>
-                              {notif.unread && <span className="w-2 h-2 bg-blue-600 rounded-full mt-1.5"></span>}
                             </div>
+                            {notif.unread && <span className="absolute right-4 top-4 h-2 w-2 rounded-full bg-blue-600"></span>}
                             <p className="text-xs text-gray-600 mb-1">{notif.desc}</p>
                             <span className="text-xs text-gray-400">{notif.time}</span>
                             {notif.type === 'SUPPORT_NEED_INFO' && (
                               <button
                                 type="button"
+                                title="Cập nhật thông tin"
+                                aria-label="Cập nhật thông tin"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   moYeuCauBoSung(notif);
                                 }}
-                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                                className="absolute bottom-3 right-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 shadow-[0_5px_14px_rgba(37,99,235,0.10)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-100/80 hover:text-blue-700 hover:shadow-[0_9px_18px_rgba(37,99,235,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/50 active:translate-y-0 active:scale-95"
                               >
-                                <Send className="h-3.5 w-3.5" />
-                                Cập nhật thông tin
+                                <Send className="h-[17px] w-[17px]" strokeWidth={1.85} />
                               </button>
                             )}
                           </div>
@@ -495,15 +552,24 @@ export default function Header() {
                                 moThongBaoDatTour(notif.id);
                               }
                             }}
-                            className="p-2 border-b border-gray-100 last:border-0 cursor-pointer"
+                            className={`relative p-2 pr-8 border-b border-gray-100 last:border-0 cursor-pointer ${notif.type === 'SUPPORT_NEED_INFO' ? 'pb-3 pr-12' : ''} ${notif.unread ? 'bg-blue-50/50' : ''}`}
                           >
                             <h4 className={`text-sm ${notif.unread ? 'font-bold text-gray-900' : 'text-gray-700'}`}>{notif.title}</h4>
                             <p className="text-xs text-gray-600">{notif.desc}</p>
+                            {notif.unread && <span className="absolute right-2 top-3 h-2 w-2 rounded-full bg-blue-600"></span>}
                             {notif.type === 'SUPPORT_NEED_INFO' && (
-                              <span className="mt-2 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
-                                <Send className="h-3 w-3" />
-                                Cập nhật thông tin
-                              </span>
+                              <button
+                                type="button"
+                                title="Cập nhật thông tin"
+                                aria-label="Cập nhật thông tin"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  moYeuCauBoSung(notif);
+                                }}
+                                className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 shadow-[0_5px_14px_rgba(37,99,235,0.10)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-100/80 hover:text-blue-700 hover:shadow-[0_9px_18px_rgba(37,99,235,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/50 active:translate-y-0 active:scale-95"
+                              >
+                                <Send className="h-[17px] w-[17px]" strokeWidth={1.85} />
+                              </button>
                             )}
                           </div>
                         ))}
