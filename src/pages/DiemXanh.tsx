@@ -19,7 +19,7 @@ interface GreenPointsProps {
 export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPointsProps) {
   const [greenActionsList, setGreenActionsList] = useState<GreenAction[]>([]);
   const [selectedGreenGuests, setSelectedGreenGuests] = useState<string[]>([]);
-  const [selectedGreenAction, setSelectedGreenAction] = useState('');
+  const [selectedGreenActions, setSelectedGreenActions] = useState<string[]>([]);
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
@@ -61,6 +61,12 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
     }
   };
 
+  const toggleSelectGreenAction = (actionId: string) => {
+    setSelectedGreenActions(prev =>
+      prev.includes(actionId) ? prev.filter(id => id !== actionId) : [...prev, actionId]
+    );
+  };
+
   useEffect(() => {
     const activePassengerCodes = new Set(activePassengers.map(p => p.code));
     setSelectedGreenGuests(prev => prev.filter(code => activePassengerCodes.has(code)));
@@ -91,57 +97,64 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   };
 
   const submitGreenAction = async () => {
-    if (selectedGreenGuests.length === 0 || !selectedGreenAction || !maTour) return;
+    if (selectedGreenGuests.length === 0 || selectedGreenActions.length === 0 || !maTour) return;
 
-    const action = greenActionsList.find(a => a.id === selectedGreenAction);
-    if (!action) return;
+    const selectedPassengers = activePassengers.filter(p => selectedGreenGuests.includes(p.code));
+    const selectablePassengers = selectedPassengers
+      .map(p => ({
+        passenger: p,
+        maKhachHang: p.maKhachHang || (!p.maNguoiDongHanh ? p.code : undefined)
+      }))
+      .filter((item): item is { passenger: Passenger; maKhachHang: string } => Boolean(item.maKhachHang));
+    const actions = greenActionsList.filter(action => selectedGreenActions.includes(action.id));
 
-    try {
-      const selectedPassengers = activePassengers.filter(p => selectedGreenGuests.includes(p.code));
-      const khachHangIds = selectedPassengers
-        .map(p => p.maKhachHang || (!p.maNguoiDongHanh ? p.code : undefined))
-        .filter((id): id is string => Boolean(id));
+    if (selectablePassengers.length === 0) {
+      setGreenConfirmToast({
+        show: true,
+        text: 'Chỉ khách hàng có hộ chiếu số mới có thể cộng điểm xanh.'
+      });
+      return;
+    }
 
-      if (khachHangIds.length === 0) {
-        setGreenConfirmToast({
-          show: true,
-          text: 'Chỉ khách hàng có hộ chiếu số mới có thể cộng điểm xanh.'
-        });
-        return;
-      }
-
-      await Promise.all(khachHangIds.map(maKhachHang => hdvService.luuHanhDongXanh(maTour, {
+    const submissions = selectablePassengers.flatMap(({ passenger, maKhachHang }) =>
+      actions.map(action => ({ passenger, maKhachHang, action }))
+    );
+    const results = await Promise.allSettled(submissions.map(({ maKhachHang, action }) =>
+      hdvService.luuHanhDongXanh(maTour, {
         maKhachHang,
         maHanhDongXanh: action.id,
         minhChung: greenPhotoFile || undefined
-      })));
+      })
+    ));
+    const succeeded = submissions.filter((_, index) => results[index].status === 'fulfilled');
+    const failedCount = submissions.length - succeeded.length;
 
+    if (succeeded.length > 0) {
+      const pointsByCustomer = succeeded.reduce<Record<string, number>>((totals, item) => {
+        totals[item.maKhachHang] = (totals[item.maKhachHang] || 0) + item.action.points;
+        return totals;
+      }, {});
       setPassengers(prev => prev.map(p => {
-        if (selectedGreenGuests.includes(p.code)) {
-          return { ...p, greenPoints: p.greenPoints + action.points };
-        }
-        return p;
+        const points = p.maKhachHang ? pointsByCustomer[p.maKhachHang] : undefined;
+        return points ? { ...p, greenPoints: p.greenPoints + points } : p;
       }));
-
-      const guestNames = selectedPassengers.map(p => p.name).join(', ');
-      setGreenConfirmToast({
-        show: true,
-        text: `Đã cộng +${action.points} điểm xanh vào Hộ chiếu số cho: ${guestNames}!`
-      });
-
-      setSelectedGreenGuests([]);
-      setSelectedGreenAction('');
-      setGreenPhotoFile(null);
-
-      setTimeout(() => setGreenConfirmToast(null), 4000);
-    } catch (error) {
-      console.error(error);
-      setGreenConfirmToast({
-        show: true,
-        text: 'Lỗi: Không thể lưu hành động xanh!'
-      });
-      setTimeout(() => setGreenConfirmToast(null), 4000);
     }
+
+    const totalPoints = succeeded.reduce((sum, item) => sum + item.action.points, 0);
+    const suffix = failedCount > 0
+      ? ` ${failedCount} lượt bị bỏ qua vì đã ghi nhận trước đó hoặc không thể lưu.`
+      : '';
+    setGreenConfirmToast({
+      show: true,
+      text: succeeded.length > 0
+        ? `Đã ghi nhận ${succeeded.length} hành động, cộng +${totalPoints} điểm xanh.${suffix}`
+        : 'Các hành động đã chọn đã được ghi nhận trước đó hoặc không thể lưu.'
+    });
+
+    setSelectedGreenGuests([]);
+    setSelectedGreenActions([]);
+    setGreenPhotoFile(null);
+    setTimeout(() => setGreenConfirmToast(null), 4000);
   };
 
   return (
@@ -180,11 +193,11 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          {activePassengers.map(p => {
+          {activePassengers.map((p, index) => {
             const isChosen = selectedGreenGuests.includes(p.code);
             return (
               <div
-                key={p.code}
+                key={p.listKey || `${p.code}:${index}`}
                 onClick={() => toggleSelectGreenGuest(p.code)}
                 className={`p-2 rounded-xl border text-left cursor-pointer transition-all duration-200 flex items-center justify-between ${isChosen ? 'bg-sky-50 border-sky-300 text-sky-800 shadow-sm ring-1 ring-sky-100' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
@@ -211,15 +224,18 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
           {greenActionsList.map(a => (
             <div
               key={a.id}
-              onClick={() => setSelectedGreenAction(a.id)}
-              className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition ${selectedGreenAction === a.id ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+              onClick={() => toggleSelectGreenAction(a.id)}
+              className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition ${selectedGreenActions.includes(a.id) ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                 }`}
             >
               <div className="flex items-center space-x-2">
                 <span className="text-base">{a.icon}</span>
                 <span>{a.name}</span>
               </div>
-              <span className="bg-emerald-100 text-emerald-700 font-black px-1.5 py-0.5 rounded font-mono text-[11px]">+{a.points}đ</span>
+              <div className="flex items-center gap-2">
+                <span className="bg-emerald-100 text-emerald-700 font-black px-1.5 py-0.5 rounded font-mono text-[11px]">+{a.points}đ</span>
+                {selectedGreenActions.includes(a.id) && <Check size={14} className="shrink-0 text-emerald-500" />}
+              </div>
             </div>
           ))}
         </div>
@@ -280,7 +296,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
 
       <button
         onClick={submitGreenAction}
-        disabled={selectedGreenGuests.length === 0 || !selectedGreenAction}
+        disabled={selectedGreenGuests.length === 0 || selectedGreenActions.length === 0}
         className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-100 transition disabled:opacity-50 disabled:shadow-none active:scale-95"
       >
         Ghi nhận & Tích điểm Hộ chiếu

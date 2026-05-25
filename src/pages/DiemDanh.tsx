@@ -214,14 +214,14 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
 
       {/* Redesign: Quiet white cards, condition-based action buttons, flat red medical text */}
       <div className="space-y-2">
-        {filteredPassengers.map((p) => {
+        {filteredPassengers.map((p, index) => {
           const isUnmarked = p.status === 'CHUA_DIEM_DANH';
           const isChecked = p.status === 'DA_DIEM_DANH';
           const isAbsent = p.status === 'VANG';
 
           return (
             <div
-              key={p.code}
+              key={p.listKey || `${p.code}:${index}`}
               className="bg-white p-3.5 rounded-2xl flex flex-col justify-between border border-slate-100 shadow-sm transition-all duration-200"
             >
               <div className="flex justify-between items-start">

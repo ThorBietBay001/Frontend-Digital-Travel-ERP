@@ -75,6 +75,9 @@ export default function App() {
 
   const mapPassenger = (p: any): Passenger => ({
     code: p.maKhachHang || p.maNguoiDongHanh,
+    listKey: p.maDatTour
+      ? `${p.maDatTour}:${p.loaiKhach || ''}:${p.maKhachHang || p.maNguoiDongHanh}`
+      : undefined,
     maKhachHang: p.maKhachHang || undefined,
     maNguoiDongHanh: p.maNguoiDongHanh || undefined,
     loaiKhach: p.loaiKhach,

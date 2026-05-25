@@ -49,29 +49,48 @@ interface PaginationTabsProps {
   onPageChange: (page: number) => void;
 }
 
+const getPaginationItems = (totalPages: number, currentPage: number) => {
+  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const pages = Array.from(new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]))
+    .filter(page => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  return pages.reduce<(number | 'ellipsis')[]>((items, page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) items.push('ellipsis');
+    items.push(page);
+    return items;
+  }, []);
+};
+
 function PaginationTabs({ currentPage, totalPages, onPageChange }: PaginationTabsProps) {
   if (totalPages <= 1) return null;
+  const pageItems = getPaginationItems(totalPages, currentPage);
 
   return (
-    <div className="flex items-center justify-center gap-1.5 pt-1">
+    <nav aria-label="Phân trang" className="mx-auto mt-1 flex w-fit items-center justify-center gap-2">
       <button
         type="button"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm flex items-center justify-center transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="size-8 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-center transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 active:scale-95 disabled:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed"
         aria-label="Trang trước"
       >
         <ChevronLeft size={14} />
       </button>
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+      {pageItems.map((page, index) => page === 'ellipsis' ? (
+        <span key={`ellipsis-${index}`} className="size-8 rounded-lg border border-slate-100 bg-white text-[11px] font-semibold text-slate-400 flex items-center justify-center">
+          ...
+        </span>
+      ) : (
         <button
           key={page}
           type="button"
           onClick={() => onPageChange(page)}
-          className={`min-w-8 h-8 px-2 rounded-full text-[11px] font-black border transition active:scale-95 ${
+          className={`size-8 rounded-lg border bg-white text-[11px] font-semibold transition active:scale-95 ${
             currentPage === page
-              ? 'bg-sky-500 text-white border-sky-500 shadow-md shadow-sky-100'
-              : 'bg-white text-slate-500 border-slate-200 shadow-sm hover:border-sky-200 hover:text-sky-600'
+              ? 'border-sky-500 bg-sky-50 text-sky-700 ring-1 ring-sky-500'
+              : 'border-slate-100 text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700'
           }`}
           aria-label={`Trang ${page}`}
           aria-current={currentPage === page ? 'page' : undefined}
@@ -83,12 +102,12 @@ function PaginationTabs({ currentPage, totalPages, onPageChange }: PaginationTab
         type="button"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm flex items-center justify-center transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="size-8 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-center transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 active:scale-95 disabled:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed"
         aria-label="Trang sau"
       >
         <ChevronRight size={14} />
       </button>
-    </div>
+    </nav>
   );
 }
 
@@ -440,9 +459,9 @@ export default function BangDieuKhien({
             {modalTab === 'PASSENGERS' && selectedUpcomingTour.trangThaiChapNhan !== 'CHO_PHAN_HOI' ? (
               <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {(selectedUpcomingTour.passengers || []).map((guest) => (
+                  {(selectedUpcomingTour.passengers || []).map((guest, index) => (
                     <div
-                      key={guest.code}
+                      key={guest.listKey || `${guest.code}:${index}`}
                       className="bg-white p-3.5 rounded-2xl flex flex-col justify-between border border-slate-100 shadow-sm transition-all duration-200"
                     >
                       <div className="flex justify-between items-start">

@@ -31,6 +31,7 @@ export interface TourItinerarySummary {
 
 export interface Passenger {
   code: string;
+  listKey?: string;
   maKhachHang?: string;
   maNguoiDongHanh?: string;
   loaiKhach?: 'NGUOI_DAT' | 'NGUOI_DONG_HANH';

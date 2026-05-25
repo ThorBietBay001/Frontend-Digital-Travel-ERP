@@ -1,12 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle, Plus, Camera, Trash2 } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Plus, Camera, Trash2 } from 'lucide-react';
 import type { Expense, Tour } from '../types';
 
 import { hdvService } from '../services/hdvService';
 
 const PAGE_SIZE = 6;
 const REPORT_WINDOW_DAYS = 3;
+
+const getPaginationItems = (totalPages: number, currentPage: number) => {
+  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const pages = Array.from(new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]))
+    .filter(page => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  return pages.reduce<(number | 'ellipsis')[]>((items, page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) items.push('ellipsis');
+    items.push(page);
+    return items;
+  }, []);
+};
 
 interface ExpenseTrackerProps {
   maTour?: string;
@@ -53,6 +67,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
   const canCreateCurrentTourExpense = Boolean(selectedTourCode);
   const visibleExpenses = expenses;
   const totalExpensePages = Math.max(1, Math.ceil(visibleExpenses.length / PAGE_SIZE));
+  const expensePageItems = getPaginationItems(totalExpensePages, expensePage);
   const paginatedExpenses = useMemo(
     () => visibleExpenses.slice((expensePage - 1) * PAGE_SIZE, expensePage * PAGE_SIZE),
     [expensePage, visibleExpenses]
@@ -310,27 +325,46 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
           ))}
         </div>
         {visibleExpenses.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between pt-1">
+          <nav aria-label="Phân trang chi phí" className="mx-auto mt-1 flex w-fit items-center gap-2">
             <button
               type="button"
               onClick={() => setExpensePage(prev => Math.max(1, prev - 1))}
               disabled={expensePage === 1}
-              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Trang trước"
+              className="size-8 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-center transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 disabled:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed"
             >
-              Trước
+              <ChevronLeft size={14} />
             </button>
-            <span className="text-[10px] font-bold text-slate-400">
-              Trang {expensePage}/{totalExpensePages}
-            </span>
+            {expensePageItems.map((page, index) => page === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="size-8 rounded-lg border border-slate-100 bg-white text-[11px] font-semibold text-slate-400 flex items-center justify-center">
+                ...
+              </span>
+            ) : (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setExpensePage(page)}
+                aria-label={`Trang ${page}`}
+                aria-current={expensePage === page ? 'page' : undefined}
+                className={`size-8 rounded-lg border bg-white text-[11px] font-semibold transition ${
+                  expensePage === page
+                    ? 'border-sky-500 bg-sky-50 text-sky-700 ring-1 ring-sky-500'
+                    : 'border-slate-100 text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
             <button
               type="button"
               onClick={() => setExpensePage(prev => Math.min(totalExpensePages, prev + 1))}
               disabled={expensePage === totalExpensePages}
-              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Trang sau"
+              className="size-8 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-center transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600 disabled:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed"
             >
-              Sau
+              <ChevronRight size={14} />
             </button>
-          </div>
+          </nav>
         )}
       </div>
 
