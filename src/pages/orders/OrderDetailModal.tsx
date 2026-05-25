@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { User, DollarSign, MapPin, Users, Tag, Ticket, Leaf, Clock, CheckCircle } from 'lucide-react';
+import { User, DollarSign, MapPin, Users, Tag, Ticket, Leaf, Clock, CheckCircle, XCircle } from 'lucide-react';
 import type { Order, Passenger } from './mockData';
 import { ordersService } from '../../services/orders';
 import type { ChiTietDatTourResponse, DonDatTourResponse } from '../../services/orders';
@@ -37,10 +37,10 @@ const mapStatus = (s?: string): Order['status'] => {
   }
 };
 
-const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
+const mapPaymentStatus = (s?: string, daBaoChuyenKhoan?: boolean): Order['paymentStatus'] => {
   switch (s?.trim().toUpperCase()) {
     case 'CHO_XAC_NHAN':
-      return 'pending_confirmation';
+      return daBaoChuyenKhoan ? 'pending_confirmation' : 'unpaid';
     case 'DA_XAC_NHAN':
     case 'HOAN_THANH':
       return 'paid';
@@ -169,7 +169,7 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
     greenNote: api.ghiChuDiemXanh,
     additionalServices: api.chiTietDichVu?.map(formatAdditionalService).filter(Boolean),
     status: mapStatus(api.trangThai),
-    paymentStatus: mapPaymentStatus(api.trangThai),
+    paymentStatus: mapPaymentStatus(api.trangThai, api.daBaoChuyenKhoan),
     passengerCount: passengerDetails.length,
     passengers: passengerDetails.map(
       (p): Passenger => {
@@ -282,6 +282,27 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
     }
   };
 
+  const handleRejectPayment = async () => {
+    if (!order) return;
+    const confirmed = await confirm(`Từ chối thanh toán cho đơn ${order.orderCode}?`);
+    if (!confirmed) return;
+
+    setApproving(true);
+    setError(null);
+    try {
+      await ordersService.tuChoiThanhToan(order.id);
+      await loadDetail();
+      await onApproved?.();
+      notify(`Đã từ chối thanh toán đơn ${order.orderCode}.`, { type: 'success' });
+    } catch (err: unknown) {
+      const message = formatApiError(err, 'Lỗi khi từ chối thanh toán');
+      setError(message);
+      notify(message, { type: 'error' });
+    } finally {
+      setApproving(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -291,9 +312,14 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
       footer={(
         <div className="flex items-center justify-end gap-3">
           {canApprovePayment && (
-            <Button icon={<CheckCircle size={16} />} onClick={handleApprovePayment} disabled={approving}>
-              Duyệt thanh toán
-            </Button>
+            <>
+              <Button icon={<XCircle size={16} />} onClick={handleRejectPayment} disabled={approving}>
+                Từ chối thanh toán
+              </Button>
+              <Button icon={<CheckCircle size={16} />} onClick={handleApprovePayment} disabled={approving}>
+                Duyệt thanh toán
+              </Button>
+            </>
           )}
           <Button variant="secondary" onClick={onClose}>Đóng</Button>
         </div>

@@ -60,4 +60,12 @@ export const ordersService = {
     );
     return unwrapApiData(response);
   },
+
+  tuChoiThanhToan: async (maDatTour: string): Promise<DonDatTourResponse | undefined> => {
+    const response = await api.put<ApiResponseDonDatTourResponse>(
+      `/api/kinh-doanh/dat-tour/${maDatTour}/tu-choi-thanh-toan`,
+      {}
+    );
+    return unwrapApiData(response);
+  },
 };

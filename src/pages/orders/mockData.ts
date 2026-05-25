@@ -40,6 +40,7 @@ export interface DonDatTourResponse {
   soDiemXanh?: number;
   ghiChuDiemXanh?: string;
   trangThai?: string;
+  daBaoChuyenKhoan?: boolean;
   thoiGianHetHan?: string;
   ghiChu?: string;
   thoiDiemTao?: string;

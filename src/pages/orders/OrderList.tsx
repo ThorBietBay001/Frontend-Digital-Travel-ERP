@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { Pagination } from '../../components/ui/Pagination';
-import { CheckCircle, Eye } from 'lucide-react';
+import { CheckCircle, Eye, XCircle } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import { Table } from '../../components/ui/Table';
 import type { Column } from '../../components/ui/Table';
@@ -38,10 +38,10 @@ const mapStatus = (s?: string): Order['status'] => {
   }
 };
 
-const mapPaymentStatus = (s?: string): Order['paymentStatus'] => {
+const mapPaymentStatus = (s?: string, daBaoChuyenKhoan?: boolean): Order['paymentStatus'] => {
   switch (s?.trim().toUpperCase()) {
     case 'CHO_XAC_NHAN':
-      return 'pending_confirmation';
+      return daBaoChuyenKhoan ? 'pending_confirmation' : 'unpaid';
     case 'DA_XAC_NHAN':
     case 'HOAN_THANH':
       return 'paid';
@@ -71,7 +71,7 @@ const mapToUI = (api: DonDatTourResponse): Order => ({
   bookingDate: formatDate(api.ngayDat),
   totalAmount: api.tongTien || 0,
   status: mapStatus(api.trangThai),
-  paymentStatus: mapPaymentStatus(api.trangThai),
+  paymentStatus: mapPaymentStatus(api.trangThai, api.daBaoChuyenKhoan),
   passengerCount: api.chiTietKhach?.length || 0,
   isExpired: api.thoiGianHetHan ? new Date(api.thoiGianHetHan) < new Date() : false,
 });
@@ -137,6 +137,25 @@ const OrderList: React.FC = () => {
         setError(message);
         notify(message, { type: 'error' });
       }
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleRejectPayment = async (order: Order) => {
+    const confirmed = await confirm(`Từ chối thanh toán cho đơn ${order.orderCode}?`);
+    if (!confirmed) return;
+
+    setApprovingId(order.id);
+    setError(null);
+    try {
+      await ordersService.tuChoiThanhToan(order.id);
+      await getAll();
+      notify(`Đã từ chối thanh toán đơn ${order.orderCode}.`, { type: 'success' });
+    } catch (err: unknown) {
+      const message = formatApiError(err, 'Lỗi khi từ chối thanh toán');
+      setError(message);
+      notify(message, { type: 'error' });
     } finally {
       setApprovingId(null);
     }
@@ -226,6 +245,15 @@ const OrderList: React.FC = () => {
             disabled={!canApprovePayment(record) || approvingId === record.id}
             className="p-2"
             aria-label="Duyệt thanh toán"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<XCircle size={16} />}
+            onClick={() => handleRejectPayment(record)}
+            disabled={!canApprovePayment(record) || approvingId === record.id}
+            className="p-2 text-red-600"
+            aria-label="Từ chối thanh toán"
           />
           <Button
             variant="ghost"
