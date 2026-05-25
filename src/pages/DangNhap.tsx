@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Compass, Eye, EyeOff, Lock, User } from 'lucide-react';
+import { AlertTriangle, Eye, EyeOff, Lock, User } from 'lucide-react';
 import { hdvService } from '../services/hdvService';
 
 interface LoginProps {
@@ -114,9 +114,11 @@ export default function DangNhap({
 
       <div className="flex flex-col space-y-6 z-10 my-auto -translate-y-6 w-full max-w-sm mx-auto">
         <div className="text-center space-y-3 animate-slide-up">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-tr from-sky-400 to-sky-500 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-sky-200 animate-pulse-subtle">
-            <Compass size={32} className="stroke-[1.8px]" />
-          </div>
+          <img
+            src="/favicon.svg"
+            alt="Digital Travel"
+            className="w-16 h-16 mx-auto rounded-3xl shadow-xl shadow-sky-200 animate-pulse-subtle"
+          />
           <div>
             <h1 className="text-xl font-black text-slate-800 tracking-wider text-center">DIGITAL TRAVEL ERP</h1>
             <p className="text-xs text-sky-500 font-bold uppercase tracking-widest mt-0.5">Nghiệp vụ Hướng dẫn viên</p>
