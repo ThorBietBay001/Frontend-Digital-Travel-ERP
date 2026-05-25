@@ -1,21 +1,52 @@
 import api from '../api';
 import { unwrapApiData, type PageQueryParams } from '../../utils/apiHelpers';
-import type {
-  ApiResponsePageNhatKyBaoMatResponse,
-  PageNhatKyBaoMatResponse,
-  NhatKyBaoMatResponse,
-  PageableObject,
-  SortObject,
-} from '../../pages/system/logs/mockData';
 
-export type ApiResponsePageNhatKyHeThongResponse = ApiResponsePageNhatKyBaoMatResponse;
-export type PageNhatKyHeThongResponse = PageNhatKyBaoMatResponse;
-export type NhatKyHeThongResponse = NhatKyBaoMatResponse;
+export interface SortObject {
+  empty?: boolean;
+  sorted?: boolean;
+  unsorted?: boolean;
+}
 
-export type {
-  PageableObject,
-  SortObject,
-};
+export interface PageableObject {
+  offset?: number;
+  pageNumber?: number;
+  pageSize?: number;
+  paged?: boolean;
+  sort?: SortObject;
+  unpaged?: boolean;
+}
+
+export interface NhatKyHeThongResponse {
+  maNhatKyHeThong?: string;
+  maTaiKhoan?: string;
+  tenDangNhap?: string;
+  hanhDong?: string;
+  doiTuong?: string;
+  maDoiTuong?: string;
+  thoiGian?: string;
+}
+
+export interface PageNhatKyHeThongResponse {
+  totalPages?: number;
+  totalElements?: number;
+  size?: number;
+  content?: NhatKyHeThongResponse[];
+  number?: number;
+  numberOfElements?: number;
+  pageable?: PageableObject;
+  sort?: SortObject;
+  first?: boolean;
+  last?: boolean;
+  empty?: boolean;
+}
+
+export interface ApiResponsePageNhatKyHeThongResponse {
+  status?: number;
+  success?: boolean;
+  message?: string;
+  data?: PageNhatKyHeThongResponse;
+  error?: string;
+}
 
 export interface NhatKyHeThongQueryParams extends PageQueryParams {
   maTaiKhoan?: string;

@@ -23,7 +23,7 @@ const TourInstanceList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  const [monthFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
