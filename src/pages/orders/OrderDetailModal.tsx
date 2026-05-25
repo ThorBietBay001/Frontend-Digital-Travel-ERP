@@ -168,6 +168,10 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
     greenPoints: api.soDiemXanh ?? api.diemXanh ?? 0,
     greenNote: api.ghiChuDiemXanh,
     additionalServices: api.chiTietDichVu?.map(formatAdditionalService).filter(Boolean),
+    additionalServicesAmount: api.chiTietDichVu?.reduce((sum, s) => sum + (s.thanhTien ?? (s.donGia && s.soLuong ? s.donGia * s.soLuong : s.donGia) ?? 0), 0) || 0,
+    adultCount: api.soNguoiLon ?? (passengerDetails.length - (childPassengers.length || api.soTreEm || api.soLuongVeTreEm || 0)),
+    transactionCode: '—', // Not available in current API
+    paymentMethod: '—', // Not available in current API
     status: mapStatus(api.trangThai),
     paymentStatus: mapPaymentStatus(api.trangThai, api.daBaoChuyenKhoan),
     passengerCount: passengerDetails.length,
@@ -356,73 +360,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
             </div>
           </div>
 
-          <div className="bg-[#F9F9FF] p-4 rounded-xl border border-[#E1F1FF] grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-gray-500 flex items-center gap-2"><Clock size={16} className="text-[#00668A]" /> Thời gian đặt</span>
-              <span className="font-semibold text-gray-800 text-right">{order.bookingDate}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-gray-500">Trạng thái đơn</span>
-              <span className="font-semibold text-gray-800 text-right">{getOrderStatusLabel(order.status)}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex flex-col gap-3">
-              <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
-                <User size={18} className="text-[#00668A]" />
-                Thông tin Khách hàng
-              </h3>
-              <div className="bg-[#F9F9FF] p-4 rounded-xl border border-[#E1F1FF] flex flex-col gap-2.5">
-                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
-                  <span className="text-gray-500">Họ tên</span>
-                  <span className="font-semibold text-gray-800">{order.customerName}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Mã KH</span>
-                  <span className="font-medium text-gray-800">{order.id}</span>
-                </div>
-                <div className="flex justify-between items-start gap-3 border-t border-[#E1F1FF] pt-2">
-                  <span className="text-gray-500">Dịch vụ thêm</span>
-                  <span className="font-medium text-gray-800 text-right">
-                    {order.additionalServices?.length ? order.additionalServices.join(', ') : '—'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
-                <DollarSign size={18} className="text-[#00668A]" />
-                Thanh toán
-              </h3>
-              <div className="bg-white p-4 rounded-xl border border-[#E1F1FF] flex flex-col gap-2.5 shadow-sm">
-                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
-                  <span className="text-gray-500">Tổng tiền</span>
-                  <span className="font-bold text-[#121C2C] text-base">{formatCurrency(order.totalAmount)}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
-                  <span className="text-gray-500">Trạng thái TT</span>
-                  <span className="font-medium">{getPaymentStatusLabel(order.paymentStatus)}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
-                  <span className="text-gray-500 flex items-center gap-1"><Tag size={14} /> Voucher</span>
-                  <span className="font-medium text-right">
-                    {order.voucherCode || order.voucherName ? `${order.voucherCode || order.voucherName}${order.voucherDiscount ? ` (-${formatCurrency(order.voucherDiscount)})` : ''}` : 'Chưa áp dụng'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center border-b border-[#E1F1FF] pb-2">
-                  <span className="text-gray-500 flex items-center gap-1"><Ticket size={14} /> Vé trẻ em</span>
-                  <span className="font-medium text-right">{order.childTicketCount || 0} vé{order.childTicketAmount ? ` - ${formatCurrency(order.childTicketAmount)}` : ''}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 flex items-center gap-1"><Leaf size={14} /> Điểm xanh</span>
-                  <span className="font-medium text-green-700 text-right">{order.greenPoints ? `+${order.greenPoints} điểm` : 'Chưa ghi nhận'}{order.greenNote ? ` - ${order.greenNote}` : ''}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-3">
             <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
               <Users size={18} className="text-[#00668A]" />
@@ -466,6 +403,86 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <h3 className="font-semibold text-[#121C2C] flex items-center gap-2">
+              <DollarSign size={18} className="text-[#00668A]" />
+              Chi tiết chi phí đơn hàng
+            </h3>
+            <div className="bg-white p-4 rounded-xl border border-[#E1F1FF] flex flex-col shadow-sm text-sm">
+              <div className="flex flex-col gap-2.5 pb-3 border-b border-[#E1F1FF]">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Vé tour:</span>
+                  <span className="font-medium text-gray-800 text-right">{formatCurrency(order.totalAmount + (order.voucherDiscount || 0) - (order.additionalServicesAmount || 0))}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Cơ cấu hành khách:</span>
+                  <span className="font-medium text-gray-800 text-right">{order.adultCount || 0} người lớn, {order.childTicketCount || 0} trẻ em</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Dịch vụ bổ sung:</span>
+                  <span className="font-medium text-gray-800 text-right">{formatCurrency(order.additionalServicesAmount || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Thuế & Phụ phí:</span>
+                  <span className="font-medium text-green-600 text-right">Đã bao gồm</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2.5 py-3 border-b border-[#E1F1FF]">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Voucher áp dụng</span>
+                  <span className="font-medium text-gray-800 text-right">{order.voucherCode || order.voucherName || 'Không áp dụng'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Số tiền gốc</span>
+                  <span className="font-medium text-gray-800 text-right">{formatCurrency(order.totalAmount + (order.voucherDiscount || 0))}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Ưu đãi voucher</span>
+                  <span className="font-medium text-green-600 text-right">-{formatCurrency(order.voucherDiscount || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Sau khi trừ</span>
+                  <span className="font-medium text-[#00668A] text-right">{formatCurrency(order.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Điểm xanh dự kiến</span>
+                  <span className="font-medium text-green-600 text-right">+{order.greenPoints || 0} điểm</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2.5 py-3 border-b border-[#E1F1FF]">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Mã giao dịch</span>
+                  <span className="font-medium text-gray-800 text-right">{order.transactionCode}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Phương thức</span>
+                  <span className="font-medium text-gray-800 text-right">{order.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Thanh toán</span>
+                  <span className="font-medium text-gray-800 text-right">{getPaymentStatusLabel(order.paymentStatus)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Thời gian</span>
+                  <span className="font-medium text-gray-800 text-right">{order.bookingDate}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2.5 pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#121C2C]">Tổng cộng:</span>
+                  <span className="font-bold text-[#00668A] text-base">{formatCurrency(order.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#121C2C]">Số tiền giao dịch:</span>
+                  <span className="font-bold text-[#00668A] text-base">{formatCurrency(order.totalAmount)}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
