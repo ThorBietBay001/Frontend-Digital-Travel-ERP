@@ -461,7 +461,7 @@ export default function HoChieuSo() {
       case 'TU_CHOI_HOAN_TIEN':
         return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold border border-red-200">Từ chối hoàn tiền</span>;
       case 'HET_HAN_GIU_CHO':
-        return <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold border border-slate-200">Hết hạn giữ chỗ</span>;
+        return <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold border border-slate-200">Hết hạn thanh toán</span>;
       case 'THANH_TOAN_THAT_BAI':
         return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200">Thanh toán thất bại</span>;
       case 'HUY_THAT_BAI':
@@ -485,7 +485,7 @@ export default function HoChieuSo() {
       case 'CHO_HUY': return 'Chờ hủy';
       case 'CHO_HOAN_TIEN': return 'Chờ hoàn tiền';
       case 'TU_CHOI_HOAN_TIEN': return 'Từ chối hoàn tiền';
-      case 'HET_HAN_GIU_CHO': return 'Hết hạn giữ chỗ';
+      case 'HET_HAN_GIU_CHO': return 'Hết hạn thanh toán';
       case 'THANH_TOAN_THAT_BAI': return 'Thanh toán thất bại';
       default: return status || 'Chưa cập nhật';
     }
@@ -1081,8 +1081,7 @@ export default function HoChieuSo() {
                         <option value="CHO_HUY">Chờ hủy</option>
                         <option value="DA_HUY">Đã hủy</option>
                         <option value="TU_CHOI_HOAN_TIEN">Từ chối hoàn tiền</option>
-                        <option value="HET_HAN_GIU_CHO">Hết hạn giữ chỗ</option>
-                        <option value="THANH_TOAN_THAT_BAI">Thanh toán thất bại</option>
+                        <option value="HET_HAN_GIU_CHO">Hết hạn thanh toán</option>
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                         <ChevronDown className="w-3.5 h-3.5" />
