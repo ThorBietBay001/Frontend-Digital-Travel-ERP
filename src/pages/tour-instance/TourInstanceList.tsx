@@ -80,8 +80,6 @@ const TourInstanceList: React.FC = () => {
     return tour.trangThai || 'CHO_KICH_HOAT';
   };
 
-  const { user } = useAuth();
-
   const mapStatusToApi = (status: string) => {
     return status;
   };
