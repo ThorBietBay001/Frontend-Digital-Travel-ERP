@@ -106,12 +106,6 @@ const MENU_ITEMS: MenuItem[] = [
       { title: 'Nhật ký hệ thống', path: '/system/logs', key: 'logs' },
     ],
   },
-  {
-    title: 'Lịch trình công tác',
-    key: 'guide-schedule',
-    icon: Map,
-    path: '/guide/schedule',
-  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({

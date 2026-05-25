@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import TourTemplateList from './pages/tour-template/TourTemplateList'
 import TourInstanceList from './pages/tour-instance/TourInstanceList'
+import ServiceList from './pages/services/ServiceList'
+import GreenActionList from './pages/green-actions/GreenActionList'
 import OrderList from './pages/orders/OrderList'
 import CustomerList from './pages/customers/CustomerList'
 import ComplaintList from './pages/complaints/ComplaintList'
@@ -17,16 +19,14 @@ import MainLayout from './components/layouts/MainLayout'
 import Dashboard from './pages/dashboard/Dashboard'
 import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
-import GuideSchedule from './pages/guide/GuideSchedule'
 
-const ROLES_DASHBOARD = ['ADMIN', 'SANPHAM', 'KINHDOANH', 'SALES', 'DIEUHANH', 'MANAGER', 'KETOAN', 'HDV', 'KHACHHANG'];
+const ROLES_DASHBOARD = ['ADMIN', 'SANPHAM', 'KINHDOANH', 'SALES', 'DIEUHANH', 'MANAGER', 'KETOAN'];
 const ROLES_SANPHAM = ['SANPHAM', 'ADMIN'];
 const ROLES_KINHDOANH = ['KINHDOANH', 'SALES', 'ADMIN'];
 const ROLES_ORDERS = ['KINHDOANH', 'SALES', 'KETOAN', 'ADMIN'];
 const ROLES_DIEUHANH = ['DIEUHANH', 'MANAGER', 'ADMIN'];
 const ROLES_TOUR_INSTANCE = ['DIEUHANH', 'MANAGER', 'SANPHAM', 'ADMIN'];
 const ROLES_KETOAN = ['KETOAN', 'ADMIN'];
-const ROLES_HDV = ['HDV', 'ADMIN'];
 const ROLES_ADMIN = ['ADMIN'];
 const ROLES_HR = ['ADMIN', 'DIEUHANH', 'MANAGER'];
 
@@ -50,6 +50,16 @@ function App() {
       <Route path="/tour-instance" element={
         <ProtectedRoute allowedRoles={ROLES_TOUR_INSTANCE}>
           <TourInstanceList />
+        </ProtectedRoute>
+      } />
+      <Route path="/services" element={
+        <ProtectedRoute allowedRoles={ROLES_SANPHAM}>
+          <ServiceList />
+        </ProtectedRoute>
+      } />
+      <Route path="/green-actions" element={
+        <ProtectedRoute allowedRoles={ROLES_SANPHAM}>
+          <GreenActionList />
         </ProtectedRoute>
       } />
 
@@ -102,13 +112,6 @@ function App() {
       <Route path="/finance/refund" element={
         <ProtectedRoute allowedRoles={ROLES_KETOAN}>
           <RefundList />
-        </ProtectedRoute>
-      } />
-
-      {/* Hướng dẫn viên */}
-      <Route path="/guide/schedule" element={
-        <ProtectedRoute allowedRoles={ROLES_HDV}>
-          <GuideSchedule />
         </ProtectedRoute>
       } />
 
