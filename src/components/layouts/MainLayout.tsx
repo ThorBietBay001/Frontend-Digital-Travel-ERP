@@ -1,6 +1,8 @@
 import React from 'react';
 import { Sidebar } from '../ui/Sidebar';
 import TopBar from '../ui/TopBar';
+import { useAuth } from '../../context/AuthContext';
+import { getRoleLabel } from '../../config/rolePermissions';
 
 export interface MainLayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   userName,
   userRole,
 }) => {
+  const { user } = useAuth();
+  const resolvedUserName = user?.tenHienThi || user?.hoTen || userName;
+  const resolvedUserRole = getRoleLabel(user?.maVaiTro || userRole);
+
   return (
     <div className="flex h-screen bg-[#F9F9FF]">
       {/* Sidebar - Cố định bên trái */}
@@ -31,8 +37,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <div className="sticky top-0 z-30">
           <TopBar 
             breadcrumb={breadcrumb} 
-            userName={userName} 
-            userRole={userRole} 
+            userName={resolvedUserName} 
+            userRole={resolvedUserRole} 
           />
         </div>
 

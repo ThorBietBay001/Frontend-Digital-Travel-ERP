@@ -15,7 +15,9 @@ const TopBar: React.FC<TopBarProps> = ({
   userName = 'Người dùng',
   userRole = 'Vai trò',
 }) => {
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=E8F6FF&color=00668A`;
+  const avatarLabel = userRole || userName;
+  const displayRole = userRole || userName;
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(avatarLabel)}&background=E8F6FF&color=00668A`;
 
   return (
     <header className="h-[64px] bg-white/90 backdrop-blur-md border-b border-[#E1F1FF] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex items-center justify-between px-6 sticky top-0 z-40">
@@ -69,12 +71,11 @@ const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center gap-3 cursor-pointer">
           <img 
             src={avatarUrl} 
-            alt={userName} 
+            alt={avatarLabel} 
             className="w-10 h-10 rounded-full border border-[#E1F1FF] object-cover" 
           />
           <div className="flex flex-col">
-            <span className="text-[14px] font-bold text-[#00668A] leading-tight">{userName}</span>
-            <span className="text-[12px] text-gray-500 font-medium leading-tight">{userRole}</span>
+            <span className="text-[14px] font-bold text-[#00668A] leading-tight">{displayRole}</span>
           </div>
         </div>
         
