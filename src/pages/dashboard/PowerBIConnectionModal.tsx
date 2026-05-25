@@ -71,7 +71,7 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
         setErrorConnection(res.message || 'Không thể lấy thông tin kết nối. Vui lòng thử lại.');
       }
     } catch (err) {
-      setErrorConnection('Không thể lấy thông tin kết nối. Vui lòng thử lại.');
+      setErrorConnection(err instanceof Error ? err.message : 'Không thể lấy thông tin kết nối. Vui lòng thử lại.');
     } finally {
       setLoadingConnection(false);
     }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { User, DollarSign, MapPin, Users, Tag, Ticket, Leaf, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { DollarSign, MapPin, Users, CheckCircle, XCircle } from 'lucide-react';
 import type { Order, Passenger } from './mockData';
 import { ordersService } from '../../services/orders';
 import type { ChiTietDatTourResponse, DonDatTourResponse } from '../../services/orders';
@@ -122,21 +122,6 @@ const getPaymentStatusLabel = (status: Order['paymentStatus']) => {
       return 'Thanh toán 1 phần';
     case 'refunded':
       return 'Đã hoàn tiền';
-    default:
-      return status;
-  }
-};
-
-const getOrderStatusLabel = (status: Order['status']) => {
-  switch (status) {
-    case 'pending':
-      return 'Chờ xác nhận';
-    case 'confirmed':
-      return 'Đã xác nhận';
-    case 'completed':
-      return 'Hoàn thành';
-    case 'cancelled':
-      return 'Đã hủy';
     default:
       return status;
   }
