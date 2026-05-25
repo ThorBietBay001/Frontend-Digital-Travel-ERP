@@ -68,7 +68,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
             id: customer.maKhachHang || '',
             name: customer.hoTenKhachHang || '',
             email: customer.emailKhachHang || '',
-            tier: '',
+            tier: customer.hangThanhVien || 'THANH_VIEN',
             phone: customer.soDienThoaiKhachHang || '',
             hasVoucher: true,
             voucherStatus: customer.trangThai || 'CO_HIEU_LUC',
@@ -188,30 +188,11 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
         return <span className={`inline-flex items-center rounded-full font-semibold px-2.5 py-1 text-xs border ${colorClass}`}>{label}</span>;
       }
     },
-    { key: 'phone', title: 'SĐT', dataIndex: 'phone' } as Column<CustomerTarget>,
     {
       key: 'voucherStatus',
       title: 'Trạng thái voucher',
       render: (record) => renderVoucherStatus(record.voucherStatus),
-    },
-    ...(isRevokeMode ? [
-      {
-        key: 'action',
-        title: 'Thao tác',
-        render: (record) => (
-          <Button
-            size="sm"
-            variant="danger"
-            disabled={record.voucherStatus !== 'CO_HIEU_LUC' || revokingCustomerId === record.id}
-            onClick={() => handleRevoke(record.id)}
-          >
-            {record.voucherStatus === 'DA_SU_DUNG'
-              ? 'Đã sử dụng'
-              : revokingCustomerId === record.id ? 'Đang thu hồi...' : 'Thu hồi'}
-          </Button>
-        ),
-      } as Column<CustomerTarget>,
-    ] : []),
+    }
   ];
 
   const refreshDistributedCount = async (fallbackCount: number) => {
@@ -322,21 +303,22 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
       }
 
       if (failedResults.length === 0) {
-        alert(`Hủy voucher thành công cho ${successCount} khách hàng`);
+        alert(`Thu hồi voucher thành công cho ${successCount} khách hàng`);
+        onClose();
         return;
       }
 
       const firstError = failedResults[0];
       const firstMessage = firstError.status === 'rejected'
-        ? mapDistributeError(formatApiError(firstError.reason, 'Lỗi hủy voucher'))
-        : 'Lỗi hủy voucher';
+        ? mapDistributeError(formatApiError(firstError.reason, 'Lỗi thu hồi voucher'))
+        : 'Lỗi thu hồi voucher';
       const failureMessage = successCount > 0
-        ? `Đã hủy voucher thành công ${successCount}/${results.length} khách hàng. ${failedResults.length} khách hàng thất bại: ${firstMessage}`
+        ? `Đã thu hồi voucher thành công ${successCount}/${results.length} khách hàng. ${failedResults.length} khách hàng thất bại: ${firstMessage}`
         : firstMessage;
       setError(failureMessage);
       alert(`Lỗi: ${failureMessage}`);
     } catch (err: unknown) {
-      const message = mapDistributeError(formatApiError(err, 'Lỗi hủy voucher'));
+      const message = mapDistributeError(formatApiError(err, 'Lỗi thu hồi voucher'));
       setError(message);
       alert(`Lỗi: ${message}`);
     } finally {
@@ -376,7 +358,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
                 onClick={handleRevokeSelected}
                 disabled={selectedCustomers.length === 0 || revokingCustomerId === 'bulk'}
               >
-                {revokingCustomerId === 'bulk' ? 'Đang hủy...' : 'Hủy voucher'}
+                {revokingCustomerId === 'bulk' ? 'Đang thu hồi...' : 'Thu hồi'}
               </Button>
             )}
           </div>
@@ -423,14 +405,14 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-[#00668A] bg-[#E1F1FF] p-3 rounded-lg">
-          <AlertCircle size={16} />
-          <span>
-            {isRevokeMode
-              ? <>Đang có <strong>{distributedCount}</strong> khách hàng được phân bổ hoặc đã sử dụng voucher</>
-              : <>Còn lại <strong>{availableQuantity}</strong> voucher để phân phối</>}
-          </span>
-        </div>
+        {!isRevokeMode && (
+          <div className="flex items-center gap-2 text-sm text-[#00668A] bg-[#E1F1FF] p-3 rounded-lg">
+            <AlertCircle size={16} />
+            <span>
+              Còn lại <strong>{availableQuantity}</strong> voucher để phân phối
+            </span>
+          </div>
+        )}
 
         {isRevokeMode && (
           <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
@@ -478,6 +460,19 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
                 dataSource={visibleCustomers}
                 rowKey="id"
                 emptyText={isRevokeMode ? 'Chưa có khách hàng nào được phân bổ hoặc sử dụng voucher' : 'Không có khách hàng phù hợp'}
+                onRowClick={(record) => {
+                  const isDisabled = isRevokeMode ? record.voucherStatus !== 'CO_HIEU_LUC' : record.hasVoucher;
+                  if (isDisabled) return;
+                  if (selectedCustomers.includes(record.id)) {
+                    setSelectedCustomers(selectedCustomers.filter(id => id !== record.id));
+                  } else {
+                    setSelectedCustomers([...selectedCustomers, record.id]);
+                  }
+                }}
+                rowClassName={(record) => {
+                  const isDisabled = isRevokeMode ? record.voucherStatus !== 'CO_HIEU_LUC' : record.hasVoucher;
+                  return isDisabled ? 'opacity-60 cursor-not-allowed' : '';
+                }}
               />
             )}
           </div>

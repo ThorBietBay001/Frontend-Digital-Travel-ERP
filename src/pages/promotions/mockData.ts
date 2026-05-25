@@ -73,6 +73,7 @@ export interface KhuyenMaiKhResponse {
   hoTenKhachHang?: string;
   emailKhachHang?: string;
   soDienThoaiKhachHang?: string;
+  hangThanhVien?: string;
   maVoucher?: string;
   maCode?: string;
   loaiUuDai?: string;
