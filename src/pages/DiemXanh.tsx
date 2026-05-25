@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Check, Leaf, RotateCcw, ThumbsUp } from 'lucide-react';
 import type { Passenger } from '../types';
 import { hdvService } from '../services/hdvService';
@@ -23,6 +23,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
+  const greenPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const activePassengers = useMemo(
     () => passengers.filter(p => p.status === 'DA_DIEM_DANH'),
     [passengers]
@@ -66,11 +67,27 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   }, [activePassengers]);
 
   const handleCaptureGreenPhoto = () => {
-    setIsCapturingGreenPhoto(true);
-    setTimeout(() => {
-      setGreenPhotoFile('GREEN_PROOF_LOCAL_UI');
-      setIsCapturingGreenPhoto(false);
-    }, 1500);
+    greenPhotoInputRef.current?.click();
+  };
+
+  const handleGreenPhotoSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setIsCapturingGreenPhoto(false);
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setGreenPhotoFile(typeof reader.result === 'string' ? reader.result : null);
+    };
+    reader.onerror = () => {
+      setGreenConfirmToast({
+        show: true,
+        text: 'Không thể đọc ảnh minh chứng. Vui lòng chụp lại.'
+      });
+      setTimeout(() => setGreenConfirmToast(null), 4000);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
   };
 
   const submitGreenAction = async () => {
@@ -212,17 +229,30 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
           Chụp ảnh minh chứng thực địa
         </h4>
+        <input
+          ref={greenPhotoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleGreenPhotoSelected}
+          className="hidden"
+        />
 
         {greenPhotoFile ? (
           <div className="relative rounded-2xl overflow-hidden h-28 bg-slate-900 border border-slate-200">
             <img
-              src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=320"
+              src={greenPhotoFile}
               alt="Minh chứng hành động xanh"
               className="w-full h-full object-cover"
             />
             <button
-              onClick={() => setGreenPhotoFile(null)}
+              type="button"
+              onClick={() => {
+                setGreenPhotoFile(null);
+                handleCaptureGreenPhoto();
+              }}
               className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full hover:bg-black"
+              title="Chụp lại ảnh minh chứng"
             >
               <RotateCcw size={12} />
             </button>

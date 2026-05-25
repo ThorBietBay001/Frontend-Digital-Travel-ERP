@@ -9,9 +9,7 @@ import {
   Bell, 
   LogOut,
   X, 
-  CheckCircle,
-  Battery, 
-  Wifi 
+  CheckCircle
 } from 'lucide-react';
 import type { Passenger, Expense, Tour, BaoCaoSuCo as IncidentType } from './types';
 // Removed mockData imports
@@ -343,16 +341,6 @@ export default function App() {
         {/* Mobile Device Frame Mockup for Browser Viewing */}
         <div className="w-full max-w-[420px] min-h-screen sm:min-h-[840px] sm:max-h-[860px] sm:rounded-[40px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 bg-white flex flex-col overflow-hidden relative">
           
-          {/* Header Status Bar (Simulated Mobile) */}
-          <div className="bg-gradient-to-r from-sky-100/50 via-white to-sky-50 px-5 pt-3 pb-1 flex justify-between items-center text-[10px] font-bold text-slate-500 z-50">
-            <span>02:15</span>
-            <div className="flex items-center space-x-1.5">
-              <Wifi size={10} className="stroke-[2.5px]" />
-              <span className="text-[9px]">LTE</span>
-              <Battery size={14} className="stroke-[2px]" />
-            </div>
-          </div>
-
           {/* DangNhap view */}
           <DangNhap 
             loginCode={loginCode}
@@ -373,16 +361,6 @@ export default function App() {
       {/* Mobile Device Frame Mockup for Browser Viewing */}
       <div className="w-full max-w-[420px] min-h-screen sm:min-h-[840px] sm:max-h-[860px] sm:rounded-[40px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 bg-slate-50 flex flex-col overflow-hidden relative">
         
-        {/* Simulated PWA Mobile Header Status Bar */}
-        <div className="bg-white px-5 pt-3 pb-1.5 flex justify-between items-center text-[10px] font-bold text-slate-500 z-50 border-b border-slate-100">
-          <span>02:15</span>
-          <div className="flex items-center space-x-1.5">
-            <Wifi size={10} className="stroke-[2.5px]" />
-            <span className="text-[9px]">LTE</span>
-            <Battery size={14} className="stroke-[2px]" />
-          </div>
-        </div>
-
         {/* Global Premium Application Top Bar (Flat Design) */}
         {activeTab !== 'profile' && (
           <header className="bg-white px-4 py-3 flex justify-between items-center border-b border-slate-100 shadow-sm sticky top-0 z-40">
@@ -586,7 +564,7 @@ export default function App() {
 
         {/* Premium Bottom PWA Tab bar Navigation (Fluid & Styled) */}
         {activeTab !== 'profile' && (
-          <nav className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-between items-center py-2.5 px-3 z-40 shadow-lg shadow-sky-900/5">
+          <nav className="fixed bottom-0 left-0 right-0 max-w-[420px] mx-auto sm:absolute sm:max-w-none bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-between items-center py-2.5 px-3 z-40 shadow-lg shadow-sky-900/5">
             <button 
               onClick={() => setActiveTab('dashboard')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'dashboard' ? 'text-sky-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}

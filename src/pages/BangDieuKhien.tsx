@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, MapPin, Users, DollarSign, ChevronLeft, ChevronRight, X, Eye } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
 
@@ -376,9 +377,9 @@ export default function BangDieuKhien({
       </div>
 
       {/* --- GLOBAL POPUP: UPCOMING TOUR ITINERARY BOTTOM SHEET --- */}
-      {selectedUpcomingTour && (
-        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+      {selectedUpcomingTour && createPortal(
+        <div className="fixed inset-0 z-[100] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl animate-slide-up max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Chi tiết lịch trình</h3>
               <button
@@ -585,7 +586,8 @@ export default function BangDieuKhien({
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
