@@ -154,7 +154,7 @@ export const hdvService = {
 
   // 8. Lịch trình tour thực tế
   layLichTrinhTourThucTe: async (maTourThucTe: string) => {
-    const res = await api.get(`/public/tour/${maTourThucTe}`);
+    const res = await api.get(`/huong-dan-vien/tour/${maTourThucTe}/lich-trinh`);
     return res.data;
   }
 };

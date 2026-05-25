@@ -35,9 +35,7 @@ export default function LichTrinh({ maTourThucTe }: LichTrinhProps) {
 
     hdvService.layLichTrinhTourThucTe(maTourThucTe)
       .then((res) => {
-        // TourCongKhaiResponse: { data: { lichTrinh: LichTrinhResponse[] } }
-        const detail = res?.data ?? res;
-        const lichTrinh: any[] = detail?.lichTrinh ?? [];
+        const lichTrinh: any[] = Array.isArray(res?.data) ? res.data : [];
 
         if (lichTrinh.length === 0) {
           setItinerary([]);

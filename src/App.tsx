@@ -92,7 +92,8 @@ export default function App() {
   const formatAllergyNote = (allergy: unknown): string => {
     const value = String(allergy || '').trim();
     if (!value) return '';
-    return /^dị ứng(?:\s*:|\s|$)/i.test(value) ? value : `Dị ứng ${value}`;
+    const detail = value.replace(/^dị ứng\s*:?\s*/i, '').trim() || value;
+    return `Dị ứng ${detail.charAt(0).toLocaleLowerCase('vi-VN')}${detail.slice(1)}`;
   };
 
   const buildHealthNotes = (p: any): string => {
@@ -174,13 +175,8 @@ export default function App() {
     }
 
     if (detailResult.status === 'fulfilled') {
-      const detail = detailResult.value?.data ?? detailResult.value;
-      hydratedTour.name = detail?.tieuDeTour || hydratedTour.name;
-      hydratedTour.durationDays = detail?.thoiLuong;
-      hydratedTour.maxGuests = detail?.soKhachToiDa;
-      hydratedTour.availableSeats = detail?.choConLai;
-      hydratedTour.currentPrice = detail?.giaHienHanh;
-      hydratedTour.itinerary = (detail?.lichTrinh || []).map((item: any) => ({
+      const lichTrinh = Array.isArray(detailResult.value?.data) ? detailResult.value.data : [];
+      hydratedTour.itinerary = lichTrinh.map((item: any) => ({
         day: item.ngayThu,
         title: item.hoatDong || 'Chưa cập nhật hoạt động',
         description: item.moTa || undefined,

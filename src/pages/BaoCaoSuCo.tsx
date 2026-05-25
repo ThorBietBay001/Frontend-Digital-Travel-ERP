@@ -53,7 +53,8 @@ const formatIncidentTime = (time?: string) => {
 const formatAllergyNote = (allergy: unknown): string => {
   const value = String(allergy || '').trim();
   if (!value) return '';
-  return /^dị ứng(?:\s*:|\s|$)/i.test(value) ? value : `Dị ứng ${value}`;
+  const detail = value.replace(/^dị ứng\s*:?\s*/i, '').trim() || value;
+  return `Dị ứng ${detail.charAt(0).toLocaleLowerCase('vi-VN')}${detail.slice(1)}`;
 };
 
 const buildHealthNotes = (p: any): string => {
