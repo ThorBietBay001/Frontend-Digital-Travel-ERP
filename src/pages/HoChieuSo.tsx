@@ -13,7 +13,8 @@ import {
   mapPublicTour,
   mapVoucher,
   unwrapData,
-  unwrapPageContent
+  unwrapPageContent,
+  splitItineraryActivities
 } from '../services/apiHelpers';
 import type { Booking, Voucher } from '../types';
 import { Link, useNavigate } from 'react-router';
@@ -501,9 +502,7 @@ export default function HoChieuSo() {
 
   // UC30: Redeem Green Points for Voucher
   const tinhDiemCanDoiVoucher = (voucher: Voucher) => {
-    return voucher.discountType === 'fixed'
-      ? Math.ceil(voucher.discount / 100)
-      : voucher.discount * 50;
+    return voucher.requiredGreenPoints;
   };
 
   const handleRedeemPoints = async (voucher: any, pointsRequired: number) => {
@@ -621,8 +620,9 @@ export default function HoChieuSo() {
           ...prev,
           itinerary: (tourDetail.lichTrinh || []).map((lt: any) => ({
             day: lt.ngayThu || 1,
-            title: lt.tieuDe || `Ngày ${lt.ngayThu || 1}`,
-            description: lt.hoatDong || '',
+            title: 'Hoạt động theo lịch trình',
+            description: lt.moTa || '',
+            activities: splitItineraryActivities(lt.hoatDong || ''),
             meals: lt.thucDon || ''
           }))
         }));
@@ -1555,6 +1555,11 @@ export default function HoChieuSo() {
                         }
                       </p>
                       <p className="text-gray-600 text-xs font-semibold mt-2 whitespace-pre-line">{voucher.description}</p>
+                      {voucher.discountType === 'percent' && voucher.maxDiscount != null && (
+                        <p className="text-gray-500 text-xs font-semibold mt-1">
+                          Giảm tối đa {formatPrice(voucher.maxDiscount)}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex sm:flex-col items-end justify-between w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-50 gap-2">
@@ -1706,8 +1711,46 @@ export default function HoChieuSo() {
                               <MapPin className="w-3 h-3 text-slate-900 fill-slate-900" />
                             </div>
                             <h5 className="font-extrabold text-xs text-gray-800">Ngày {day.day}: {day.title}</h5>
-                            <p className="text-xs text-gray-500 mt-0.5">{day.description}</p>
-                            {day.meals && <p className="text-xs text-blue-600 font-bold mt-1">Thực đơn: {day.meals}</p>}
+                            <ul className="mt-1.5 space-y-1">
+                              {(day.activities || splitItineraryActivities(day.description || '')).map((activity: any, index: number) => {
+                                const isObj = typeof activity === 'object' && activity !== null;
+                                const time = isObj ? activity.time : '';
+                                const actText = isObj ? activity.activity : activity;
+                                return (
+                                  <li key={index} className="flex items-start text-xs text-gray-500 leading-relaxed">
+                                    {time ? (
+                                      <span className="rounded-md border border-sky-100 bg-sky-50 px-1.5 py-0.5 font-mono font-bold text-sky-600 shrink-0 mr-2">
+                                        {time}
+                                      </span>
+                                    ) : (
+                                      <span className="mt-[7px] mr-2 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
+                                    )}
+                                    <span className="pt-0.5">{actText}</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                            {day.meals && (
+                              <div className="mt-2 text-xs text-blue-600 font-bold">
+                                Thực đơn:
+                                {day.meals.includes('|') ? (
+                                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                    {day.meals.split('|').map((p: string, i: number) => {
+                                      const [k, ...rest] = p.split(':');
+                                      const v = rest.join(':').trim();
+                                      if (!v || v.toLowerCase() === 'null') return null;
+                                      return (
+                                        <span key={i} className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+                                          {k.trim()}: <span className="text-blue-500 font-medium">{v}</span>
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="ml-1 text-slate-500 font-medium">{day.meals}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

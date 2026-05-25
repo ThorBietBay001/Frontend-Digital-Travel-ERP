@@ -72,6 +72,8 @@ export interface Voucher {
   title: string;
   discount: number;
   discountType: 'percent' | 'fixed';
+  maxDiscount?: number;
+  requiredGreenPoints: number;
   minPurchase: number;
   expiryDate: string;
   status: 'active' | 'used' | 'expired';

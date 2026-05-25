@@ -91,6 +91,29 @@ export default function ChiTietTour() {
   }, [showItineraryModal, selectedItineraryDay]);
 
   const getDayMeals = (tId: string, day: number, meals?: string) => {
+    if (meals && meals.includes('|')) {
+      const parts = meals.split('|').map(s => s.trim()).filter(Boolean);
+      return (
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          {parts.map((p, i) => {
+            const [k, ...rest] = p.split(':');
+            const v = rest.join(':').trim();
+            if (!v || v.toLowerCase() === 'null') return null;
+            let icon = '🍽️';
+            let color = "text-slate-600";
+            if (k.trim().toLowerCase().includes('sáng')) { icon = '☕'; color = "text-amber-600"; }
+            else if (k.trim().toLowerCase().includes('trưa')) { icon = '🍲'; color = "text-orange-600"; }
+            else if (k.trim().toLowerCase().includes('chiều')) { icon = '🍵'; color = "text-emerald-600"; }
+            else if (k.trim().toLowerCase().includes('tối')) { icon = '🌙'; color = "text-indigo-600"; }
+            return (
+              <span key={i} className={`flex items-center gap-1 bg-white border border-slate-200 shadow-sm px-1.5 py-0.5 rounded-md text-[10.5px] font-bold ${color}`}>
+                <span>{icon}</span> {k.trim()}: <span className="text-slate-500 font-medium">{v}</span>
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
     if (meals && meals.trim()) {
       return meals;
     }
@@ -415,10 +438,16 @@ export default function ChiTietTour() {
                           ? day.title
                           : `Ngày ${day.day}${day.title ? `: ${day.title}` : ''}`}
                       </span>
-                      <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
-                        <Utensils className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{getDayMeals(tour.id, day.day, day.meals || day.menu)}</span>
-                      </span>
+                      <div className="mt-1">
+                        {typeof getDayMeals(tour.id, day.day, day.meals || day.menu) === 'string' ? (
+                          <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
+                            <Utensils className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{getDayMeals(tour.id, day.day, day.meals || day.menu)}</span>
+                          </span>
+                        ) : (
+                          getDayMeals(tour.id, day.day, day.meals || day.menu)
+                        )}
+                      </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
                   </button>
@@ -479,10 +508,16 @@ export default function ChiTietTour() {
                                         : day.title}
                                     </h4>
                                   )}
-                                  <span className="flex items-center text-slate-500 text-[10px] sm:text-xs font-semibold space-x-1.5 mt-1.5">
-                                    <Utensils className="w-3.5 h-3.5 text-slate-400" />
-                                    <span>{getDayMeals(tour.id, day.day, day.meals || day.menu)}</span>
-                                  </span>
+                                  <div className="mt-2.5">
+                                  {typeof getDayMeals(tour.id, day.day, day.meals || day.menu) === 'string' ? (
+                                    <span className="inline-flex items-center text-xs font-semibold text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-md">
+                                      <Utensils className="w-3.5 h-3.5 mr-1.5 text-orange-500" />
+                                      <span>{getDayMeals(tour.id, day.day, day.meals || day.menu)}</span>
+                                    </span>
+                                  ) : (
+                                    getDayMeals(tour.id, day.day, day.meals || day.menu)
+                                  )}
+                                </div>
                                 </div>
                                 <div className="w-2/5 relative flex-shrink-0">
                                   <img
@@ -499,12 +534,23 @@ export default function ChiTietTour() {
                                   Hoạt động chính:
                                 </p>
                                 <ul className="space-y-2">
-                                  {(day.activities || []).map((activity: string, idx: number) => (
-                                    <li key={idx} className="flex items-start text-xs font-semibold text-slate-650">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 mr-2.5 mt-2 flex-shrink-0" />
-                                      <span className="leading-relaxed">{activity}</span>
-                                    </li>
-                                  ))}
+                                  {(day.activities || []).map((activity: any, idx: number) => {
+                                    const isObj = typeof activity === 'object' && activity !== null;
+                                    const time = isObj ? activity.time : '';
+                                    const actText = isObj ? activity.activity : activity;
+                                    return (
+                                      <li key={idx} className="flex items-start text-xs font-semibold text-slate-650">
+                                        {time ? (
+                                          <span className="rounded-md border border-sky-100 bg-sky-50 px-1.5 py-0.5 font-mono font-bold text-sky-600 shrink-0 mr-2">
+                                            {time}
+                                          </span>
+                                        ) : (
+                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-900 mr-2.5 mt-2 flex-shrink-0" />
+                                        )}
+                                        <span className="leading-relaxed pt-0.5">{actText}</span>
+                                      </li>
+                                    );
+                                  })}
                                 </ul>
                               </div>
                             </div>

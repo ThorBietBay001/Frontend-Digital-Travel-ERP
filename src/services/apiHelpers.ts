@@ -79,6 +79,21 @@ const splitTourNotes = (value: string): string[] => {
     .filter(Boolean);
 };
 
+export const splitItineraryActivities = (value: string): { time: string, activity: string }[] => {
+  if (!value) return [];
+  return value
+    .split(/\\n|\r?\n|<br\s*\/?>/)
+    .map((dong) => dong.trim())
+    .filter(Boolean)
+    .map((dong) => {
+      const cleanedDong = dong.replace(/^[-–—•\s]+/, '').trim();
+      const khop = cleanedDong.match(/^(\d{2}:\d{2})\s*[-–—]\s*(.+)$/);
+      return khop
+        ? { time: khop[1], activity: khop[2] }
+        : { time: '', activity: cleanedDong };
+    });
+};
+
 const extractTourIncludes = (moTa: string): string[] => {
   const match = moTa.match(/bao gồm[^:]*:\s*([\s\S]*?)(?=\s*không bao gồm|$)/i);
   return match?.[1] ? splitTourNotes(match[1]) : [];
@@ -159,14 +174,32 @@ export const mapTourDetail = (item: ApiRecord, greenActions: ApiRecord[] = []): 
     excludes,
     included: includes,
     excluded: excludes,
-    itinerary: (item.lichTrinh || []).map((lt: ApiRecord) => ({
-      day: toNumber(lt.ngayThu, 1),
-      title: lt.tieuDe || `Ngày ${lt.ngayThu || 1}`,
-      description: lt.hoatDong || '',
-      meals: lt.thucDon || '',
-      menu: lt.thucDon || '',
-      activities: (lt.hoatDong || '').split(/[.;]/).map((s: string) => s.trim()).filter(Boolean)
-    })),
+    itinerary: (item.lichTrinh || []).map((lt: ApiRecord) => {
+      const hoatDongStr = lt.hoatDong || '';
+      const isTimeline = /\d{2}:\d{2}\s*[-–—]/.test(hoatDongStr);
+      const isMultiline = /\\n|\n|<br/.test(hoatDongStr);
+      
+      let title = `Hoạt động ngày ${lt.ngayThu || 1}`;
+      let activitiesStr = hoatDongStr;
+
+      if (!isTimeline && !isMultiline && hoatDongStr.length > 0 && hoatDongStr.length < 150) {
+        title = hoatDongStr;
+        activitiesStr = '';
+      } else if (isTimeline || isMultiline) {
+        title = 'Lịch trình trong ngày';
+      } else if (hoatDongStr) {
+        title = hoatDongStr.substring(0, 50) + (hoatDongStr.length > 50 ? '...' : '');
+      }
+
+      return {
+        day: toNumber(lt.ngayThu, 1),
+        title,
+        description: lt.moTa || '',
+        meals: lt.thucDon || '',
+        menu: lt.thucDon || '',
+        activities: splitItineraryActivities(activitiesStr)
+      };
+    }),
     greenActions: greenActions.map(mapGreenAction)
   };
 };
@@ -253,6 +286,8 @@ export const mapVoucher = (v: ApiRecord): Voucher => ({
   title: 'VOUCHER ƯU ĐÃI SỐC',
   discount: toNumber(v.giaTriGiam ?? v.discount, 0),
   discountType: v.loaiUuDai === 'PHAN_TRAM' ? 'percent' : 'fixed',
+  maxDiscount: v.mucGiamToiDa == null ? undefined : toNumber(v.mucGiamToiDa, 0),
+  requiredGreenPoints: toNumber(v.diemCanDoi, 0),
   minPurchase: 0,
   expiryDate: v.ngayHetHan || '',
   status: v.trangThai === 'CO_HIEU_LUC' || v.trangThai === 'SAN_SANG' ? 'active' : v.trangThai === 'HET_HAN' ? 'expired' : 'used',
