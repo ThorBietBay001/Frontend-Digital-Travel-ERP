@@ -112,7 +112,7 @@ const TourTemplateList: React.FC = () => {
                 meals: parseThucDon(lt.thucDon),
               };
             }
-            return { title: `Ngày ${index + 1}: `, description: '', meals: { breakfast: '', lunch: '', dinner: '' } };
+            return { title: '', description: '', meals: { breakfast: '', lunch: '', dinner: '' } };
           }),
           services: [],
         };

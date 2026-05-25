@@ -17,6 +17,8 @@ const defaultDaySchedule: DaySchedule = {
   meals: { breakfast: '', lunch: '', dinner: '' },
 };
 
+const KIEM_TRA_MOC_THOI_GIAN = /^(?:[01]\d|2[0-3]):[0-5]\d\s*[-–—]\s*.+$/;
+
 const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
   isOpen,
   onClose,
@@ -101,7 +103,7 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
       }
       if (days > currentSchedule.length) {
         for (let i = currentSchedule.length; i < days; i++) {
-          currentSchedule.push({ ...defaultDaySchedule, title: `Ngày ${i + 1}: ` });
+          currentSchedule.push({ ...defaultDaySchedule });
         }
       } else if (days < currentSchedule.length) {
         currentSchedule.splice(days);
@@ -147,8 +149,13 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
     if (!formData.basePrice || formData.basePrice <= 0) newErrors.basePrice = 'Giá sàn phải lớn hơn 0';
     
     formData.schedule?.forEach((day, index) => {
-      if (!day.title.trim()) {
-        newErrors[`schedule_${index}`] = `Lịch trình ngày ${index + 1} không được để trống tiêu đề`;
+      const cacMocThoiGian = day.title.split(/\r?\n/).map((moc) => moc.trim()).filter(Boolean);
+      if (cacMocThoiGian.length === 0) {
+        newErrors[`schedule_${index}`] = `Timeline ngày ${index + 1} không được để trống`;
+      } else if (cacMocThoiGian.length < 2) {
+        newErrors[`schedule_${index}`] = 'Mỗi ngày phải có ít nhất hai mốc hoạt động';
+      } else if (cacMocThoiGian.some((moc) => !KIEM_TRA_MOC_THOI_GIAN.test(moc))) {
+        newErrors[`schedule_${index}`] = 'Mỗi dòng phải theo định dạng HH:mm - Hoạt động';
       }
     });
 
@@ -308,24 +315,25 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
                 {formData.schedule?.map((day, index) => (
                   <div key={index} className="bg-[#F9F9FF] p-4 rounded-lg border border-[#E1F1FF]">
                     <div className="mb-3">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề Ngày {index + 1} <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Timeline hoạt động Ngày {index + 1} <span className="text-red-500">*</span></label>
+                      <textarea
+                        rows={5}
+                        maxLength={1000}
                         className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:border-[#89D4FF] ${errors[`schedule_${index}`] ? 'border-red-500' : 'border-[#C5EAFF]'}`}
                         value={day.title}
                         onChange={(e) => handleScheduleChange(index, 'title', e.target.value)}
-                        placeholder={`Ngày ${index + 1}: ...`}
-                      />
+                        placeholder={'06:30 - Tập trung và dùng bữa sáng\n08:00 - Tham quan điểm đến chính\n11:30 - Dùng bữa trưa\n14:00 - Tiếp tục hành trình'}
+                      ></textarea>
                       {errors[`schedule_${index}`] && <span className="text-xs text-red-500 mt-1 block">{errors[`schedule_${index}`]}</span>}
                     </div>
                     <div className="mb-3">
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">Mô tả hoạt động</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Ghi chú lịch trình (không bắt buộc)</label>
                       <textarea
                         rows={2}
                         className="w-full px-3 py-2 border border-[#C5EAFF] rounded text-sm focus:outline-none focus:border-[#89D4FF] resize-none"
                         value={day.description}
                         onChange={(e) => handleScheduleChange(index, 'description', e.target.value)}
-                        placeholder="Sáng đi đâu, trưa ăn gì, chiều tham quan..."
+                        placeholder="Ghi chú điều phối hoặc lưu ý chung trong ngày..."
                       ></textarea>
                     </div>
                     <div className="grid grid-cols-3 gap-3">

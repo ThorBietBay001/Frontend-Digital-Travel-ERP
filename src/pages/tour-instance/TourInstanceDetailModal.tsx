@@ -20,6 +20,10 @@ export interface TourInstanceFormProps {
   onSuccess?: () => void;
 }
 
+const tachTimelineHoatDong = (giaTri: string): string[] => {
+  return giaTri.split(/\r?\n/).map((dong) => dong.trim()).filter(Boolean);
+};
+
 const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
   isOpen,
   onClose,
@@ -537,7 +541,12 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
                   </div>
                 )}
                 <div className={!isFormDisabled ? 'pr-20' : ''}>
-                  <h4 className="font-bold text-[#00668A] text-base">{day.title}</h4>
+                  <h4 className="font-bold text-[#00668A] text-base">Ngày {index + 1}</h4>
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    {tachTimelineHoatDong(day.title).map((hoatDong, mocGioIndex) => (
+                      <p key={mocGioIndex} className="text-sm text-gray-700">{hoatDong}</p>
+                    ))}
+                  </div>
                   {day.description && <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{day.description}</p>}
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-xs mt-1">
@@ -729,16 +738,17 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
         {editingDayData && (
           <div className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề hoạt động</label>
-              <input
-                type="text"
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Timeline hoạt động (HH:mm - Hoạt động)</label>
+              <textarea
+                rows={5}
+                maxLength={1000}
                 className="w-full px-4 py-2 border border-[#C5EAFF] rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#89D4FF]"
                 value={editingDayData.title}
                 onChange={(e) => setEditingDayData({ ...editingDayData, title: e.target.value })}
-              />
+              ></textarea>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Mô tả chi tiết</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Ghi chú lịch trình</label>
               <textarea
                 rows={3}
                 className="w-full px-4 py-2 border border-[#C5EAFF] rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#89D4FF] resize-none"
