@@ -24,7 +24,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
   const activePassengers = useMemo(
-    () => passengers.filter(p => p.status !== 'VANG'),
+    () => passengers.filter(p => p.status === 'DA_DIEM_DANH'),
     [passengers]
   );
 

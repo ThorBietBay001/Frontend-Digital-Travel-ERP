@@ -6,6 +6,8 @@ export interface Tour {
   trangThaiChapNhan?: 'CHO_PHAN_HOI' | 'DA_DONG_Y' | 'TU_CHOI';
   name: string;
   departureDate: string;
+  startDate?: string;
+  endDate?: string;
   destination: string;
   guestsCount: number;
   status: 'Chờ kích hoạt' | 'Mở bán' | 'Sắp khởi hành' | 'Đang diễn ra' | 'Kết thúc' | 'Đã quyết toán';
@@ -72,6 +74,7 @@ export interface BaoCaoSuCo {
   severity: 'Thấp' | 'Cao';
   passengerName?: string;
   passengerCode?: string;
+  healthNotes?: string;
   description: string;
   treatment: string;
   result: string;

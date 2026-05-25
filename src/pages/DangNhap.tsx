@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Compass, Eye, EyeOff, Lock, User } from 'lucide-react';
 import { hdvService } from '../services/hdvService';
 
@@ -27,11 +27,48 @@ export default function DangNhap({
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpArray, setOtpArray] = useState<string[]>(['', '', '', '', '', '']);
+  const [expectedOtp, setExpectedOtp] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(60);
+  const [resetToken, setResetToken] = useState('');
+  const [submittingForgot, setSubmittingForgot] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const displayError = errorMsg || loginError;
+
+  useEffect(() => {
+    if (mode !== 'OTP_FORGOT' || isOtpVerified || otpCountdown <= 0) return;
+    const timer = window.setInterval(() => {
+      setOtpCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isOtpVerified, mode, otpCountdown]);
+
+  const issueForgotOtp = async (showResendMessage = false) => {
+    if (!forgotEmail.trim()) {
+      setErrorMsg('Vui lòng nhập email đã đăng ký.');
+      return;
+    }
+
+    setSubmittingForgot(true);
+    setErrorMsg(null);
+    try {
+      const response = await hdvService.quenMatKhau(forgotEmail.trim());
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setResetToken(response?.data || '');
+      setExpectedOtp(generatedOtp);
+      setOtpArray(['', '', '', '', '', '']);
+      setOtpCountdown(60);
+      setIsOtpVerified(false);
+      setSuccessMsg(`${showResendMessage ? 'Mã OTP mới' : 'Mã OTP xác thực'} đã được gửi: ${generatedOtp}`);
+      setMode('OTP_FORGOT');
+    } catch (err: any) {
+      setErrorMsg(err?.response?.data?.message || 'Không thể gửi OTP. Vui lòng thử lại.');
+    } finally {
+      setSubmittingForgot(false);
+    }
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;
@@ -62,6 +99,12 @@ export default function DangNhap({
     setErrorMsg(null);
     setLoginError(null);
     setSuccessMsg(null);
+    if (nextMode !== 'OTP_FORGOT') {
+      setOtpArray(['', '', '', '', '', '']);
+      setExpectedOtp('');
+      setOtpCountdown(60);
+      setIsOtpVerified(false);
+    }
   };
 
   return (
@@ -193,15 +236,9 @@ export default function DangNhap({
             )}
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (!forgotEmail.trim()) {
-                  setErrorMsg('Vui lòng nhập email đã đăng ký.');
-                  return;
-                }
-                setErrorMsg(null);
-                setSuccessMsg('Mã OTP xác thực khôi phục mật khẩu đã được gửi!');
-                setMode('OTP_FORGOT');
+                await issueForgotOtp();
               }}
               className="space-y-4"
             >
@@ -219,9 +256,10 @@ export default function DangNhap({
 
               <button
                 type="submit"
+                disabled={submittingForgot}
                 className="w-full py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-200 transition active:scale-98"
               >
-                Gửi Yêu Cầu OTP
+                {submittingForgot ? 'Đang gửi OTP...' : 'Gửi Yêu Cầu OTP'}
               </button>
             </form>
 
@@ -270,8 +308,8 @@ export default function DangNhap({
                 onSubmit={(e) => {
                   e.preventDefault();
                   const enteredOtp = otpArray.join('');
-                  if (enteredOtp !== '123456') {
-                    setErrorMsg('Mã OTP không chính xác! Vui lòng nhập 123456.');
+                  if (enteredOtp !== expectedOtp) {
+                    setErrorMsg('Mã OTP không chính xác. Vui lòng kiểm tra lại.');
                     return;
                   }
                   setErrorMsg(null);
@@ -300,10 +338,19 @@ export default function DangNhap({
                 </div>
 
                 <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-                  Bạn chưa nhận được mã? <span className="text-sky-500 font-bold hover:underline cursor-pointer">Gửi lại OTP (01:57)</span>
+                  {otpCountdown > 0 ? (
+                    <span>Gửi lại OTP sau 00:{otpCountdown.toString().padStart(2, '0')}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => issueForgotOtp(true)}
+                      className="text-sky-500 font-bold hover:underline"
+                      disabled={submittingForgot}
+                    >
+                      Gửi lại OTP
+                    </button>
+                  )}
                 </p>
-
-                <p className="text-[8px] text-slate-400 text-center -mt-2">OTP mặc định: <code className="bg-slate-100 px-1 rounded font-bold text-slate-700">123456</code></p>
 
                 <button
                   type="submit"
@@ -323,20 +370,44 @@ export default function DangNhap({
               </form>
             ) : (
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
+                  if (forgotNewPassword.length < 6) {
+                    setErrorMsg('Mật khẩu mới phải có ít nhất 6 ký tự!');
+                    return;
+                  }
                   if (forgotNewPassword !== forgotConfirmPassword) {
                     setErrorMsg('Mật khẩu mới không trùng khớp!');
                     return;
                   }
+                  if (!resetToken) {
+                    setErrorMsg('Phiên đặt lại mật khẩu không hợp lệ. Vui lòng gửi lại OTP.');
+                    setIsOtpVerified(false);
+                    return;
+                  }
+
+                  setSubmittingForgot(true);
                   setErrorMsg(null);
-                  setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.');
-                  setForgotEmail('');
-                  setForgotNewPassword('');
-                  setForgotConfirmPassword('');
-                  setOtpArray(['', '', '', '', '', '']);
-                  setIsOtpVerified(false);
-                  setMode('LOGIN');
+                  try {
+                    await hdvService.datLaiMatKhau({
+                      resetToken,
+                      matKhauMoi: forgotNewPassword,
+                      xacNhanMatKhau: forgotConfirmPassword
+                    });
+                    setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.');
+                    setForgotEmail('');
+                    setForgotNewPassword('');
+                    setForgotConfirmPassword('');
+                    setOtpArray(['', '', '', '', '', '']);
+                    setExpectedOtp('');
+                    setResetToken('');
+                    setIsOtpVerified(false);
+                    setMode('LOGIN');
+                  } catch (err: any) {
+                    setErrorMsg(err?.response?.data?.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+                  } finally {
+                    setSubmittingForgot(false);
+                  }
                 }}
                 className="space-y-3.5 animate-slide-up"
               >
@@ -366,9 +437,10 @@ export default function DangNhap({
 
                 <button
                   type="submit"
+                  disabled={submittingForgot}
                   className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-750 text-white font-bold text-xs rounded-xl shadow-lg transition active:scale-98 animate-pulse-subtle"
                 >
-                  Cập nhật mật khẩu mới
+                  {submittingForgot ? 'Đang cập nhật...' : 'Cập nhật mật khẩu mới'}
                 </button>
               </form>
             )}
@@ -377,15 +449,6 @@ export default function DangNhap({
       </div>
 
       <div className="z-10 text-center space-y-4 w-full animate-slide-up mt-auto" style={{ animationDelay: '200ms' }}>
-        {mode === 'LOGIN' && (
-          <div className="bg-sky-50/50 p-2.5 rounded-2xl border border-sky-100/50 inline-block max-w-[280px] mx-auto">
-            <p className="text-[10px] text-sky-700 leading-snug text-center">
-              <strong>Tài khoản seed</strong>:<br />
-              Ví dụ: <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">hdv01</code> | Mật khẩu <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-sky-800">password</code>
-            </p>
-          </div>
-        )}
-
         <footer className="mt-6 text-center space-y-2 w-full pb-2">
           <div className="flex items-center justify-center space-x-3 text-[10px] text-slate-400 font-medium">
             <a href="mailto:support@digitaltravel.vn" className="hover:text-sky-500 transition">Hỗ trợ</a>

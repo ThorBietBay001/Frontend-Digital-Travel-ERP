@@ -12,6 +12,21 @@ export const hdvService = {
     return res.data;
   },
 
+  kiemTraMatKhau: async (matKhauCu: string) => {
+    const res = await api.post('/auth/kiem-tra-mat-khau', { matKhauCu });
+    return res.data;
+  },
+
+  quenMatKhau: async (email: string) => {
+    const res = await api.post('/auth/quen-mat-khau', { email });
+    return res.data;
+  },
+
+  datLaiMatKhau: async (data: { resetToken: string; matKhauMoi: string; xacNhanMatKhau: string }) => {
+    const res = await api.post('/auth/dat-lai-mat-khau', data);
+    return res.data;
+  },
+
   layHoSo: async () => {
     const res = await api.get('/huong-dan-vien/ho-so');
     return res.data;

@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
-import type { Passenger, BaoCaoSuCo as IncidentType } from '../types';
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Passenger, Tour, BaoCaoSuCo as IncidentType } from '../types';
 import { hdvService } from '../services/hdvService';
 
 interface IncidentReportProps {
   maTour?: string;
+  currentTour?: Tour | null;
+  pastTours?: Tour[];
   passengers: Passenger[];
   incidents: IncidentType[];
   setIncidents: React.Dispatch<React.SetStateAction<IncidentType[]>>;
@@ -18,7 +20,8 @@ const incidentTypes = [
   { id: 'Khác', label: 'Khác', apiValue: 'KHAC' }
 ];
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 4;
+const REPORT_WINDOW_DAYS = 3;
 
 const getIncidentTypeMeta = (type: string) => {
   const normalized = type.toUpperCase();
@@ -32,7 +35,111 @@ const getIncidentTypeMeta = (type: string) => {
   return { label, className: 'bg-slate-50 text-slate-600 border-slate-100' };
 };
 
-export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents }: IncidentReportProps) {
+const isMedicalIncident = (type: string) => {
+  const normalized = type.toUpperCase();
+  return normalized === 'Y_TE' || type === 'Y tế';
+};
+
+const formatIncidentTime = (time?: string) => {
+  if (!time) return 'Chưa cập nhật';
+  const date = new Date(time);
+  if (Number.isNaN(date.getTime())) return time;
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const buildHealthNotes = (p: any): string => {
+  return [p.ghiChuYTe, p.diUng]
+    .map((note) => String(note || '').trim())
+    .filter(Boolean)
+    .join(' | ');
+};
+
+const mapPassenger = (p: any): Passenger => ({
+  code: p.maKhachHang || p.maNguoiDongHanh,
+  maKhachHang: p.maKhachHang || undefined,
+  maNguoiDongHanh: p.maNguoiDongHanh || undefined,
+  loaiKhach: p.loaiKhach,
+  name: p.hoTenKhachHang || p.hoTen,
+  phone: p.soDienThoai || 'N/A',
+  rank: p.hangThanhVien || 'THANH_VIEN',
+  healthNotes: buildHealthNotes(p),
+  status: p.trangThai || 'CHUA_DIEM_DANH',
+  greenPoints: p.diemXanh || 0
+});
+
+const isTourInReportWindow = (tour: Tour) => {
+  if (!tour.endDate) return false;
+  const endDate = new Date(tour.endDate);
+  if (Number.isNaN(endDate.getTime())) return false;
+  const deadline = new Date(endDate);
+  deadline.setDate(deadline.getDate() + REPORT_WINDOW_DAYS);
+  deadline.setHours(23, 59, 59, 999);
+  return new Date() <= deadline;
+};
+
+interface PaginationTabsProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function PaginationTabs({ currentPage, totalPages, onPageChange }: PaginationTabsProps) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 pt-1">
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm flex items-center justify-center transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        aria-label="Trang trước"
+      >
+        <ChevronLeft size={14} />
+      </button>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+        <button
+          key={page}
+          type="button"
+          onClick={() => onPageChange(page)}
+          className={`min-w-8 h-8 px-2 rounded-full text-[11px] font-black border transition active:scale-95 ${
+            currentPage === page
+              ? 'bg-sky-500 text-white border-sky-500 shadow-md shadow-sky-100'
+              : 'bg-white text-slate-500 border-slate-200 shadow-sm hover:border-sky-200 hover:text-sky-600'
+          }`}
+          aria-label={`Trang ${page}`}
+          aria-current={currentPage === page ? 'page' : undefined}
+        >
+          {page}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm flex items-center justify-center transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        aria-label="Trang sau"
+      >
+        <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+}
+
+export default function BaoCaoSuCo({
+  maTour,
+  currentTour,
+  pastTours = [],
+  passengers,
+  incidents,
+  setIncidents
+}: IncidentReportProps) {
   const [incidentForm, setIncidentForm] = useState({
     type: 'Y tế',
     severity: 'Thấp' as 'Thấp' | 'Cao',
@@ -47,9 +154,18 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
   const [incidentToast, setIncidentToast] = useState<string | null>(null);
   const [expandedIncidents, setExpandedIncidents] = useState<Record<string, boolean>>({});
   const [incidentPage, setIncidentPage] = useState(1);
+  const reportableTours = useMemo(() => {
+    const tours = [
+      ...(currentTour ? [currentTour] : []),
+      ...pastTours.filter(isTourInReportWindow)
+    ];
+    return tours.filter((tour, index, list) => list.findIndex(item => item.code === tour.code) === index);
+  }, [currentTour, pastTours]);
+  const [selectedTourCode, setSelectedTourCode] = useState(maTour || reportableTours[0]?.code || '');
+  const [selectedTourPassengers, setSelectedTourPassengers] = useState<Passenger[]>(passengers);
   const activePassengers = useMemo(
-    () => passengers.filter(p => p.status !== 'VANG'),
-    [passengers]
+    () => selectedTourPassengers.filter(p => p.status === 'DA_DIEM_DANH'),
+    [selectedTourPassengers]
   );
   const totalIncidentPages = Math.max(1, Math.ceil(incidents.length / PAGE_SIZE));
   const paginatedIncidents = useMemo(
@@ -64,6 +180,42 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
   }, [activePassengers, incidentForm.passengerCode]);
 
   useEffect(() => {
+    if (maTour) {
+      setSelectedTourCode(maTour);
+      return;
+    }
+    if (reportableTours.length > 0 && !reportableTours.some(tour => tour.code === selectedTourCode)) {
+      setSelectedTourCode(reportableTours[0].code);
+    }
+  }, [maTour, reportableTours]);
+
+  useEffect(() => {
+    setIncidentForm(prev => ({ ...prev, passengerCode: '' }));
+    if (!selectedTourCode) {
+      setSelectedTourPassengers([]);
+      return;
+    }
+    if (selectedTourCode === maTour) {
+      setSelectedTourPassengers(passengers);
+      return;
+    }
+
+    let cancelled = false;
+    hdvService.layDanhSachDoan(selectedTourCode)
+      .then((res) => {
+        if (!cancelled) {
+          setSelectedTourPassengers((res?.data || []).map(mapPassenger));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedTourPassengers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [maTour, passengers, selectedTourCode]);
+
+  useEffect(() => {
     setIncidentPage(prev => Math.min(prev, totalIncidentPages));
   }, [totalIncidentPages]);
 
@@ -75,33 +227,40 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
 
   const handleIncidentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!maTour) {
+    if (!selectedTourCode) {
       setIncidentToast('Lỗi: Không tìm thấy thông tin tour!');
       setTimeout(() => setIncidentToast(null), 4000);
       return;
     }
 
     const targetPassenger = activePassengers.find(p => p.code === incidentForm.passengerCode);
+    const shouldAttachHealthNotes = Boolean(targetPassenger) && (isMedicalIncident(incidentForm.type) || Boolean(incidentForm.passengerCode));
 
     try {
       const data = {
         loaiSuCo: mapLoaiSuCo(incidentForm.type),
         mucDo: mapMucDo(incidentForm.severity),
         moTa: incidentForm.description,
-        giaiPhap: incidentForm.treatment
+        giaiPhap: incidentForm.treatment,
+        ...(targetPassenger?.maNguoiDongHanh
+          ? { maNguoiDongHanh: targetPassenger.maNguoiDongHanh }
+          : targetPassenger?.maKhachHang
+            ? { maKhachHang: targetPassenger.maKhachHang }
+            : {})
       };
 
-      const res = await hdvService.taoSuCo(maTour, data);
+      const res = await hdvService.taoSuCo(selectedTourCode, data);
 
       if (res.data) {
         const i = res.data;
         const newReport: IncidentType = {
           id: i.maNhatKySuCo,
-          tourCode: i.maTour || maTour,
+          tourCode: i.maTour || selectedTourCode,
           type: incidentForm.type,
           severity: i.mucDo === 'SOS' ? 'Cao' : 'Thấp',
           passengerName: targetPassenger ? targetPassenger.name : undefined,
           passengerCode: incidentForm.passengerCode || undefined,
+          healthNotes: shouldAttachHealthNotes ? targetPassenger?.healthNotes : undefined,
           description: i.moTa || incidentForm.description,
           treatment: i.giaiPhap || incidentForm.treatment,
           result: i.giaiPhap || incidentForm.treatment,
@@ -145,9 +304,19 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
               <AlertTriangle size={14} className="mr-1.5 text-rose-500" />
               Sổ tay sự cố y tế
             </h3>
-            <p className="text-[10px] text-slate-400 mt-1">Ghi nhận nhanh các trường hợp y tế</p>
+            <p className="text-[10px] text-slate-400 mt-1">Mặc định tour hiện tại; cho phép tour đã dẫn trong vòng 3 ngày</p>
           </div>
-          <span className="text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300">{maTour || 'N/A'}</span>
+          <select
+            value={selectedTourCode}
+            onChange={(event) => setSelectedTourCode(event.target.value)}
+            className="max-w-[120px] text-[10px] bg-sky-50 text-sky-600 px-2 py-0.5 rounded font-mono font-bold border border-dashed border-sky-300 outline-none"
+            aria-label="Chọn tour báo cáo sự cố"
+          >
+            {reportableTours.length === 0 && <option value="">N/A</option>}
+            {reportableTours.map(tour => (
+              <option key={tour.code} value={tour.code}>{tour.code}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -310,7 +479,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                 <span>GỬI BÁO CÁO KHẨN SOS</span>
               </>
             ) : (
-              <span>Gửi Báo Cáo Sự Cố</span>
+              <span>GỬI BÁO CÁO</span>
             )}
           </button>
         </form>
@@ -326,6 +495,7 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
             const isExpanded = !!expandedIncidents[log.id];
             const isHigh = log.severity === 'Cao';
             const typeMeta = getIncidentTypeMeta(log.type);
+            const showHealthNotes = Boolean(log.healthNotes) && (isMedicalIncident(log.type) || Boolean(log.passengerCode));
             return (
               <div
                 key={log.id}
@@ -343,9 +513,6 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                 >
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center space-x-1.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${typeMeta.className}`}>
-                        {typeMeta.label}
-                      </span>
                       <span className="text-[11px] font-semibold text-slate-700 font-mono">
                         {log.id}
                       </span>
@@ -354,11 +521,14 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                           {log.tourCode}
                         </span>
                       )}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${typeMeta.className}`}>
+                        {typeMeta.label}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2 text-[10px] text-slate-400 font-medium">
                       <span>{log.passengerName ? log.passengerName : 'Đoàn chung'}</span>
                       <span>•</span>
-                      <span>{log.time}</span>
+                      <span>{formatIncidentTime(log.time)}</span>
                     </div>
                   </div>
 
@@ -375,13 +545,15 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
                       <strong className="text-slate-700 block mb-0.5">Mô tả sự việc:</strong>
                       <p className="text-slate-500 leading-normal">{log.description}</p>
                     </div>
-                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/50">
-                      <strong className="text-slate-700 block mb-0.5">Xử lý tại hiện địa:</strong>
-                      <p className="text-slate-500 leading-normal">{log.treatment}</p>
-                    </div>
+                    {showHealthNotes && (
+                      <div className="bg-amber-50 p-2 rounded-xl border border-amber-100/70">
+                        <strong className="text-amber-800 block mb-0.5 font-bold">Thông tin y tế:</strong>
+                        <p className="text-amber-700 leading-normal">{log.healthNotes}</p>
+                      </div>
+                    )}
                     <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-100/50">
-                      <strong className="text-emerald-800 block mb-0.5 font-bold">Kết quả hiện tại:</strong>
-                      <p className="text-emerald-700 leading-normal">{log.result}</p>
+                      <strong className="text-emerald-800 block mb-0.5 font-bold">Phương án xử lí:</strong>
+                      <p className="text-emerald-700 leading-normal">{log.treatment}</p>
                     </div>
                   </div>
                 )}
@@ -390,27 +562,11 @@ export default function BaoCaoSuCo({ maTour, passengers, incidents, setIncidents
           })}
         </div>
         {incidents.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between pt-1">
-            <button
-              type="button"
-              onClick={() => setIncidentPage(prev => Math.max(1, prev - 1))}
-              disabled={incidentPage === 1}
-              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Trước
-            </button>
-            <span className="text-[10px] font-bold text-slate-400">
-              Trang {incidentPage}/{totalIncidentPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setIncidentPage(prev => Math.min(totalIncidentPages, prev + 1))}
-              disabled={incidentPage === totalIncidentPages}
-              className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Sau
-            </button>
-          </div>
+          <PaginationTabs
+            currentPage={incidentPage}
+            totalPages={totalIncidentPages}
+            onPageChange={setIncidentPage}
+          />
         )}
       </div>
     </div>

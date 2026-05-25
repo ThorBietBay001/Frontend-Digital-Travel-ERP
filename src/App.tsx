@@ -113,6 +113,8 @@ export default function App() {
       trangThaiChapNhan: assignment.trangThaiChapNhan,
       name: assignment.tenTour || assignment.maTourThucTe,
       departureDate: assignment.ngayKhoiHanh ? new Date(assignment.ngayKhoiHanh).toLocaleDateString('vi-VN') : '-',
+      startDate: assignment.ngayKhoiHanh,
+      endDate: assignment.ngayKetThuc || assignment.ngayKhoiHanh,
       destination: 'Chưa cập nhật',
       guestsCount: tourPassengers.length || assignment.soKhachDaXacNhan || 0,
       status: getTourStatusLabel(assignment.trangThaiTour),
@@ -139,6 +141,9 @@ export default function App() {
     tourCode: i.maTour,
     type: i.loaiSuCo || 'Khác',
     severity: i.mucDo === 'SOS' ? 'Cao' : 'Thấp',
+    passengerName: i.hoTenKhachHang || i.passengerName,
+    passengerCode: i.maKhachHang || i.maNguoiDongHanh || i.passengerCode,
+    healthNotes: buildHealthNotes(i) || i.healthNotes,
     description: i.moTa,
     treatment: i.giaiPhap || '',
     result: i.giaiPhap || '',
@@ -563,6 +568,8 @@ export default function App() {
           {activeTab === 'incident' && (
             <BaoCaoSuCo 
               maTour={currentTour?.code}
+              currentTour={currentTour}
+              pastTours={pastTours}
               passengers={passengers}
               incidents={incidents}
               setIncidents={setIncidents}

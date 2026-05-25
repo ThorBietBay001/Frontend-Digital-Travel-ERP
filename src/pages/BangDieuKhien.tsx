@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Check, MapPin, Users, DollarSign, ChevronRight, X, Eye } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Check, MapPin, Users, DollarSign, ChevronLeft, ChevronRight, X, Eye } from 'lucide-react';
 import type { Tour, Expense, Passenger } from '../types';
 
 interface DashboardProps {
@@ -22,6 +22,8 @@ interface DashboardProps {
   rejectingAssignmentIds: string[];
 }
 
+const PAGE_SIZE = 4;
+
 // Helper: Get passenger member rank labels (unified with DiemDanh.tsx)
 const layHuyHieuHangThanhVien = (rank: string) => {
   switch (rank) {
@@ -40,6 +42,55 @@ const layHuyHieuHangThanhVien = (rank: string) => {
 
 // Helper function removed because it is unused
 
+interface PaginationTabsProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function PaginationTabs({ currentPage, totalPages, onPageChange }: PaginationTabsProps) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 pt-1">
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm flex items-center justify-center transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        aria-label="Trang trước"
+      >
+        <ChevronLeft size={14} />
+      </button>
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+        <button
+          key={page}
+          type="button"
+          onClick={() => onPageChange(page)}
+          className={`min-w-8 h-8 px-2 rounded-full text-[11px] font-black border transition active:scale-95 ${
+            currentPage === page
+              ? 'bg-sky-500 text-white border-sky-500 shadow-md shadow-sky-100'
+              : 'bg-white text-slate-500 border-slate-200 shadow-sm hover:border-sky-200 hover:text-sky-600'
+          }`}
+          aria-label={`Trang ${page}`}
+          aria-current={currentPage === page ? 'page' : undefined}
+        >
+          {page}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 shadow-sm flex items-center justify-center transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        aria-label="Trang sau"
+      >
+        <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+}
+
 export default function BangDieuKhien({
   currentTour,
   upcomingTours,
@@ -56,6 +107,27 @@ export default function BangDieuKhien({
 }: DashboardProps) {
   const [selectedUpcomingTour, setSelectedUpcomingTour] = useState<Tour | null>(null);
   const [modalTab, setModalTab] = useState<'ITINERARY' | 'PASSENGERS'>('ITINERARY');
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
+
+  const totalUpcomingPages = Math.max(1, Math.ceil(upcomingTours.length / PAGE_SIZE));
+  const totalPastPages = Math.max(1, Math.ceil(pastTours.length / PAGE_SIZE));
+  const paginatedUpcomingTours = useMemo(
+    () => upcomingTours.slice((upcomingPage - 1) * PAGE_SIZE, upcomingPage * PAGE_SIZE),
+    [upcomingPage, upcomingTours]
+  );
+  const paginatedPastTours = useMemo(
+    () => pastTours.slice((pastPage - 1) * PAGE_SIZE, pastPage * PAGE_SIZE),
+    [pastPage, pastTours]
+  );
+
+  useEffect(() => {
+    setUpcomingPage(prev => Math.min(prev, totalUpcomingPages));
+  }, [totalUpcomingPages]);
+
+  useEffect(() => {
+    setPastPage(prev => Math.min(prev, totalPastPages));
+  }, [totalPastPages]);
 
   // Helper: Format price currency
   const formatCurrency = (val: number) => {
@@ -225,7 +297,7 @@ export default function BangDieuKhien({
         </h3>
 
         <div className="space-y-2">
-          {upcomingTours.map((tour) => (
+          {paginatedUpcomingTours.map((tour) => (
             <div
               key={tour.code}
               onClick={() => {
@@ -251,6 +323,13 @@ export default function BangDieuKhien({
             </div>
           ))}
         </div>
+        {upcomingTours.length > PAGE_SIZE && (
+          <PaginationTabs
+            currentPage={upcomingPage}
+            totalPages={totalUpcomingPages}
+            onPageChange={setUpcomingPage}
+          />
+        )}
       </div>
 
       {/* Trip History (Lịch sử chuyến đi đã dẫn) */}
@@ -261,7 +340,7 @@ export default function BangDieuKhien({
         </h3>
 
         <div className="space-y-2">
-          {pastTours.map((tour) => (
+          {paginatedPastTours.map((tour) => (
             <div
               key={tour.code}
               onClick={() => {
@@ -287,6 +366,13 @@ export default function BangDieuKhien({
             </div>
           ))}
         </div>
+        {pastTours.length > PAGE_SIZE && (
+          <PaginationTabs
+            currentPage={pastPage}
+            totalPages={totalPastPages}
+            onPageChange={setPastPage}
+          />
+        )}
       </div>
 
       {/* --- GLOBAL POPUP: UPCOMING TOUR ITINERARY BOTTOM SHEET --- */}

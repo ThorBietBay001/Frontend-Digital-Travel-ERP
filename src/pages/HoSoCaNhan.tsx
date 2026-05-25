@@ -13,11 +13,14 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
   const [pastToursCount, setPastToursCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [sendingOtp, setSendingOtp] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -49,10 +52,19 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (!otpModalOpen || otpCountdown <= 0) return;
+    const timer = window.setInterval(() => {
+      setOtpCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [otpModalOpen, otpCountdown]);
+
   if (loading) return <div className="text-center p-4 mt-10 font-medium text-slate-500">Đang tải hồ sơ...</div>;
   if (!profile) return <div className="text-center p-4 mt-10 text-red-500">Lỗi không thể tải hồ sơ!</div>;
 
   const initials = profile.hoTen ? profile.hoTen.split(' ').map((n: string) => n[0]).slice(-2).join('').toUpperCase() : 'HD';
+  const formatDate = (value?: string) => value ? new Date(value).toLocaleDateString('vi-VN') : 'Đang cập nhật';
 
   const resetPasswordForm = () => {
     setOldPassword('');
@@ -60,40 +72,96 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
     setConfirmPassword('');
     setGeneratedOtp('');
     setOtpCode('');
+    setOtpCountdown(0);
     setPasswordError(null);
   };
 
-  const generateOtp = () => {
-    const nextOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(nextOtp);
+  const resetOtpState = () => {
+    setGeneratedOtp('');
     setOtpCode('');
+    setOtpCountdown(0);
+  };
+
+  const validatePasswordFields = () => {
+    if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+      setPasswordError('Vui lòng nhập đầy đủ thông tin mật khẩu.');
+      return false;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
+      return false;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Mật khẩu mới và xác nhận không khớp.');
+      return false;
+    }
+    return true;
+  };
+
+  const requestPasswordOtp = async () => {
     setPasswordError(null);
-    setPasswordSuccess(`OTP đã được tạo: ${nextOtp}`);
+    setPasswordSuccess(null);
+    if (!validatePasswordFields()) return;
+
+    setSendingOtp(true);
+    try {
+      await hdvService.kiemTraMatKhau(oldPassword);
+      const nextOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(nextOtp);
+      setOtpCode('');
+      setOtpCountdown(60);
+      setChangePasswordOpen(false);
+      setOtpModalOpen(true);
+      setPasswordSuccess(`Mã OTP bảo mật đã được gửi đến thiết bị của bạn: ${nextOtp}`);
+    } catch (e: any) {
+      resetOtpState();
+      setPasswordError(e?.response?.data?.message || 'Mật khẩu hiện tại không chính xác.');
+    } finally {
+      setSendingOtp(false);
+    }
   };
 
   const closeChangePasswordModal = () => {
     setChangePasswordOpen(false);
+    setOtpModalOpen(false);
     resetPasswordForm();
+    setPasswordSuccess(null);
+  };
+
+  const closeOtpModal = () => {
+    setOtpModalOpen(false);
+    resetOtpState();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setChangePasswordOpen(true);
+  };
+
+  const resendPasswordOtp = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setSendingOtp(true);
+    try {
+      await hdvService.kiemTraMatKhau(oldPassword);
+      const nextOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(nextOtp);
+      setOtpCode('');
+      setOtpCountdown(60);
+      setPasswordSuccess(`Mã OTP mới đã được gửi đến thiết bị của bạn: ${nextOtp}`);
+    } catch (e: any) {
+      resetOtpState();
+      setPasswordError(e?.response?.data?.message || 'Không thể gửi lại OTP. Vui lòng thử lại.');
+    } finally {
+      setSendingOtp(false);
+    }
   };
 
   const handleChangePassword = async () => {
     setPasswordError(null);
     setPasswordSuccess(null);
 
-    if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
-      setPasswordError('Vui lòng nhập đầy đủ thông tin mật khẩu.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPasswordError('Mật khẩu mới phải có ít nhất 6 ký tự.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Mật khẩu mới và xác nhận không khớp.');
-      return;
-    }
+    if (!validatePasswordFields()) return;
     if (!generatedOtp) {
-      setPasswordError('Vui lòng tạo OTP trước khi đổi mật khẩu.');
+      setPasswordError('Vui lòng gửi OTP trước khi đổi mật khẩu.');
       return;
     }
     if (otpCode !== generatedOtp) {
@@ -113,7 +181,8 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
       window.setTimeout(() => {
         setChangePasswordOpen(false);
         setPasswordSuccess(null);
-      }, 900);
+        onLogout();
+      }, 1200);
     } catch (e: any) {
       setPasswordError(e?.response?.data?.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.');
     } finally {
@@ -194,6 +263,12 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
               <span className="text-slate-500 font-medium ml-1.5 font-mono">{profile.cccd || 'Đang cập nhật'}</span>
             </div>
             <div className="border-b border-slate-50 pb-1.5 text-left">
+              <span className="text-slate-700 font-bold">Ngày sinh:</span>
+              <span className="text-slate-500 font-medium ml-1.5">
+                {formatDate(profile.ngaySinh)}
+              </span>
+            </div>
+            <div className="border-b border-slate-50 pb-1.5 text-left">
               <span className="text-slate-700 font-bold">Điện thoại:</span>
               <span className="text-slate-500 font-medium ml-1.5">{profile.soDienThoai || 'Đang cập nhật'}</span>
             </div>
@@ -204,7 +279,7 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
             <div className="text-left">
               <span className="text-slate-700 font-bold">Ngày vào làm:</span>
               <span className="text-slate-500 font-medium ml-1.5">
-                {profile.ngayVaoLam ? new Date(profile.ngayVaoLam).toLocaleDateString('vi-VN') : 'Đang cập nhật'}
+                {formatDate(profile.ngayVaoLam)}
               </span>
             </div>
           </div>
@@ -331,28 +406,6 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 block">Mã OTP xác thực</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="flex-1 min-w-0 text-xs p-2.5 rounded-xl glass-input font-mono tracking-widest"
-                    placeholder="Nhập OTP"
-                  />
-                  <button
-                    type="button"
-                    onClick={generateOtp}
-                    className="shrink-0 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[11px] font-bold border border-emerald-100 transition active:scale-95"
-                  >
-                    Tạo OTP
-                  </button>
-                </div>
-              </div>
-
               {passwordError && (
                 <div className="text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl p-2.5">
                   {passwordError}
@@ -372,6 +425,81 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
                 className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
               >
                 Hủy
+              </button>
+              <button
+                type="button"
+                onClick={requestPasswordOtp}
+                disabled={sendingOtp}
+                className="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-xl shadow-md transition disabled:cursor-not-allowed disabled:bg-sky-300"
+              >
+                {sendingOtp ? 'Đang gửi OTP...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {otpModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="font-bold text-slate-800 text-sm">Xác thực OTP</h3>
+              <button
+                type="button"
+                onClick={closeOtpModal}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition"
+                aria-label="Đóng"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                Nhập mã OTP đã được gửi để xác nhận đổi mật khẩu.
+              </p>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 block">Mã OTP xác thực</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="flex-1 min-w-0 text-xs p-2.5 rounded-xl glass-input font-mono tracking-widest"
+                    placeholder="Nhập OTP"
+                  />
+                  <button
+                    type="button"
+                    onClick={resendPasswordOtp}
+                    disabled={sendingOtp || otpCountdown > 0}
+                    className="shrink-0 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[11px] font-bold border border-emerald-100 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sendingOtp ? 'Đang gửi...' : otpCountdown > 0 ? `Gửi lại (${otpCountdown}s)` : 'Gửi lại OTP'}
+                  </button>
+                </div>
+              </div>
+
+              {passwordError && (
+                <div className="text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl p-2.5">
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl p-2.5">
+                  {passwordSuccess}
+                </div>
+              )}
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={closeOtpModal}
+                className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                Quay lại
               </button>
               <button
                 type="button"

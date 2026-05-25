@@ -6,6 +6,7 @@ import type { Expense, Tour } from '../types';
 import { hdvService } from '../services/hdvService';
 
 const PAGE_SIZE = 6;
+const REPORT_WINDOW_DAYS = 3;
 
 interface ExpenseTrackerProps {
   maTour?: string;
@@ -15,7 +16,17 @@ interface ExpenseTrackerProps {
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
 }
 
-export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseTrackerProps) {
+const isTourInReportWindow = (tour: Tour) => {
+  if (!tour.endDate) return false;
+  const endDate = new Date(tour.endDate);
+  if (Number.isNaN(endDate.getTime())) return false;
+  const deadline = new Date(endDate);
+  deadline.setDate(deadline.getDate() + REPORT_WINDOW_DAYS);
+  deadline.setHours(23, 59, 59, 999);
+  return new Date() <= deadline;
+};
+
+export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expenses, setExpenses }: ExpenseTrackerProps) {
   // Expense State
   const [expenseForm, setExpenseForm] = useState({
     category: 'Ăn uống',
@@ -31,7 +42,15 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
   const [expensePage, setExpensePage] = useState(1);
-  const canCreateCurrentTourExpense = Boolean(maTour);
+  const reportableTours = useMemo(() => {
+    const tours = [
+      ...(currentTour ? [currentTour] : []),
+      ...pastTours.filter(isTourInReportWindow)
+    ];
+    return tours.filter((tour, index, list) => list.findIndex(item => item.code === tour.code) === index);
+  }, [currentTour, pastTours]);
+  const [selectedTourCode, setSelectedTourCode] = useState(maTour || reportableTours[0]?.code || '');
+  const canCreateCurrentTourExpense = Boolean(selectedTourCode);
   const visibleExpenses = expenses;
   const totalExpensePages = Math.max(1, Math.ceil(visibleExpenses.length / PAGE_SIZE));
   const paginatedExpenses = useMemo(
@@ -42,6 +61,16 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
   useEffect(() => {
     setExpensePage(prev => Math.min(prev, totalExpensePages));
   }, [totalExpensePages]);
+
+  useEffect(() => {
+    if (maTour) {
+      setSelectedTourCode(maTour);
+      return;
+    }
+    if (reportableTours.length > 0 && !reportableTours.some(tour => tour.code === selectedTourCode)) {
+      setSelectedTourCode(reportableTours[0].code);
+    }
+  }, [maTour, reportableTours]);
 
   // Simulated capture function
   const handleCaptureReceipt = () => {
@@ -62,7 +91,7 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
     e.preventDefault();
     setFormError(null);
 
-    if (!maTour) {
+    if (!selectedTourCode) {
       setFormError("Không tìm thấy thông tin Tour!");
       return;
     }
@@ -91,13 +120,13 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
         ghiChu: expenseForm.notes
       };
 
-      const res = await hdvService.taoChiPhi(maTour, data);
+      const res = await hdvService.taoChiPhi(selectedTourCode, data);
       
       if (res.data) {
         const eRes = res.data;
         const newExpense: Expense = {
           id: eRes.maChiPhi,
-          tourCode: eRes.maTour || maTour,
+          tourCode: eRes.maTour || selectedTourCode,
           category: eRes.danhMuc || expenseForm.category,
           amount: eRes.thanhTien || amountVal,
           status: eRes.trangThaiDuyet || 'CHO_DUYET',
@@ -148,11 +177,21 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
       <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-200 shadow-sm space-y-2 relative overflow-hidden">
         <div className="flex justify-between items-center">
           <span className="text-[12px] text-slate-400 font-bold uppercase tracking-wider">Hạn mức tạm ứng thực địa</span>
-          <span className="text-[11px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300">Tất cả tour</span>
+          <select
+            value={selectedTourCode}
+            onChange={(event) => setSelectedTourCode(event.target.value)}
+            className="max-w-[150px] text-[10px] bg-white text-sky-600 px-1.5 py-0.5 rounded font-bold uppercase border border-dashed border-sky-300 outline-none"
+            aria-label="Chọn tour khai chi phí"
+          >
+            {reportableTours.length === 0 && <option value="">N/A</option>}
+            {reportableTours.map(tour => (
+              <option key={tour.code} value={tour.code}>{tour.code}</option>
+            ))}
+          </select>
         </div>
 
         <p className="text-[10px] text-slate-400 font-semibold">
-          Lịch sử quyết toán của toàn bộ các tour bạn đã dẫn.
+          Mặc định là tour hiện tại; có thể bổ sung chi phí cho tour đã dẫn trong vòng 3 ngày.
         </p>
 
         <div className="space-y-1.5">
@@ -212,7 +251,6 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
                   <div className="flex items-center space-x-1.5">
                     <span className="text-[10px] font-bold px-1 py-px rounded bg-sky-50 border border-sky-100 text-sky-500 font-mono">{e.id}</span>
                     <span className="text-[10px] font-bold px-1 py-px rounded bg-slate-50 border border-slate-100 text-slate-500 font-mono">{e.tourCode || 'N/A'}</span>
-                    <span className="text-[11px] font-bold text-slate-700">{e.category}</span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-snug">{e.notes}</p>
                   <span className="text-[10px] text-slate-400 block font-medium">{e.date}</span>
@@ -247,13 +285,13 @@ export default function QuanLyChiPhi({ maTour, expenses, setExpenses }: ExpenseT
                   <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100/80 text-[10px] text-slate-600 font-bold">
                     <span>HDV</span>
                     <span className="text-slate-200 font-normal">|</span>
-                    <span>{e.tourCode || maTour || 'N/A'}</span>
+                    <span>{e.tourCode || selectedTourCode || 'N/A'}</span>
                     <span className="text-slate-200 font-normal">|</span>
                     <span>{e.date}</span>
                   </div>
 
                   {/* Delete action button inside details (Ultra-Premium, Modern & Fluid Hover) */}
-                  {canCreateCurrentTourExpense && e.tourCode === maTour && e.status === 'CHO_DUYET' && (
+                  {canCreateCurrentTourExpense && e.tourCode === selectedTourCode && e.status === 'CHO_DUYET' && (
                     <button
                       onClick={(ev) => {
                         ev.stopPropagation();
