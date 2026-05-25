@@ -120,6 +120,11 @@ export const khService = {
     return res.data;
   },
 
+  layYeuCauCanBoSung: async () => {
+    const res = await api.get('/khach-hang/yeu-cau-ho-tro/can-bo-sung');
+    return res.data;
+  },
+
   taoYeuCauHoTro: async (data: any) => {
     const res = await api.post('/khach-hang/yeu-cau-ho-tro', data);
     return res.data;
