@@ -491,35 +491,6 @@ export default function BangDieuKhien({
               </div>
             ) : (
               <div className="space-y-3">
-                {(selectedUpcomingTour.durationDays || selectedUpcomingTour.maxGuests || selectedUpcomingTour.availableSeats !== undefined || selectedUpcomingTour.currentPrice) && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedUpcomingTour.durationDays && (
-                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Thời lượng</p>
-                        <p className="text-xs text-slate-800 font-black">{selectedUpcomingTour.durationDays} ngày</p>
-                      </div>
-                    )}
-                    {selectedUpcomingTour.maxGuests && (
-                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Sức chứa</p>
-                        <p className="text-xs text-slate-800 font-black">{selectedUpcomingTour.maxGuests} khách</p>
-                      </div>
-                    )}
-                    {selectedUpcomingTour.availableSeats !== undefined && (
-                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Còn lại</p>
-                        <p className="text-xs text-slate-800 font-black">{selectedUpcomingTour.availableSeats} chỗ</p>
-                      </div>
-                    )}
-                    {selectedUpcomingTour.currentPrice && (
-                      <div className="bg-white border border-slate-100 rounded-2xl p-2.5">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Giá hiện hành</p>
-                        <p className="text-xs text-slate-800 font-black">{formatCurrency(selectedUpcomingTour.currentPrice)}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div className="space-y-3.5 pl-3 relative border-l border-sky-100 max-h-[42vh] overflow-y-auto pr-1">
                   {(selectedUpcomingTour.itinerary || []).length > 0 ? (
                     (selectedUpcomingTour.itinerary || []).map((item) => (
