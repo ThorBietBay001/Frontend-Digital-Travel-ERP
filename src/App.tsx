@@ -28,6 +28,20 @@ import { hdvService } from './services/hdvService';
 
 type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile';
 
+const READ_NOTIFICATION_IDS_KEY = 'hdv-read-notification-ids';
+const DISMISSED_ASSIGNMENT_NOTIFICATION_IDS_KEY = 'hdv-dismissed-assignment-notification-ids';
+
+const layDanhSachIdDaLuu = (key: string): string[] => {
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
 const tachTimelineHoatDong = (giaTri?: string) => {
   return (giaTri || '')
     .split(/\\n|\r?\n|<br\s*\/?>/)
@@ -94,8 +108,10 @@ export default function App() {
   const [acceptingAssignmentIds, setAcceptingAssignmentIds] = useState<string[]>([]);
   const [rejectingAssignmentIds, setRejectingAssignmentIds] = useState<string[]>([]);
   const [submittingGuideRequestIds, setSubmittingGuideRequestIds] = useState<string[]>([]);
-  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
-  const [dismissedAssignmentNotificationIds, setDismissedAssignmentNotificationIds] = useState<string[]>([]);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => layDanhSachIdDaLuu(READ_NOTIFICATION_IDS_KEY));
+  const [dismissedAssignmentNotificationIds, setDismissedAssignmentNotificationIds] = useState<string[]>(
+    () => layDanhSachIdDaLuu(DISMISSED_ASSIGNMENT_NOTIFICATION_IDS_KEY)
+  );
   const [guideProfile, setGuideProfile] = useState<any>(null);
   const [selectedGuideRequest, setSelectedGuideRequest] = useState<GuideExplanationRequest | null>(null);
   const [guideExplanationContent, setGuideExplanationContent] = useState('');
@@ -291,6 +307,16 @@ export default function App() {
 
   useEffect(() => {
     if (!isLoggedIn) return;
+    localStorage.setItem(READ_NOTIFICATION_IDS_KEY, JSON.stringify(readNotificationIds));
+  }, [isLoggedIn, readNotificationIds]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    localStorage.setItem(DISMISSED_ASSIGNMENT_NOTIFICATION_IDS_KEY, JSON.stringify(dismissedAssignmentNotificationIds));
+  }, [dismissedAssignmentNotificationIds, isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
 
     const loadGuideProfile = async () => {
       try {
@@ -453,7 +479,11 @@ export default function App() {
 
   const xuLyDangXuat = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem(READ_NOTIFICATION_IDS_KEY);
+    localStorage.removeItem(DISMISSED_ASSIGNMENT_NOTIFICATION_IDS_KEY);
     setIsLoggedIn(false);
+    setReadNotificationIds([]);
+    setDismissedAssignmentNotificationIds([]);
     setActiveTab('dashboard');
     setLoginError(null);
     setNotificationOpen(false);
