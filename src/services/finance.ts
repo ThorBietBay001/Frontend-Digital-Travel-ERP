@@ -40,6 +40,13 @@ export const financeService = {
         const response = await api.put<ApiResponseQuyetToanResponse>(`/api/ke-toan/quyet-toan/${maQuyetToan}/chot`);
         return response.data.data;
     },
+    yeuCauBoSungQuyetToan: async (maQuyetToan: string, noiDung: string) => {
+        const response = await api.post<ApiResponseQuyetToanResponse>(
+            `/api/ke-toan/quyet-toan/${maQuyetToan}/yeu-cau-bo-sung`,
+            { noiDung }
+        );
+        return response.data.data;
+    },
     xacNhanHoanTien: async (maGiaoDich: string) => {
         const response = await api.put<ApiResponseThanhToanResponse>(`/api/ke-toan/giao-dich-hoan/${maGiaoDich}/xac-nhan`, {});
         return response.data.data;

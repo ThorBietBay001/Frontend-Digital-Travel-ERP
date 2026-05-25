@@ -68,6 +68,7 @@ const SettlementList: React.FC = () => {
       const mapped = (res?.content || []).map((q: QuyetToanResponse): SettlementTour => {
         let status: SettlementTour['status'] = 'pending';
         if (q.trangThai === 'DA_QUYET_TOAN') status = 'completed';
+        else if ((q.ghiChu || '').includes('[Yêu cầu bổ sung quyết toán') && !(q.ghiChu || '').includes('[HDV bổ sung quyết toán')) status = 'pending_info';
         else if (q.trangThai === 'CHUA_QUYET_TOAN') status = 'pending';
         
         return {
@@ -85,7 +86,8 @@ const SettlementList: React.FC = () => {
           approverName: q.tenNhanVien || '',
           actualCostItems: [],
           status,
-          settlementNote: q.ghiChu
+          settlementNote: q.ghiChu,
+          receiptImage: q.hoaDonAnh
         };
       });
 
@@ -135,6 +137,7 @@ const SettlementList: React.FC = () => {
         const res = await financeService.chotQuyetToan(quyetToanId);
         notify(`Quyết toán thành công! Mã: ${res?.maQuyetToan || quyetToanId}, Lợi nhuận: ${res?.loiNhuan?.toLocaleString() || '0'} VND`, { type: 'success' });
       } else if (status === 'pending_info') {
+        await financeService.yeuCauBoSungQuyetToan(quyetToanId, note || 'Vui lòng bổ sung chứng từ và ghi chú quyết toán.');
         notify('Đã yêu cầu Hướng dẫn viên bổ sung chứng từ giải trình. Tour được chuyển sang trạng thái "Chờ bổ sung".', { type: 'info' });
       } else if (status === 'over_budget') {
         notify('Đã gửi yêu cầu trình duyệt vượt chi lên cấp quản lý. Vui lòng chờ phê duyệt.', { type: 'info' });
@@ -217,6 +220,9 @@ const SettlementList: React.FC = () => {
       render: (record) => {
         if (record.status === 'completed') {
           return <Badge label="Đã quyết toán" variant="success" />;
+        }
+        if (record.status === 'pending_info') {
+          return <Badge label="Chờ HDV bổ sung" variant="info" />;
         }
         return <Badge label="Chờ quyết toán" variant="warning" />;
       },

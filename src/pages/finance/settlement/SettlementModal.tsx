@@ -244,7 +244,38 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
             {readonly && tour.settlementNote && (
               <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
                 <label className="text-sm font-semibold text-gray-700">Ghi chú quyết toán</label>
-                <p className="mt-2 text-sm text-gray-700">{tour.settlementNote}</p>
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{tour.settlementNote}</p>
+                {tour.receiptImage && (
+                  <a
+                    href={tour.receiptImage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex text-sm font-semibold text-[#00668A] hover:underline"
+                  >
+                    Xem HoaDonAnh
+                  </a>
+                )}
+              </div>
+            )}
+
+            {!readonly && (tour.settlementNote || tour.receiptImage) && (
+              <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
+                {tour.settlementNote && (
+                  <>
+                    <label className="text-sm font-semibold text-gray-700">Trao đổi bổ sung</label>
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{tour.settlementNote}</p>
+                  </>
+                )}
+                {tour.receiptImage && (
+                  <a
+                    href={tour.receiptImage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex text-sm font-semibold text-[#00668A] hover:underline"
+                  >
+                    Xem HoaDonAnh
+                  </a>
+                )}
               </div>
             )}
         </div>

@@ -10,8 +10,9 @@ export interface SettlementTour {
   passengerCount: number;
   guideName: string;
   guideCode: string;
-  status: 'pending' | 'completed' | 'pending_over_budget';
+  status: 'pending' | 'completed' | 'pending_info' | 'pending_over_budget';
   settlementNote?: string;
+  receiptImage?: string;
   approverName?: string;
   actualCostItems: {
     category: string;

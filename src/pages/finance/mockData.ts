@@ -26,6 +26,7 @@ export interface ApiResponseChiPhiThucTeResponse {
 
 export interface QuyetToanRequest {
   ghiChu?: string;
+  hoaDonAnh?: string;
 }
 
 export interface ApiResponsePageQuyetToanResponse {
@@ -61,6 +62,7 @@ export interface QuyetToanResponse {
   loiNhuan?: number;
   trangThai?: string;
   ghiChu?: string;
+  hoaDonAnh?: string;
   ngayQuyetToan?: string;
   maNhanVien?: string;
   tenNhanVien?: string;
