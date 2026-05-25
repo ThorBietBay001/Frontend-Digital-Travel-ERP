@@ -84,7 +84,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
   const [selectedExtraServices, setSelectedExtraServices] = useState<Record<string, number>>({});
   const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
-  const [timeRemaining, setTimeRemaining] = useState(600);
+  const [timeRemaining, setTimeRemaining] = useState(60 * 10); // 10 phút
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showQrPayment, setShowQrPayment] = useState(false);
@@ -507,9 +507,9 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
   const brand = getPaymentBrandInfo();
 
   return (
-    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-[#f0f4f9] rounded-[2.5rem] max-w-6xl w-full my-4 relative shadow-2xl overflow-hidden border border-slate-200/40 flex flex-col max-h-[92vh]">
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 px-6 sm:px-8 py-5 relative">
+    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-4 overflow-hidden animate-fadeIn">
+      <div className="bg-[#f0f4f9] rounded-[2.5rem] max-w-6xl w-full relative shadow-2xl overflow-hidden border border-slate-200/40 flex flex-col h-[calc(100dvh-1.5rem)] sm:h-[92dvh]">
+        <div className="shrink-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 px-6 sm:px-8 py-5 relative">
           <button
             onClick={onClose}
             type="button"
@@ -557,37 +557,36 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
           </div>
         </div>
 
-        <div className="bg-white border-b border-slate-100 px-6 sm:px-8 pt-6 pb-8 overflow-x-auto scrollbar-none">
-          <div className="grid grid-cols-[auto_minmax(64px,1fr)_auto_minmax(64px,1fr)_auto] items-center min-w-[760px] max-w-4xl mx-auto">
-            {stepsList.map((s, idx) => {
+        <div className="shrink-0 bg-white border-b border-slate-100 px-6 sm:px-8 pt-4 pb-4 overflow-x-auto scrollbar-none">
+          <div className="relative grid grid-cols-3 min-w-[620px] max-w-4xl mx-auto">
+            <div className="absolute left-[16.666%] right-[16.666%] top-4 h-0.5 bg-slate-100" />
+            <div
+              className="absolute left-[16.666%] top-4 h-0.5 bg-green-500 transition-all duration-500"
+              style={{ width: `${Math.max(0, currentStep - 1) * 33.333}%` }}
+            />
+            {stepsList.map((s) => {
               const isActive = s.step === currentStep;
               const isCompleted = s.step < currentStep;
               return (
-                <div key={s.step} className="contents">
-                  <div className="flex items-center space-x-2.5">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${isActive
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/25 scale-110'
-                      : isCompleted
-                        ? 'bg-green-500 border-green-500 text-white'
-                        : 'bg-white border-slate-200 text-slate-400'
-                      }`}>
-                      {isCompleted ? '✓' : s.step}
-                    </div>
-                    <span className={`text-xs font-bold transition-colors ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>
-                      {s.name}
-                    </span>
+                <div key={s.step} className="relative flex flex-col items-center text-center px-3">
+                  <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${isActive
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/25 scale-110'
+                    : isCompleted
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'bg-white border-slate-200 text-slate-400'
+                    }`}>
+                    {isCompleted ? '✓' : s.step}
                   </div>
-                  {idx < stepsList.length - 1 && (
-                    <div className={`h-0.5 mx-4 rounded-full transition-colors duration-500 ${isCompleted ? 'bg-green-500' : 'bg-slate-100'
-                      }`} />
-                  )}
+                  <span className={`mt-3 text-xs font-bold transition-colors ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>
+                    {s.name}
+                  </span>
                 </div>
               );
             })}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f0f4f9] scrollbar-thin">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f0f4f9] scrollbar-thin">
           {error && (
             <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
               {error}
@@ -821,7 +820,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
           )}
         </div>
 
-        <div className="bg-slate-50 border-t border-slate-150 px-6 sm:px-8 py-4.5 flex items-center justify-between rounded-b-[2.5rem] z-10 shadow-inner">
+        <div className="shrink-0 bg-slate-50 border-t border-slate-150 px-6 sm:px-8 py-4.5 flex items-center justify-between rounded-b-[2.5rem] z-10 shadow-inner">
           {showQrPayment ? (
             <>
               <button

@@ -144,7 +144,6 @@ export default function TongKetDonHang({
             className="w-full flex items-center justify-center space-x-2 py-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-extrabold transition-all shadow-md shadow-blue-500/25"
           >
             <span>Tiếp tục để Thanh toán</span>
-            <Leaf className="w-4 h-4 text-green-300 animate-bounce" />
           </button>
         </div>
       ) : (
