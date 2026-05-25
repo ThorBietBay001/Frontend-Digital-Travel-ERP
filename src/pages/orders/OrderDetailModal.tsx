@@ -188,6 +188,7 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
         };
       }
     ),
+    isExpired: api.thoiGianHetHan ? new Date(api.thoiGianHetHan) < new Date() : false,
   };
 };
 
@@ -247,6 +248,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-bold text-[#121C2C]">Chi tiết Đơn hàng</h2>
         {order && renderPaymentBadge(order.paymentStatus)}
+        {order?.isExpired && <Badge label="Đã hết hạn" variant="error" />}
       </div>
       <p className="text-sm font-medium text-gray-500">Mã đơn: {maDatTour}</p>
     </div>
@@ -268,8 +270,13 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
       notify(`Duyệt thanh toán đơn ${order.orderCode} thành công.`, { type: 'success' });
     } catch (err: unknown) {
       const message = formatApiError(err, 'Lỗi khi duyệt thanh toán');
-      setError(message);
-      notify(message, { type: 'error' });
+      if (message.includes('giao dịch thành công trước đó') || message.includes('giao dịch thành công')) {
+        notify(`Đơn ${order.orderCode} đã được thanh toán thành công từ trước.`, { type: 'info' });
+        setError(null);
+      } else {
+        setError(message);
+        notify(message, { type: 'error' });
+      }
     } finally {
       setApproving(false);
     }

@@ -73,6 +73,7 @@ const mapToUI = (api: DonDatTourResponse): Order => ({
   status: mapStatus(api.trangThai),
   paymentStatus: mapPaymentStatus(api.trangThai),
   passengerCount: api.chiTietKhach?.length || 0,
+  isExpired: api.thoiGianHetHan ? new Date(api.thoiGianHetHan) < new Date() : false,
 });
 
 const OrderList: React.FC = () => {
@@ -129,8 +130,13 @@ const OrderList: React.FC = () => {
       notify(`Duyệt thanh toán đơn ${order.orderCode} thành công.`, { type: 'success' });
     } catch (err: unknown) {
       const message = formatApiError(err, 'Lỗi khi duyệt thanh toán');
-      setError(message);
-      notify(message, { type: 'error' });
+      if (message.includes('giao dịch thành công trước đó') || message.includes('giao dịch thành công')) {
+        notify(`Đơn ${order.orderCode} đã được thanh toán thành công từ trước.`, { type: 'info' });
+        setError(null);
+      } else {
+        setError(message);
+        notify(message, { type: 'error' });
+      }
     } finally {
       setApprovingId(null);
     }

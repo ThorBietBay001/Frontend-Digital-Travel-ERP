@@ -47,7 +47,7 @@ const CostList: React.FC = () => {
         else if (c.trangThaiDuyet === 'TU_CHOI') status = 'rejected';
         else if (c.trangThaiDuyet === 'YEU_CAU_BO_SUNG') status = 'pending_info';
         else if (c.trangThaiDuyet === 'CHO_DUYET') status = 'pending';
-        
+
         return {
           id: c.maChiPhi || '',
           tourCode: c.maTour || '',

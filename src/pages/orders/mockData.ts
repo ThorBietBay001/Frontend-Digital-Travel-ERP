@@ -151,6 +151,7 @@ export interface Order {
   paymentStatus: 'paid' | 'unpaid' | 'pending_confirmation' | 'partial' | 'refunded';
   passengerCount: number;
   passengers?: Passenger[];
+  isExpired?: boolean;
 }
 
 export const mockOrders: Order[] = [
