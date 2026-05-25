@@ -1,5 +1,6 @@
-import { Plane, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router';
+import digitalTravelLogo from '../../assets/digital-travel-logo.svg';
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
           {/* Company Info */}
           <div>
             <div className="flex items-center space-x-2 text-white mb-4">
-              <Plane className="w-8 h-8 text-blue-500" />
+              <img src={digitalTravelLogo} alt="Digital Travel" className="w-10 h-10" />
               <span className="font-bold text-xl">Digital Travel</span>
             </div>
             <p className="text-sm mb-4">

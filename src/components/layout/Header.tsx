@@ -1,11 +1,12 @@
 import { Link } from 'react-router';
-import { User, Menu, X, Bell, LogOut, HelpCircle, Search, ChevronDown, Plane, AlertCircle, Send } from 'lucide-react';
+import { User, Menu, X, Bell, LogOut, HelpCircle, Search, ChevronDown, AlertCircle, Send } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import CuaSoXacThuc from '../modals/CuaSoXacThuc';
 import FAQModal from '../modals/FAQModal';
 import { khService } from '../../services/khService';
 import { mapProfile, unwrapData, unwrapPageContent } from '../../services/apiHelpers';
 import { AUTH_SESSION_CLEARED_EVENT, hasActiveSession } from '../../services/api';
+import digitalTravelLogo from '../../assets/digital-travel-logo.svg';
 
 type HeaderNotification = {
   id: string;
@@ -269,9 +270,9 @@ export default function Header() {
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo / Trang chủ với Icon Ngôi nhà */}
+            {/* Shared Digital Travel brand */}
             <Link to="/" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700" title="Về trang chủ">
-              <Plane className="w-7 h-7" />
+              <img src={digitalTravelLogo} alt="Digital Travel" className="w-9 h-9" />
               <span className="font-bold text-xl">Digital Travel</span>
             </Link>
 
