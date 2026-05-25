@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Check, Leaf, RotateCcw, ThumbsUp } from 'lucide-react';
+import { AlertCircle, Camera, Check, Leaf, RotateCcw, ThumbsUp } from 'lucide-react';
 import type { Passenger } from '../types';
 import { hdvService } from '../services/hdvService';
 
@@ -22,7 +22,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   const [selectedGreenActions, setSelectedGreenActions] = useState<string[]>([]);
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
-  const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string } | null>(null);
+  const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string; type?: 'success' | 'error' } | null>(null);
   const greenPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const activePassengers = useMemo(
     () => passengers.filter(p => p.status === 'DA_DIEM_DANH'),
@@ -146,9 +146,10 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
       : '';
     setGreenConfirmToast({
       show: true,
+      type: succeeded.length > 0 ? 'success' : 'error',
       text: succeeded.length > 0
         ? `Đã ghi nhận ${succeeded.length} hành động, cộng +${totalPoints} điểm xanh.${suffix}`
-        : 'Các hành động đã chọn đã được ghi nhận trước đó hoặc không thể lưu.'
+        : 'Hành động xanh đã được ghi nhận trước đó.'
     });
 
     setSelectedGreenGuests([]);
@@ -173,8 +174,14 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
       </div>
 
       {greenConfirmToast && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-2xl shadow-sm flex items-center space-x-2 animate-slide-up">
-          <ThumbsUp size={16} className="text-emerald-500" />
+        <div className={`p-3 border text-xs font-semibold rounded-2xl shadow-sm flex items-center space-x-2 animate-slide-up ${
+          greenConfirmToast.type === 'error'
+            ? 'bg-rose-50 border-rose-200 text-rose-700'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+        }`}>
+          {greenConfirmToast.type === 'error'
+            ? <AlertCircle size={16} className="text-rose-500" />
+            : <ThumbsUp size={16} className="text-emerald-500" />}
           <p className="leading-snug">{greenConfirmToast.text}</p>
         </div>
       )}
