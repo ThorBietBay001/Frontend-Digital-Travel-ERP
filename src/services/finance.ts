@@ -86,5 +86,13 @@ export const financeService = {
     danhSachChiPhi: async (params?: Record<string, any>) => {
         const response = await api.get<ApiResponsePageChiPhiThucTeResponse>('/api/ke-toan/chi-phi', { params });
         return response.data.data;
+    },
+    danhSachCanhBao: async (params?: Record<string, any>) => {
+        const response = await api.get('/api/ke-toan/canh-bao-chi-phi', { params });
+        return response.data.data;
+    },
+    tinhToan: async (maTour: string) => {
+        const response = await api.get<ApiResponseQuyetToanResponse>(`/api/ke-toan/tinh-toan/${maTour}`);
+        return response.data.data;
     }
 };
