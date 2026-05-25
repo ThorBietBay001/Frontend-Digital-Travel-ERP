@@ -49,7 +49,7 @@ export const mapOrderStatus = (status?: string): StatusMapping => {
 export const mapTransactionStatus = (status?: string): StatusMapping => {
   switch (status) {
     case 'CHO_THANH_TOAN': return { label: 'Chờ thanh toán', variant: 'warning' };
-    case 'THANH_CONG': return { label: 'Đã hoàn', variant: 'success' };
+    case 'THANH_CONG': return { label: 'Thành công', variant: 'success' };
     case 'THAT_BAI': return { label: 'Thất bại', variant: 'error' };
     case 'DA_HOAN_TIEN': return { label: 'Đã hoàn tiền', variant: 'success' };
     default: return { label: status || 'Không xác định', variant: 'neutral' };

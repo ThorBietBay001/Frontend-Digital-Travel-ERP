@@ -71,7 +71,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
         }
       }).catch(() => {});
 
-      financeService.danhSachChiPhi().then(res => {
+      financeService.danhSachChiPhi({ maTour: tour.code, size: 100 }).then(res => {
         const cost = res?.content?.find(c => c.maTour === tour.code);
         if (cost) {
           setExtraDetails(prev => ({
