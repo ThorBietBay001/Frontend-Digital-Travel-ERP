@@ -9,7 +9,8 @@ import {
   Bell, 
   LogOut,
   X, 
-  CheckCircle
+  CheckCircle,
+  Send
 } from 'lucide-react';
 import type { Passenger, Expense, Tour, BaoCaoSuCo as IncidentType } from './types';
 // Removed mockData imports
@@ -32,8 +33,17 @@ type AppNotification = {
   text: string;
   time: string;
   read: boolean;
-  type: 'ASSIGNMENT_CONFIRMATION' | 'ACTION_RESULT';
+  type: 'ASSIGNMENT_CONFIRMATION' | 'ACTION_RESULT' | 'GUIDE_EXPLANATION_REQUEST';
   tour?: Tour;
+  supportRequest?: GuideExplanationRequest;
+};
+
+type GuideExplanationRequest = {
+  maYeuCau?: string;
+  maDatTour?: string;
+  loaiYeuCau?: string;
+  noiDung?: string;
+  trangThai?: string;
 };
 
 export default function App() {
@@ -56,11 +66,15 @@ export default function App() {
   const [upcomingTours, setUpcomingTours] = useState<Tour[]>([]);
   const [pastTours, setPastTours] = useState<Tour[]>([]);
   const [pendingTours, setPendingTours] = useState<Tour[]>([]);
+  const [guideExplanationRequests, setGuideExplanationRequests] = useState<GuideExplanationRequest[]>([]);
   const [acceptingAssignmentIds, setAcceptingAssignmentIds] = useState<string[]>([]);
   const [rejectingAssignmentIds, setRejectingAssignmentIds] = useState<string[]>([]);
+  const [submittingGuideRequestIds, setSubmittingGuideRequestIds] = useState<string[]>([]);
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [dismissedAssignmentNotificationIds, setDismissedAssignmentNotificationIds] = useState<string[]>([]);
   const [guideProfile, setGuideProfile] = useState<any>(null);
+  const [selectedGuideRequest, setSelectedGuideRequest] = useState<GuideExplanationRequest | null>(null);
+  const [guideExplanationContent, setGuideExplanationContent] = useState('');
 
   const buildHealthNotes = (p: any): string => {
     const notes = [
@@ -178,12 +192,14 @@ export default function App() {
       setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
       setPastTours(await Promise.all(past.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
 
-      const [allIncRes, allExpRes] = await Promise.all([
+      const [allIncRes, allExpRes, guideExplanationRes] = await Promise.all([
         hdvService.layTatCaSuCo().catch(() => null),
-        hdvService.layTatCaChiPhi().catch(() => null)
+        hdvService.layTatCaChiPhi().catch(() => null),
+        hdvService.layYeuCauGiaiTrinh().catch(() => null)
       ]);
       setIncidents(Array.isArray(allIncRes?.data) ? allIncRes.data.map(mapIncident) : []);
       setExpenses(Array.isArray(allExpRes?.data) ? allExpRes.data.map(mapExpense) : []);
+      setGuideExplanationRequests(Array.isArray(guideExplanationRes?.data) ? guideExplanationRes.data : []);
 
       if (ongoingTour) {
         const mappedTour = await hydrateTourPassengers({ ...mapAssignmentToTour(ongoingTour), destination: 'Đang đi' });
@@ -272,6 +288,45 @@ export default function App() {
     }
   };
 
+  const handleOpenGuideExplanation = (request?: GuideExplanationRequest) => {
+    if (!request) return;
+    setSelectedGuideRequest(request);
+    setGuideExplanationContent('');
+    setNotificationOpen(false);
+  };
+
+  const handleSubmitGuideExplanation = async () => {
+    const maYeuCau = selectedGuideRequest?.maYeuCau;
+    if (!maYeuCau || !guideExplanationContent.trim()) {
+      alert('Vui lòng nhập nội dung giải trình.');
+      return;
+    }
+
+    setSubmittingGuideRequestIds(prev => [...prev, maYeuCau]);
+    try {
+      await hdvService.capNhatGiaiTrinh(maYeuCau, guideExplanationContent.trim());
+      setNotifications(prev => [
+        {
+          id: `guide-explanation-sent-${maYeuCau}-${Date.now()}`,
+          text: `Bạn đã gửi giải trình cho yêu cầu ${maYeuCau}.`,
+          time: 'Vừa xong',
+          read: false,
+          type: 'ACTION_RESULT'
+        },
+        ...prev
+      ]);
+      setSelectedGuideRequest(null);
+      setGuideExplanationContent('');
+      await loadHdvData();
+    } catch (e) {
+      console.error('Failed to submit guide explanation', e);
+      const apiMessage = (e as any)?.response?.data?.message || (e as any)?.response?.data?.error;
+      alert(apiMessage || 'Không thể gửi giải trình. Vui lòng thử lại.');
+    } finally {
+      setSubmittingGuideRequestIds(prev => prev.filter(id => id !== maYeuCau));
+    }
+  };
+
   // Compute attendance stats to pass down
   const attendanceStats = useMemo(() => {
     const total = passengers.length;
@@ -306,9 +361,23 @@ export default function App() {
       });
   }, [dismissedAssignmentNotificationIds, pendingTours, readNotificationIds]);
 
+  const guideExplanationNotifications = useMemo<AppNotification[]>(() => {
+    return guideExplanationRequests.map(request => {
+      const id = `guide-explanation-${request.maYeuCau}`;
+      return {
+        id,
+        text: `Admin yêu cầu bạn giải trình yêu cầu ${request.maYeuCau}${request.maDatTour ? ` của đơn ${request.maDatTour}` : ''}.`,
+        time: 'Chờ bạn cập nhật nội dung',
+        read: readNotificationIds.includes(id),
+        type: 'GUIDE_EXPLANATION_REQUEST',
+        supportRequest: request
+      };
+    });
+  }, [guideExplanationRequests, readNotificationIds]);
+
   const allNotifications = useMemo(() => {
-    return [...assignmentNotifications, ...notifications];
-  }, [assignmentNotifications, notifications]);
+    return [...guideExplanationNotifications, ...assignmentNotifications, ...notifications];
+  }, [assignmentNotifications, guideExplanationNotifications, notifications]);
 
   const handleMarkNotificationRead = (id: string) => {
     setReadNotificationIds(prev => prev.includes(id) ? prev : [...prev, id]);
@@ -469,6 +538,20 @@ export default function App() {
                             Đã ghi nhận
                           </span>
                         )}
+                        {n.type === 'GUIDE_EXPLANATION_REQUEST' && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleMarkNotificationRead(n.id);
+                              handleOpenGuideExplanation(n.supportRequest);
+                            }}
+                            className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-extrabold text-white bg-sky-500 hover:bg-sky-600 px-2.5 py-1.5 rounded-lg transition active:scale-95"
+                          >
+                            <Send size={12} />
+                            Cập nhật nội dung
+                          </button>
+                        )}
                       </div>
                       {!n.read && (
                         <button
@@ -492,6 +575,52 @@ export default function App() {
                 className="w-full py-2 bg-sky-400 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md transition"
               >
                 Đóng thông báo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {selectedGuideRequest && (
+          <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up shadow-2xl border border-sky-100 space-y-4">
+              <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">Cập nhật giải trình</h3>
+                  <p className="text-[10px] text-slate-400 font-mono mt-1">
+                    {selectedGuideRequest.maYeuCau}
+                    {selectedGuideRequest.maDatTour ? ` · ${selectedGuideRequest.maDatTour}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGuideRequest(null)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 transition"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wide">
+                  Nội dung gửi admin
+                </label>
+                <textarea
+                  value={guideExplanationContent}
+                  onChange={(event) => setGuideExplanationContent(event.target.value)}
+                  rows={5}
+                  className="w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 resize-none leading-relaxed"
+                  placeholder="Nhập nội dung giải trình, thông tin xác minh hoặc bằng chứng liên quan..."
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSubmitGuideExplanation}
+                disabled={submittingGuideRequestIds.includes(selectedGuideRequest.maYeuCau || '')}
+                className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-md transition inline-flex items-center justify-center gap-2"
+              >
+                <Send size={14} />
+                {submittingGuideRequestIds.includes(selectedGuideRequest.maYeuCau || '') ? 'Đang gửi...' : 'Gửi đến admin'}
               </button>
             </div>
           </div>
