@@ -60,6 +60,12 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
   if (!isOpen || !complaint) return null;
 
   const isView = mode === 'view';
+  const actionContentLabels: Record<string, string> = {
+    'Yêu cầu KH bổ sung': 'Nội dung yêu cầu KH bổ sung',
+    'Yêu cầu HDV giải trình': 'Nội dung yêu cầu HDV giải trình',
+    'Đề xuất bồi thường': 'Nội dung đề xuất bồi thường',
+    'Từ chối khiếu nại': 'Nội dung từ chối khiếu nại',
+  };
 
   const handleActionComplete = () => {
     if (activeAction && noteContent.trim() && onUpdate) {
@@ -256,7 +262,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
             {/* Vùng nhập liệu khi chọn action */}
             {activeAction && !isView && (
               <div className="mb-6 p-4 bg-white border border-[#E1F1FF] rounded-lg shadow-sm">
-                <p className="text-sm font-semibold text-gray-800 mb-2">Nhập nội dung cho: {activeAction}</p>
+                <p className="text-sm font-semibold text-gray-800 mb-2">{actionContentLabels[activeAction]}</p>
                 <textarea 
                   className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-[#00668A] resize-none mb-3"
                   rows={3}

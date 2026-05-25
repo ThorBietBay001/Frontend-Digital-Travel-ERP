@@ -169,7 +169,9 @@ const StaffProfileModal: React.FC<StaffProfileModalProps> = ({
             {rating > 0 && (
               <div className="flex items-center gap-1 text-amber-500">
                 <Star size={16} className="fill-amber-400 text-amber-400" />
-                <span className="text-sm font-semibold text-amber-600">{rating.toFixed(1)}</span>
+                <span className="text-sm font-semibold text-amber-600">
+                  {rating.toFixed(1)} <span className="text-gray-400 font-normal">({nangLuc?.soDanhGia ?? 0} đánh giá)</span>
+                </span>
               </div>
             )}
           </div>
