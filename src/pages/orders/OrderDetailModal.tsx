@@ -149,8 +149,8 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
     additionalServices: api.chiTietDichVu?.map(formatAdditionalService).filter(Boolean),
     additionalServicesAmount: api.chiTietDichVu?.reduce((sum, s) => sum + (s.thanhTien ?? (s.donGia && s.soLuong ? s.donGia * s.soLuong : s.donGia) ?? 0), 0) || 0,
     adultCount: api.soNguoiLon ?? (passengerDetails.length - (childPassengers.length || api.soTreEm || api.soLuongVeTreEm || 0)),
-    transactionCode: '—', // Not available in current API
-    paymentMethod: '—', // Not available in current API
+    transactionCode: api.maGiaoDich || '—',
+    paymentMethod: api.phuongThuc || '—',
     status: mapStatus(api.trangThai),
     paymentStatus: mapPaymentStatus(api.trangThai, api.daBaoChuyenKhoan),
     passengerCount: passengerDetails.length,

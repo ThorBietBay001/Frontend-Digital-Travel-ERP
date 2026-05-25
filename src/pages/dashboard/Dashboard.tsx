@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map as MapIcon, CheckCircle2, XCircle, Clock, BarChart3 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 // API Services
@@ -172,14 +172,10 @@ const Dashboard: React.FC = () => {
           }
 
           if (totalBookedAll > 0) {
-            // Lấy ra 4 tour mẫu có số lượng khách đặt cao nhất
             const sortedDestinations = Array.from(templateStats.values())
               .sort((a, b) => b.booked - a.booked)
               .slice(0, 4);
-              
-            // Tính % dựa trên số lượng khách đặt tour nhiều nhất
             const maxBooked = sortedDestinations.length > 0 ? sortedDestinations[0].booked : 1;
-            
             setDestinations(
               sortedDestinations.map(stat => ({
                 name: stat.name,
@@ -190,6 +186,7 @@ const Dashboard: React.FC = () => {
             setDestinations(topDestinations);
           }
         } else {
+          // API failed (e.g. 403) → always show mock data
           setDestinations(topDestinations);
         }
 
@@ -304,7 +301,7 @@ const Dashboard: React.FC = () => {
 
               <div className="relative z-10 flex items-center justify-center gap-2 w-full">
                 <div className="p-2.5 bg-blue-100/70 rounded-[14px] text-blue-600">
-                  <Map size={20} strokeWidth={2.5} />
+                  <MapIcon size={20} strokeWidth={2.5} />
                 </div>
                 <div className="flex items-center gap-1 text-red-500 bg-red-50 px-2.5 py-1 rounded-full text-xs font-bold">
                   <ArrowDownRight size={14} strokeWidth={3} />

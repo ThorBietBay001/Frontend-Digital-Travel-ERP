@@ -12,6 +12,8 @@ import type { Column } from '../../components/ui/Table';
 import type { Complaint } from './mockData';
 import type { YeuCauHoTroResponse, XuLyHoTroRequest } from '../../services/complaints';
 import { complaintsService } from '../../services/complaints';
+import { incidentService } from '../../services/incidents';
+import type { NhatKySuCoResponse } from '../../services/incidents';
 import { formatDate } from '../../utils/dateHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
@@ -36,6 +38,7 @@ const ComplaintList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedSeverity, setSelectedSeverity] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -59,15 +62,32 @@ const ComplaintList: React.FC = () => {
       tourName: api.loaiYeuCau || '',
       guideName: api.maNhanVienXuLy,
       sentDate: api.thoiDiemTao ? formatDate(api.thoiDiemTao) : '',
-      severity: 'medium',
+      severity: 'THAP',
       status: mapStatus(api.trangThai, api.noiDung),
       description: (api.noiDung || '')
         .replace(/\[Yêu cầu (?:KH bổ sung|HDV giải trình) lúc [^\]]+\]:.*?(?=\n\[|$)/gs, '')
         .trim(),
       resolution: savedResolution || undefined,
       timeline: savedTimeline,
+      source: 'complaint',
     };
   };
+
+  const mapIncidentToUI = (api: NhatKySuCoResponse): Complaint => ({
+    id: api.maNhatKySuCo || '',
+    code: api.maNhatKySuCo || '',
+    maDatTour: '',
+    customerName: api.hoTenKhachHang || api.maKhachHang || '',
+    customerPhone: '',
+    tourName: api.loaiSuCo || '',
+    guideName: api.maHdvBaoCao,
+    sentDate: api.thoiGianBaoCao ? formatDate(api.thoiGianBaoCao) : '',
+    severity: api.mucDo === 'SOS' ? 'SOS' : 'THAP',
+    status: 'pending',
+    description: api.moTa || '',
+    timeline: [],
+    source: 'incident',
+  });
 
   const { user } = useAuth();
 
@@ -76,18 +96,26 @@ const ComplaintList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const pageSize = 100;
-      const firstPage = await complaintsService.danhSachYeuCauHoTro({ page: 0, size: pageSize });
-      const totalPages = firstPage?.totalPages ?? 1;
-      const remainingPages = totalPages > 1
-        ? await Promise.all(
-          Array.from({ length: totalPages - 1 }, (_, index) =>
-            complaintsService.danhSachYeuCauHoTro({ page: index + 1, size: pageSize })
-          )
-        )
-        : [];
-      const allComplaints = [firstPage, ...remainingPages].flatMap(page => page?.content ?? []);
-      setComplaints(allComplaints.map(mapToUI));
+      const [complaintsRes, incidents] = await Promise.all([
+        (async () => {
+          const pageSize = 100;
+          const firstPage = await complaintsService.danhSachYeuCauHoTro({ page: 0, size: pageSize });
+          const totalPages = firstPage?.totalPages ?? 1;
+          if (totalPages <= 1) return firstPage?.content ?? [];
+          const remainingPages = await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, index) =>
+              complaintsService.danhSachYeuCauHoTro({ page: index + 1, size: pageSize })
+            )
+          );
+          return [firstPage, ...remainingPages].flatMap(page => page?.content ?? []);
+        })(),
+        incidentService.lichSuSuCoCuaHdv().catch(() => [] as NhatKySuCoResponse[]),
+      ]);
+      const mapped = [
+        ...complaintsRes.map(mapToUI),
+        ...incidents.map(mapIncidentToUI),
+      ];
+      setComplaints(mapped);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
       setError(msg);
@@ -102,7 +130,8 @@ const ComplaintList: React.FC = () => {
     const matchesSearch = c.code.toLowerCase().includes(search.toLowerCase()) ||
                           c.customerName.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = selectedStatus === 'all' || c.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+    const matchesSeverity = selectedSeverity === 'all' || c.severity === selectedSeverity;
+    return matchesSearch && matchesStatus && matchesSeverity;
   });
 
   const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
@@ -113,7 +142,7 @@ const ComplaintList: React.FC = () => {
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedStatus]);
+  }, [search, selectedStatus, selectedSeverity]);
 
   React.useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
@@ -151,12 +180,8 @@ const ComplaintList: React.FC = () => {
       title: 'Mức độ',
       width: '13%',
       render: (record) => {
-        let label = '';
-        let variant: 'success' | 'warning' | 'error' | 'info' = 'info';
-        if (record.severity === 'high') { label = 'Cao'; variant = 'error'; }
-        else if (record.severity === 'medium') { label = 'Trung bình'; variant = 'warning'; }
-        else { label = 'Thấp'; variant = 'success'; }
-        return <Badge label={label} variant={variant} />;
+        const isSOS = record.severity === 'SOS';
+        return <Badge label={isSOS ? 'SOS' : 'Thấp'} variant={isSOS ? 'error' : 'warning'} />;
       }
     },
     {
@@ -164,6 +189,9 @@ const ComplaintList: React.FC = () => {
       title: 'Trạng thái',
       width: '15%',
       render: (record) => {
+        if (record.source === 'incident') {
+          return <Badge label="Đã ghi nhận" variant="neutral" />;
+        }
         let label = '';
         let variant: 'success' | 'warning' | 'error' | 'info' | 'neutral' = 'info';
         switch (record.status) {
@@ -186,6 +214,9 @@ const ComplaintList: React.FC = () => {
       width: '12%',
       align: 'center',
       render: (record) => {
+        if (record.source === 'incident') {
+          return <Badge label="Sự cố" variant="neutral" />;
+        }
         const isDone = record.status === 'resolved' || record.status === 'rejected' || record.status === 'cancelled';
         return (
           <Button
@@ -202,6 +233,7 @@ const ComplaintList: React.FC = () => {
   ];
 
   const handleOpenDrawer = (complaint: Complaint, mode: 'edit' | 'view') => {
+    if (complaint.source === 'incident') return;
     setSelectedComplaint(complaint);
     setDrawerMode(mode);
     setDrawerOpen(true);
@@ -267,6 +299,17 @@ const ComplaintList: React.FC = () => {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-[#E1F1FF] mb-6 flex flex-wrap gap-4 items-center">
         <div className="flex-1 min-w-[300px]">
           <SearchInput placeholder="Tìm mã khiếu nại, tên khách hàng..." value={search} onChange={setSearch} />
+        </div>
+        <div className="w-[160px]">
+          <Select
+            value={selectedSeverity}
+            onChange={setSelectedSeverity}
+            options={[
+              { value: 'all', label: 'Mức độ: Tất cả' },
+              { value: 'THAP', label: 'Thấp' },
+              { value: 'SOS', label: 'SOS' }
+            ]}
+          />
         </div>
         <div className="w-[200px]">
           <Select

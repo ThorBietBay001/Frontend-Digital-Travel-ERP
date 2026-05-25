@@ -78,7 +78,7 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/promotions',
   },
   {
-    title: 'Điều phối Hướng dẫn viên',
+    title: 'Điều phối HDV',
     key: 'dispatch',
     icon: Leaf,
     children: [

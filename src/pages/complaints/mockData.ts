@@ -73,12 +73,13 @@ export interface Complaint {
   tourName: string;
   guideName?: string;
   sentDate: string;
-  severity: 'high' | 'medium' | 'low';
+  severity: 'THAP' | 'SOS';
   status: 'pending' | 'processing' | 'pending_info' | 'pending_guide' | 'pending_review' | 'resolved' | 'rejected' | 'cancelled';
   description: string;
   attachments?: string[];
   timeline: { action: string; timestamp: string }[];
   resolution?: string;
+  source: 'complaint' | 'incident';
 }
 
 export const mockComplaints: Complaint[] = [
@@ -90,7 +91,8 @@ export const mockComplaints: Complaint[] = [
     tourName: 'Sapa Eco Trekking',
     guideName: 'Lê Văn C',
     sentDate: '15/10/2024',
-    severity: 'high',
+    severity: 'SOS',
+    source: 'complaint',
     status: 'pending',
     description: 'Khách sạn tại Sapa không đúng như cam kết. Phòng không có view núi, máy sưởi hỏng. Hướng dẫn viên không hỗ trợ nhiệt tình khi tôi phản ánh.',
     timeline: [
@@ -106,7 +108,8 @@ export const mockComplaints: Complaint[] = [
     tourName: 'Mekong Delta Cruise',
     guideName: 'Phạm Thị D',
     sentDate: '14/10/2024',
-    severity: 'medium',
+    severity: 'THAP',
+    source: 'complaint',
     status: 'processing',
     description: 'Bữa ăn trên tàu không đảm bảo vệ sinh. Tàu khởi hành trễ hơn 1 tiếng so với lịch trình.',
     timeline: [
@@ -121,7 +124,8 @@ export const mockComplaints: Complaint[] = [
     customerPhone: '0912345678',
     tourName: 'Tour Phú Quốc',
     sentDate: '18/05/2024',
-    severity: 'low',
+    severity: 'THAP',
+    source: 'complaint',
     status: 'resolved',
     description: 'Xe đưa đón sân bay đến sai giờ, tôi phải tự gọi taxi.',
     resolution: 'Đã hoàn tiền taxi 200,000 VND và tặng voucher giảm giá 5% cho tour tiếp theo.',
@@ -140,7 +144,8 @@ export const mockComplaints: Complaint[] = [
     tourName: 'Đà Nẵng 3 ngày 2 đêm',
     guideName: 'Nguyễn Văn E',
     sentDate: '20/10/2024',
-    severity: 'medium',
+    severity: 'THAP',
+    source: 'complaint',
     status: 'pending_info',
     description: 'Phòng không giống quảng cáo trên web.',
     timeline: [
@@ -156,7 +161,8 @@ export const mockComplaints: Complaint[] = [
     tourName: 'Nha Trang Hành Trình Biển',
     guideName: 'Trần Văn F',
     sentDate: '21/10/2024',
-    severity: 'high',
+    severity: 'SOS',
+    source: 'complaint',
     status: 'pending_guide',
     description: 'HDV không xuất hiện tại điểm hẹn.',
     timeline: [
