@@ -16,7 +16,8 @@ import {
   unwrapPageContent
 } from '../services/apiHelpers';
 import type { Booking, Voucher } from '../types';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { hasActiveSession } from '../services/api';
 
 type Tab = 'profile' | 'bookings' | 'vouchers' | 'complaints';
 type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
@@ -35,6 +36,7 @@ interface ComplaintTicket {
 }
 
 export default function HoChieuSo() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [bookingFilter, setBookingFilter] = useState<BookingFilter>('all');
   const [bookingPage, setBookingPage] = useState(1);
@@ -68,9 +70,14 @@ export default function HoChieuSo() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!hasActiveSession()) {
+        navigate('/', { replace: true });
+        return;
+      }
+
       try {
-        const [profileRes, bookingsRes, pastToursRes, vouchersRes, redeemableVouchersRes, toursRes, complaintsRes] = await Promise.all([
-          khService.layHoChieuSo().catch(() => ({ data: null })),
+        const profileRes = await khService.layHoChieuSo();
+        const [bookingsRes, pastToursRes, vouchersRes, redeemableVouchersRes, toursRes, complaintsRes] = await Promise.all([
           khService.getMyBookings({ size: 200 }).catch(() => ({ data: { content: [] } })),
           khService.getPastTours({ size: 200 }).catch(() => ({ data: { content: [] } })),
           khService.getVouchers().catch(() => ({ data: { content: [] } })),
@@ -98,7 +105,7 @@ export default function HoChieuSo() {
           guests: 1,
           passengers: 1,
           tourImage: `https://picsum.photos/seed/${b.maTourThucTe}/900/650`,
-          qrCode: `QR-${b.maDatTour || b.maLichSuTour}`,
+          bookingCode: b.maDatTour || b.maLichSuTour,
           hasReviewed: Boolean(b.daDanhGia),
           hasComplaint: Boolean(b.daKhieuNai),
           complaintStatus: b.trangThaiKhieuNai || ''
@@ -127,7 +134,7 @@ export default function HoChieuSo() {
       }
     };
     fetchData();
-  }, []);
+  }, [navigate]);
 
   // Custom OTP verification modal states (UC23)
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -395,7 +402,7 @@ export default function HoChieuSo() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, hasConfirmedTransfer = true) => {
     if (status === 'DA_QUYET_TOAN') status = 'KET_THUC';
     if (status === 'CHO_HOAN_TIEN') status = 'CHO_HUY';
     if (status === 'TU_CHOI_HOAN_TIEN') status = 'Hủy thất bại';
@@ -414,6 +421,9 @@ export default function HoChieuSo() {
       case 'CHO_HOAN_TIEN':
         return <span className="px-3 py-1 bg-fuchsia-50 text-fuchsia-700 rounded-full text-xs font-bold border border-fuchsia-200">Chờ hoàn tiền</span>;
       case 'CHO_XAC_NHAN':
+        if (!hasConfirmedTransfer) {
+          return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">Chưa xác nhận chuyển khoản</span>;
+        }
         return (
           <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200/60 flex items-center space-x-1.5 animate-pulse">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -435,7 +445,7 @@ export default function HoChieuSo() {
     }
   };
 
-  const layTenTrangThaiDon = (status: string) => {
+  const layTenTrangThaiDon = (status: string, hasConfirmedTransfer = true) => {
     if (status === 'DA_QUYET_TOAN') status = 'KET_THUC';
     if (status === 'CHO_HOAN_TIEN') status = 'CHO_HUY';
     if (status === 'TU_CHOI_HOAN_TIEN') return 'Hủy thất bại';
@@ -445,7 +455,7 @@ export default function HoChieuSo() {
       case 'KET_THUC': return 'Đã hoàn thành';
       case 'DA_QUYET_TOAN': return 'Đã quyết toán';
       case 'DA_HUY': return 'Đã hủy';
-      case 'CHO_XAC_NHAN': return 'Chờ xác nhận';
+      case 'CHO_XAC_NHAN': return hasConfirmedTransfer ? 'Chờ xác nhận' : 'Chưa xác nhận chuyển khoản';
       case 'CHO_HUY': return 'Chờ hủy';
       case 'CHO_HOAN_TIEN': return 'Chờ hoàn tiền';
       case 'TU_CHOI_HOAN_TIEN': return 'Từ chối hoàn tiền';
@@ -594,7 +604,7 @@ export default function HoChieuSo() {
 
       if (detailRes) {
         const detail = mapBooking(unwrapData<any>(detailRes));
-        setSelectedBookingForDetail({ ...booking, ...detail, qrCode: booking.qrCode || detail.qrCode });
+        setSelectedBookingForDetail({ ...booking, ...detail, bookingCode: booking.bookingCode || detail.bookingCode });
       }
 
       if (paymentRes) {
@@ -733,7 +743,7 @@ export default function HoChieuSo() {
       const query = searchQuery.toLowerCase().trim();
       const searchStr = `
         ${booking.tourName || ''} 
-        ${booking.qrCode || ''} 
+        ${booking.bookingCode || ''}
         ${booking.id || ''}
       `.toLowerCase();
       return searchStr.includes(query);
@@ -1079,9 +1089,9 @@ export default function HoChieuSo() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="font-extrabold text-lg text-gray-900 leading-snug">{booking.tourName}</h3>
-                                <p className="text-gray-500 text-xs font-semibold mt-1">Mã đặt chỗ: <span className="font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{booking.qrCode}</span></p>
+                                <p className="text-gray-500 text-xs font-semibold mt-1">Mã đặt tour: <span className="font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{booking.bookingCode}</span></p>
                               </div>
-                              {getStatusBadge(booking.status)}
+                              {getStatusBadge(booking.status, booking.hasConfirmedTransfer)}
                             </div>
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-4 text-sm text-gray-600">
@@ -1632,7 +1642,7 @@ export default function HoChieuSo() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-gray-900">Chi tiết vé điện tử</h2>
-                  <p className="text-sm text-gray-600">Mã đặt vé: {selectedBookingForDetail.qrCode}</p>
+                  <p className="text-sm text-gray-600">Mã đặt tour: <span className="font-mono font-semibold">{selectedBookingForDetail.bookingCode}</span></p>
                 </div>
               </div>
 
@@ -1646,7 +1656,7 @@ export default function HoChieuSo() {
                       className="w-full h-44 object-cover"
                     />
                     <div className="absolute top-4 right-4">
-                      {getStatusBadge(selectedBookingForDetail.status)}
+                      {getStatusBadge(selectedBookingForDetail.status, selectedBookingForDetail.hasConfirmedTransfer)}
                     </div>
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
                       <h3 className="font-extrabold text-lg leading-tight">{selectedBookingForDetail.tourName}</h3>
@@ -1715,7 +1725,7 @@ export default function HoChieuSo() {
                       <span>Khởi hành</span>
                       <span className="font-bold text-right">{formatDate(selectedBookingForDetail.departureDate)}</span>
                       <span>Trạng thái</span>
-                      <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status)}</span>
+                      <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status, selectedBookingForDetail.hasConfirmedTransfer)}</span>
                       <span>Người đặt</span>
                       <span className="font-bold text-right">{selectedBookingForDetail.customerName || profile.fullName}</span>
                       <span>Số khách</span>

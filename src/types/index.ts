@@ -37,12 +37,13 @@ export interface Booking {
   totalAmount: number;
   status: 'CHO_XAC_NHAN' | 'DA_XAC_NHAN' | 'CHO_HUY' | 'CHO_HOAN_TIEN' | 'DA_HUY' | 'TU_CHOI_HOAN_TIEN' | 'HET_HAN_GIU_CHO' | 'THANH_TOAN_THAT_BAI' | 'KET_THUC' | 'DA_QUYET_TOAN';
   guests: number;
-  qrCode: string;
+  bookingCode: string;
   paymentMethod?: string;
   paymentStatus?: string;
   paymentTransactionId?: string;
   paymentAmount?: number;
   paymentPaidAt?: string;
+  hasConfirmedTransfer?: boolean;
   originalAmount?: number;
   discountAmount?: number;
   voucherId?: string;

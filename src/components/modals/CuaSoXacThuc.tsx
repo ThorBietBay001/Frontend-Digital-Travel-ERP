@@ -47,25 +47,23 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
     setSystemMessage('');
   };
 
-  const saveAuthSession = async (response: any, fallbackUsername: string) => {
+  const saveAuthSession = async (response: any) => {
     const data = unwrapData<any>(response);
     const token = data.accessToken || data.token;
-    if (token) {
-      localStorage.setItem('token', token);
+    if (!token || data.maVaiTro !== 'KHACHHANG') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userProfile');
+      throw new Error('Tài khoản này không thuộc cổng khách hàng.');
     }
 
+    localStorage.setItem('token', token);
     try {
       const profileResponse = await khService.layHoChieuSo();
       localStorage.setItem('userProfile', JSON.stringify(mapProfile(unwrapData<any>(profileResponse))));
-    } catch {
-      localStorage.setItem('userProfile', JSON.stringify({
-        fullName: data.hoTen || data.tenHienThi || fallbackUsername,
-        username: fallbackUsername,
-        email,
-        phone,
-        greenPoints: 0,
-        membershipTier: 'THANH_VIEN'
-      }));
+    } catch (error) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userProfile');
+      throw error;
     }
   };
 
@@ -183,7 +181,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
 
       if (mode === 'dangNhap') {
         const response = await khService.dangNhap(identifier.trim(), password);
-        await saveAuthSession(response, identifier.trim());
+        await saveAuthSession(response);
         onLoginSuccess();
         return;
       }
@@ -215,12 +213,12 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
         });
 
         const response = await khService.dangNhap(username.trim(), password);
-        await saveAuthSession(response, username.trim());
+        await saveAuthSession(response);
         onLoginSuccess();
         return;
       }
     } catch (err: any) {
-      showMessage(err?.response?.data?.message || 'Hệ thống chưa xử lý được yêu cầu. Vui lòng thử lại.');
+      showMessage(err?.response?.data?.message || err?.message || 'Hệ thống chưa xử lý được yêu cầu. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

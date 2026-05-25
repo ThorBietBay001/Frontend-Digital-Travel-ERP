@@ -155,5 +155,15 @@ export const khService = {
   ketQuaThanhToan: async (maDatTour: string) => {
     const res = await api.get(`/thanh-toan/${maDatTour}/ket-qua`);
     return res.data;
+  },
+
+  capNhatHetHanThanhToanQr: async (maDatTour: string) => {
+    const res = await api.post(`/thanh-toan/${maDatTour}/het-han-qr`);
+    return res.data;
+  },
+
+  xacNhanDaChuyenKhoan: async (maDatTour: string) => {
+    const res = await api.post(`/thanh-toan/${maDatTour}/xac-nhan-chuyen-khoan`);
+    return res.data;
   }
 };

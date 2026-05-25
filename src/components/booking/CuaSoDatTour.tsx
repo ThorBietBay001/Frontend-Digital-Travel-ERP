@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Clock, ChevronLeft, ShieldCheck, Copy, Check, Lock } from 'lucide-react';
+import axios from 'axios';
+import { X, Clock, ChevronLeft, ShieldCheck, Copy, Check, Lock, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import type { Tour, Voucher } from '../../types';
 import { khService } from '../../services/khService';
 import { mapExtraService, mapProfile, mapVoucher, unwrapData, unwrapPageContent } from '../../services/apiHelpers';
+import { hasActiveSession } from '../../services/api';
 import BieuMauHanhKhach, { type PassengerData } from './BieuMauHanhKhach';
 import ChonHanhDongXanh from './ChonHanhDongXanh';
 import ChonDichVuThem, { type ExtraService } from './ChonDichVuThem';
@@ -14,6 +16,7 @@ import DatTourThanhCong from './DatTourThanhCong';
 interface BookingModalProps {
   tour: Tour;
   onClose: () => void;
+  onSessionExpired: () => void;
 }
 
 const emptyPassenger: PassengerData = {
@@ -54,7 +57,15 @@ const isChildPassenger = (dateOfBirth: string, referenceDate?: string) => {
   return age !== null && age <= CHILD_MAX_AGE;
 };
 
-export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
+const isHoldExpiredError = (message: string) => {
+  const normalized = message
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+  return normalized.includes('HET HAN GIU CHO') || normalized.includes('HET_HAN_GIU_CHO');
+};
+
+export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: BookingModalProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [profile, setProfile] = useState<any>(getStoredProfile);
@@ -79,55 +90,60 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   const [showQrPayment, setShowQrPayment] = useState(false);
   const [qrCountdown, setQrCountdown] = useState(300);
   const [transferMemo, setTransferMemo] = useState('');
-  const [createdQrCode, setCreatedQrCode] = useState('');
   const [createdBookingId, setCreatedBookingId] = useState('');
   const [bookingStatus, setBookingStatus] = useState('CHO_XAC_NHAN');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [useGreenPoints, setUseGreenPoints] = useState(false);
+  const [expirationNotice, setExpirationNotice] = useState<'HOLD' | 'PAYMENT' | null>(null);
 
   const greenPointsDiscount = (profile.greenPoints || 0) * 500;
 
   useEffect(() => {
     const loadBookingData = async () => {
       try {
-        const [profileResponse, servicesResponse, vouchersResponse] = await Promise.all([
-          khService.layHoChieuSo().catch(() => null),
-          khService.layDichVuThem(tour.id).catch(() => ({ data: [] })),
-          khService.getVouchers().catch(() => ({ data: { content: [] } }))
-        ]);
-
-        if (profileResponse) {
-          const mappedProfile = mapProfile(unwrapData<any>(profileResponse));
-          setProfile(mappedProfile);
-          localStorage.setItem('userProfile', JSON.stringify(mappedProfile));
-          setPassengers(prev => prev.map((passenger, index) => index === 0 ? {
-            name: mappedProfile.fullName || passenger.name || '',
-            phone: mappedProfile.phone || passenger.phone || '',
-            idCard: mappedProfile.idCard || passenger.idCard || '',
-            email: mappedProfile.email || passenger.email || '',
-            dateOfBirth: mappedProfile.dateOfBirth || passenger.dateOfBirth || ''
-          } : passenger));
+        if (!hasActiveSession()) {
+          onSessionExpired();
+          return;
         }
 
+        const profileResponse = await khService.layHoChieuSo();
+        const mappedProfile = mapProfile(unwrapData<any>(profileResponse));
+        setProfile(mappedProfile);
+        localStorage.setItem('userProfile', JSON.stringify(mappedProfile));
+        setPassengers(prev => prev.map((passenger, index) => index === 0 ? {
+          name: mappedProfile.fullName || passenger.name || '',
+          phone: mappedProfile.phone || passenger.phone || '',
+          idCard: mappedProfile.idCard || passenger.idCard || '',
+          email: mappedProfile.email || passenger.email || '',
+          dateOfBirth: mappedProfile.dateOfBirth || passenger.dateOfBirth || ''
+        } : passenger));
+
+        const [servicesResponse, vouchersResponse] = await Promise.all([
+          khService.layDichVuThem(tour.id),
+          khService.getVouchers()
+        ]);
         setExtraServices(unwrapPageContent<any>(servicesResponse).map(mapExtraService));
         setVouchers(unwrapPageContent<any>(vouchersResponse).map(mapVoucher));
       } catch (err) {
         console.error(err);
+        if ((axios.isAxiosError(err) && err.response?.status === 401) || !hasActiveSession()) {
+          onSessionExpired();
+          return;
+        }
         setError('Không tải được dữ liệu đặt tour từ hệ thống. Vui lòng đăng nhập lại hoặc thử lại sau.');
       }
     };
 
     loadBookingData();
-  }, [tour.id]);
+  }, [onSessionExpired, tour.id]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          setError('Hết thời gian giữ chỗ! Vui lòng đặt lại.');
-          onClose();
+          setExpirationNotice('HOLD');
           return 0;
         }
         return prev - 1;
@@ -135,7 +151,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [onClose]);
+  }, []);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
@@ -144,8 +160,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
         setQrCountdown(prev => {
           if (prev <= 1) {
             clearInterval(timer);
-            setError('Giao dịch thanh toán bằng mã QR đã hết hạn! Vui lòng thực hiện lại.');
-            setShowQrPayment(false);
+            setExpirationNotice('PAYMENT');
             return 0;
           }
           return prev - 1;
@@ -154,6 +169,14 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
     }
     return () => clearInterval(timer);
   }, [showQrPayment, qrCountdown]);
+
+  useEffect(() => {
+    if (expirationNotice === 'PAYMENT' && createdBookingId) {
+      void khService.capNhatHetHanThanhToanQr(createdBookingId).catch((err) => {
+        console.error('Không thể cập nhật trạng thái hết hạn thanh toán:', err);
+      });
+    }
+  }, [createdBookingId, expirationNotice]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -310,6 +333,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     setIsProcessingPayment(true);
 
     try {
@@ -330,6 +354,10 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
 
       const booking = unwrapData<any>(bookingResponse);
       const maDatTour = booking.maDatTour || booking.id || '';
+      if (!maDatTour) {
+        throw new Error('Hệ thống chưa trả về mã đặt tour. Vui lòng kiểm tra lại đơn hàng.');
+      }
+
       if (selectedVoucher && maDatTour) {
         await khService.apVoucher(maDatTour, selectedVoucher);
       }
@@ -341,24 +369,51 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
         });
       }
 
-      const memo = maDatTour || `DDT${Math.floor(100000 + Math.random() * 900000)}`;
-      const qr = `QR-${tour.id.toUpperCase()}-${Date.now().toString().slice(-6)}`;
-
       setCreatedBookingId(maDatTour);
-      setTransferMemo(memo);
-      setCreatedQrCode(qr);
+      setTransferMemo(maDatTour);
       setBookingStatus('CHO_XAC_NHAN');
       setShowQrPayment(true);
       setQrCountdown(300);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Đặt tour hoặc thanh toán thất bại. Vui lòng thử lại.');
+      if (err?.response?.status === 401 || !hasActiveSession()) {
+        onSessionExpired();
+        return;
+      }
+      const message = err?.response?.data?.message || err?.message || 'Đặt tour hoặc thanh toán thất bại. Vui lòng thử lại.';
+      if (isHoldExpiredError(message)) {
+        setExpirationNotice('HOLD');
+      } else {
+        setError(message);
+      }
     } finally {
       setIsProcessingPayment(false);
     }
   };
 
-  const handleConfirmTransfer = () => {
-    setShowSuccess(true);
+  const handleConfirmTransfer = async () => {
+    if (!createdBookingId) return;
+
+    setError('');
+    setIsProcessingPayment(true);
+    try {
+      await khService.xacNhanDaChuyenKhoan(createdBookingId);
+      setBookingStatus('CHO_XAC_NHAN');
+      setShowQrPayment(false);
+      setShowSuccess(true);
+    } catch (err: any) {
+      if (err?.response?.status === 401 || !hasActiveSession()) {
+        onSessionExpired();
+        return;
+      }
+      const message = err?.response?.data?.message || 'Không thể ghi nhận chuyển khoản. Vui lòng thử lại.';
+      if (isHoldExpiredError(message) || message.toLowerCase().includes('qr đã hết hiệu lực')) {
+        setExpirationNotice('PAYMENT');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleSuccess = () => {
@@ -410,13 +465,40 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
   if (showSuccess) {
     return (
       <DatTourThanhCong
-        tour={tour}
         onClose={onClose}
         xuLyThanhCong={handleSuccess}
         greenPoints={tinhDiemXanh()}
         bookingStatus={bookingStatus}
-        qrCode={createdQrCode || createdBookingId}
+        bookingCode={createdBookingId}
       />
+    );
+  }
+
+  if (expirationNotice) {
+    const isPaymentExpired = expirationNotice === 'PAYMENT';
+    return (
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[70] p-4">
+        <div className="w-full max-w-sm rounded-3xl bg-white border border-amber-100 shadow-2xl p-6 text-center">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-amber-600" />
+          </div>
+          <h3 className="text-lg font-black text-slate-900 mb-2">
+            {isPaymentExpired ? 'Thời gian thanh toán đã hết' : 'Thời gian giữ chỗ đã hết'}
+          </h3>
+          <p className="text-sm text-slate-500 leading-relaxed mb-6">
+            {isPaymentExpired
+              ? 'Mã thanh toán QR đã hết hiệu lực và đơn đã hết hạn giữ chỗ. Tài khoản của bạn vẫn đang đăng nhập; vui lòng mở lại tour để đặt mới.'
+              : 'Phiên đặt tour này đã hết thời gian xử lý. Tài khoản của bạn vẫn đang đăng nhập; vui lòng mở lại tour để đặt chỗ mới.'}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-colors"
+          >
+            Đã hiểu, quay lại tour
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -509,7 +591,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f0f4f9] scrollbar-thin">
-          {error && !showQrPayment && (
+          {error && (
             <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
               {error}
             </div>
@@ -769,6 +851,7 @@ export default function CuaSoDatTour({ tour, onClose }: BookingModalProps) {
               <button
                 type="button"
                 onClick={handleConfirmTransfer}
+                disabled={isProcessingPayment}
                 className="flex items-center space-x-1.5 px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl active:scale-95 transition-all text-xs font-black shadow-md shadow-green-500/20"
               >
                 <ShieldCheck className="w-4 h-4 text-green-200 animate-pulse" />

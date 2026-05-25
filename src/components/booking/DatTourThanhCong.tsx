@@ -1,27 +1,21 @@
 import { Check, Leaf, X, Clock } from 'lucide-react';
-import { useState } from 'react';
-import { type Tour } from '../../types';
 
 interface BookingSuccessProps {
-  tour: Tour;
   onClose: () => void;
   xuLyThanhCong: () => void;
   greenPoints: number;
   bookingStatus?: string;
-  qrCode?: string;
+  bookingCode: string;
 }
 
 export default function DatTourThanhCong({
-  tour,
   onClose,
   xuLyThanhCong,
   greenPoints,
   bookingStatus = 'upcoming',
-  qrCode
+  bookingCode
 }: BookingSuccessProps) {
   const isPending = bookingStatus === 'CHO_XAC_NHAN';
-  const [generatedQrCode] = useState(() => `QR-${tour.id.toUpperCase()}-${Date.now().toString().slice(-6)}`);
-  const displayQrCode = qrCode || generatedQrCode;
 
   return (
     <div className="fixed inset-0 bg-[#020617]/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn">
@@ -72,18 +66,18 @@ export default function DatTourThanhCong({
           )}
 
           {/* Ticket Information Box */}
-          <div className={`rounded-2xl p-5 mb-6 border-2 relative overflow-hidden ${
+          <div className={`rounded-xl px-4 py-3.5 mb-6 border relative overflow-hidden ${
             isPending 
-              ? 'bg-gradient-to-br from-amber-50/50 to-orange-50/20 border-amber-200/60' 
-              : 'bg-gradient-to-br from-blue-50/50 to-indigo-50/20 border-blue-250/60'
+              ? 'bg-amber-50/60 border-amber-200/70'
+              : 'bg-blue-50/60 border-blue-200/70'
           }`}>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Mã đặt tour (QR Code)</p>
-            <p className={`text-2xl font-black tracking-tight ${isPending ? 'text-amber-600' : 'text-blue-600'}`}>
-              {displayQrCode}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.16em] mb-1">Mã đặt tour</p>
+            <p className={`text-base font-bold font-mono tracking-wide ${isPending ? 'text-amber-700' : 'text-blue-700'}`}>
+              {bookingCode}
             </p>
             
             {greenPoints > 0 && (
-              <div className={`mt-4 pt-3.5 border-t ${isPending ? 'border-amber-100' : 'border-blue-100'}`}>
+              <div className={`mt-3 pt-3 border-t ${isPending ? 'border-amber-100' : 'border-blue-100'}`}>
                 <p className="text-xs text-emerald-650 font-bold flex items-center justify-center">
                   <Leaf className="w-3.5 h-3.5 mr-1.5 text-emerald-550 fill-emerald-50" />
                   Bạn nhận thêm +{greenPoints} điểm xanh!

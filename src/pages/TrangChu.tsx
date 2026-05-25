@@ -126,28 +126,28 @@ export default function TrangChu() {
     let results = [...allTours];
 
     const beachKeywords = [
-      'phu quoc', 'nha trang', 'ha long', 'con dao', 'mui ne', 'phan thiet', 'vung tau', 
-      'quy nhon', 'phu yen', 'tuy hoa', 'cu lao cham', 'co to', 'cat ba', 'ly son', 
-      'binh thuan', 'khanh hoa', 'quang ninh', 'hai phong', 'sam son', 'cua lo', 
+      'phu quoc', 'nha trang', 'ha long', 'con dao', 'mui ne', 'phan thiet', 'vung tau',
+      'quy nhon', 'phu yen', 'tuy hoa', 'cu lao cham', 'co to', 'cat ba', 'ly son',
+      'binh thuan', 'khanh hoa', 'quang ninh', 'hai phong', 'sam son', 'cua lo',
       'quang binh', 'binh dinh', 'ninh thuan', 'phan rang', 'ba ria', 'kien giang'
     ];
-    
+
     const mountainKeywords = [
-      'sapa', 'da lat', 'moc chau', 'ha giang', 'cao bang', 'bac kan', 'lang son', 
-      'tuyen quang', 'thai nguyen', 'phu tho', 'bac giang', 'lai chau', 'dien bien', 
-      'son la', 'yen bai', 'hoa binh', 'kon tum', 'gia lai', 'dak lak', 'dak nong', 
+      'sa pa', 'da lat', 'moc chau', 'ha giang', 'cao bang', 'bac kan', 'lang son',
+      'tuyen quang', 'thai nguyen', 'phu tho', 'bac giang', 'lai chau', 'dien bien',
+      'son la', 'yen bai', 'hoa binh', 'kon tum', 'gia lai', 'dak lak', 'dak nong',
       'lam dong', 'buon ma thuot', 'pleiku', 'mang den', 'ta xua', 'bao loc'
     ];
-    
+
     const cityKeywords = [
-      'ha noi', 'ho chi minh', 'sai gon', 'da nang', 'hai phong', 'can tho', 'hue', 
-      'hoi an', 'ninh binh', 'vinh', 'thanh hoa', 'nam dinh', 'thai binh', 'hai duong', 
+      'ha noi', 'ho chi minh', 'sai gon', 'da nang', 'hai phong', 'can tho', 'hue',
+      'hoi an', 'ninh binh', 'vinh', 'thanh hoa', 'nam dinh', 'thai binh', 'hai duong',
       'hung yen', 'vinh phuc', 'bac ninh', 'dong nai', 'bien hoa', 'binh duong', 'thu dau mot'
     ];
-    
+
     const countrysideKeywords = [
-      'can tho', 'vinh long', 'long an', 'tien giang', 'ben tre', 'tra vinh', 'dong thap', 
-      'an giang', 'kien giang', 'hau giang', 'soc trang', 'bac lieu', 'ca mau', 'my tho', 
+      'can tho', 'vinh long', 'long an', 'tien giang', 'ben tre', 'tra vinh', 'dong thap',
+      'an giang', 'kien giang', 'hau giang', 'soc trang', 'bac lieu', 'ca mau', 'my tho',
       'chau doc', 'ha tien'
     ];
 
@@ -438,8 +438,8 @@ export default function TrangChu() {
               })
               .slice(0, 3)
               .map((tour) => (
-              <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
-            ))}
+                <TourCard key={tour.id} tour={tour} dinhDangGia={dinhDangGia} />
+              ))}
           </div>
         </div>
       </div>
@@ -459,7 +459,7 @@ export default function TrangChu() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { name: 'Hạ Long', image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=400' },
-              { name: 'Sapa', image: 'https://images.unsplash.com/photo-1609412058473-c199497c3c5d?w=400' },
+              { name: 'Sa Pa', image: 'https://images.unsplash.com/photo-1609412058473-c199497c3c5d?w=400' },
               { name: 'Hội An', image: 'https://images.unsplash.com/photo-1562005094-c724030f99bd?w=400' },
               { name: 'Phú Quốc', image: 'https://images.unsplash.com/photo-1514890084135-f16d926f4d03?w=400' },
               { name: 'Đà Lạt', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400' },
@@ -469,27 +469,27 @@ export default function TrangChu() {
             ].map((dest, idx) => {
               const tourCount = allTours.filter(tour => khopDiemDen(tour.destination, dest.name)).length;
               return (
-              <div
-                key={idx}
-                onClick={() => xuLyChonDiemDen(dest.name)}
-                className={`relative group cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all ${selectedDestination === dest.name ? 'ring-4 ring-blue-500' : ''
-                  }`}
-              >
-                <img
-                  src={dest.image}
-                  alt={dest.name}
-                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4">
-                  <h3 className="text-white font-bold text-xl mb-1">{dest.name}</h3>
-                  <p className="text-white/90 text-sm">{tourCount} tour</p>
-                </div>
-                {selectedDestination === dest.name && (
-                  <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                    Đã chọn
+                <div
+                  key={idx}
+                  onClick={() => xuLyChonDiemDen(dest.name)}
+                  className={`relative group cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all ${selectedDestination === dest.name ? 'ring-4 ring-blue-500' : ''
+                    }`}
+                >
+                  <img
+                    src={dest.image}
+                    alt={dest.name}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4">
+                    <h3 className="text-white font-bold text-xl mb-1">{dest.name}</h3>
+                    <p className="text-white/90 text-sm">{tourCount} tour</p>
                   </div>
-                )}
-              </div>
+                  {selectedDestination === dest.name && (
+                    <div className="absolute top-2 right-2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                      Đã chọn
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -577,11 +577,10 @@ export default function TrangChu() {
                     key={item}
                     type="button"
                     onClick={() => chuyenTrangTour(item)}
-                    className={`h-9 min-w-9 rounded-full px-3 text-sm font-semibold transition-colors ${
-                      item === tourPage
+                    className={`h-9 min-w-9 rounded-full px-3 text-sm font-semibold transition-colors ${item === tourPage
                         ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
+                      }`}
                     aria-current={item === tourPage ? 'page' : undefined}
                   >
                     {item}

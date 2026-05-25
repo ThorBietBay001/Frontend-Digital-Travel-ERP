@@ -4,12 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import CuaSoXacThuc from '../modals/CuaSoXacThuc';
 import FAQModal from '../modals/FAQModal';
 import { khService } from '../../services/khService';
-import { unwrapPageContent } from '../../services/apiHelpers';
+import { mapProfile, unwrapData, unwrapPageContent } from '../../services/apiHelpers';
+import { AUTH_SESSION_CLEARED_EVENT, hasActiveSession } from '../../services/api';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('token'));
+  const [isLoggedIn, setIsLoggedIn] = useState(hasActiveSession);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -27,6 +28,20 @@ export default function Header() {
     { id: 'city', name: 'Thành Phố', icon: '🏙️' },
     { id: 'countryside', name: 'Miền Tây', icon: '🌾' },
   ];
+
+  useEffect(() => {
+    const handleSessionCleared = () => {
+      setIsLoggedIn(false);
+      setNotifications([]);
+      setShowNotifications(false);
+      if (window.location.pathname.includes('/passport')) {
+        window.location.href = '/';
+      }
+    };
+
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared);
+    return () => window.removeEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared);
+  }, []);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -52,7 +67,11 @@ export default function Header() {
       }
 
       try {
-        const res = await khService.getMyBookings({ size: 5 });
+        const [res, profileResponse] = await Promise.all([
+          khService.getMyBookings({ size: 5 }),
+          khService.layHoChieuSo()
+        ]);
+        localStorage.setItem('userProfile', JSON.stringify(mapProfile(unwrapData(profileResponse))));
         const items = unwrapPageContent(res).map((booking: any) => {
           const statusMap: Record<string, string> = {
             'CHO_XAC_NHAN': 'Chờ xác nhận',
@@ -60,19 +79,20 @@ export default function Header() {
             'DA_HUY': 'Đã hủy',
             'HOAN_THANH': 'Hoàn thành'
           };
-          const trangThaiText = statusMap[booking.trangThai] || booking.trangThai;
+          const trangThaiText = booking.trangThai === 'CHO_XAC_NHAN' && !booking.daBaoChuyenKhoan
+            ? 'Chưa xác nhận chuyển khoản'
+            : statusMap[booking.trangThai] || booking.trangThai;
           
           return {
             id: booking.maDatTour,
             title: 'Cập nhật đơn đặt tour',
             desc: `${booking.tieuDeTour || booking.maTourThucTe}: ${trangThaiText}`,
             time: booking.ngayDat ? new Date(booking.ngayDat).toLocaleDateString('vi-VN') : '',
-            unread: booking.trangThai === 'CHO_XAC_NHAN'
+            unread: booking.trangThai === 'CHO_XAC_NHAN' && Boolean(booking.daBaoChuyenKhoan)
           };
         });
         setNotifications(items);
-      } catch (error) {
-        console.error('Không thể tải thông báo:', error);
+      } catch {
         setNotifications([]);
       }
     };

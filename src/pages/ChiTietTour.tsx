@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import {
   Star, ArrowLeft, Check, X, Leaf, Eye, Utensils, ChevronRight, Compass, MapPin, ThumbsUp
@@ -8,6 +8,7 @@ import { khService } from '../services/khService';
 import { mapTourDetail, unwrapData, unwrapPageContent } from '../services/apiHelpers';
 import CuaSoDatTour from '../components/booking/CuaSoDatTour';
 import CuaSoXacThuc from '../components/modals/CuaSoXacThuc';
+import { hasActiveSession } from '../services/api';
 
 export default function ChiTietTour() {
   const { tourId } = useParams();
@@ -20,6 +21,11 @@ export default function ChiTietTour() {
   const [showCuaSoXacThuc, setShowCuaSoXacThuc] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [tourReviewsList, setTourReviewsList] = useState<any[]>([]);
+
+  const handleBookingSessionExpired = useCallback(() => {
+    setShowCuaSoDatTour(false);
+    setShowCuaSoXacThuc(true);
+  }, []);
 
   // Reviews filters and likes state
   const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'images' | '5star' | '4star' | '3star' | '2star' | '1star'>('all');
@@ -774,7 +780,7 @@ export default function ChiTietTour() {
                 <button
                   type="button"
                   onClick={() => {
-                    const isLoggedIn = !!localStorage.getItem('token');
+                    const isLoggedIn = hasActiveSession();
                     if (!isLoggedIn) {
                       setShowCuaSoXacThuc(true);
                     } else {
@@ -797,6 +803,7 @@ export default function ChiTietTour() {
             <CuaSoDatTour
               tour={tour}
               onClose={() => setShowCuaSoDatTour(false)}
+              onSessionExpired={handleBookingSessionExpired}
             />
           )}
 
