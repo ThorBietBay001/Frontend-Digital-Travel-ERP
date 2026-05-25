@@ -552,23 +552,23 @@ export default function TrangChu() {
           <div className="mt-10 flex items-center justify-center">
             <nav
               aria-label="Phân trang tour"
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-2 py-2 shadow-sm"
+              className="inline-flex items-center gap-2"
             >
               <button
                 type="button"
                 onClick={() => chuyenTrangTour(tourPage - 1)}
                 disabled={tourPage === 1}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-35"
+                className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:pointer-events-none disabled:bg-slate-100 disabled:text-slate-300"
                 aria-label="Trang trước"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="size-3.5" />
               </button>
 
               {pageItems.map((item, index) => (
                 item === 'ellipsis' ? (
                   <span
                     key={`ellipsis-${index}`}
-                    className="flex h-9 min-w-7 items-center justify-center text-sm font-semibold text-gray-400"
+                    className="flex size-9 items-center justify-center rounded-lg border border-slate-100 bg-white text-sm font-semibold text-slate-400"
                   >
                     ...
                   </span>
@@ -577,9 +577,9 @@ export default function TrangChu() {
                     key={item}
                     type="button"
                     onClick={() => chuyenTrangTour(item)}
-                    className={`h-9 min-w-9 rounded-full px-3 text-sm font-semibold transition-colors ${item === tourPage
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    className={`size-9 rounded-lg border bg-white text-sm font-semibold transition-colors ${item === tourPage
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600'
+                        : 'border-slate-100 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                       }`}
                     aria-current={item === tourPage ? 'page' : undefined}
                   >
@@ -592,10 +592,10 @@ export default function TrangChu() {
                 type="button"
                 onClick={() => chuyenTrangTour(tourPage + 1)}
                 disabled={tourPage === totalTourPages}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:pointer-events-none disabled:opacity-35"
+                className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:pointer-events-none disabled:bg-slate-100 disabled:text-slate-300"
                 aria-label="Trang sau"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="size-3.5" />
               </button>
             </nav>
           </div>

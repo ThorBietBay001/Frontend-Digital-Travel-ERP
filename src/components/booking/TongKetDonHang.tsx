@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gift, Ticket, Leaf, Star, Calendar, ShieldCheck } from 'lucide-react';
+import { Gift, Ticket, Leaf, Calendar, ShieldCheck } from 'lucide-react';
 import type { Tour, Voucher } from '../../types';
 
 interface OrderSummaryProps {
@@ -9,10 +9,6 @@ interface OrderSummaryProps {
   setSelectedVoucher: (id: string | null) => void;
   tinhTongTien: () => number;
   tinhDiemXanh: () => number;
-  useGreenPoints: boolean;
-  setUseGreenPoints: (use: boolean) => void;
-  userGreenPoints: number;
-  greenPointsDiscount: number;
   extraServicesTotal: number;
   passengerFareSummary: {
     adultCount: number;
@@ -34,10 +30,6 @@ export default function TongKetDonHang({
   setSelectedVoucher,
   tinhTongTien,
   tinhDiemXanh,
-  useGreenPoints,
-  setUseGreenPoints,
-  userGreenPoints,
-  greenPointsDiscount,
   extraServicesTotal,
   passengerFareSummary,
   currentStep,
@@ -74,7 +66,7 @@ export default function TongKetDonHang({
     }
   };
 
-  const finalTotal = Math.max(0, tinhTongTien() - (useGreenPoints ? greenPointsDiscount : 0));
+  const finalTotal = tinhTongTien();
 
   return (
     <div className="bg-white rounded-2xl p-6 border-t-4 border-t-blue-600 shadow-sm space-y-5 transition-all duration-300">
@@ -206,27 +198,6 @@ export default function TongKetDonHang({
             </div>
           </div>
 
-          {userGreenPoints > 0 && (
-            <div className="space-y-3 bg-green-50/30 p-4 rounded-xl border border-green-150 shadow-sm">
-              <h4 className="font-bold text-green-900 text-xs flex items-center space-x-1.5 uppercase tracking-wide">
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                <span>Sử dụng Green Points</span>
-              </h4>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useGreenPoints}
-                  onChange={(e) => setUseGreenPoints(e.target.checked)}
-                  className="rounded text-green-600 focus:ring-green-500/20 h-4.5 w-4.5 border-slate-300"
-                />
-                <div className="flex-1">
-                  <span className="block text-xs font-bold text-green-900">Dùng {userGreenPoints} điểm tích lũy</span>
-                  <span className="block text-[10px] text-green-750 mt-0.5 font-bold">Giảm trừ ngay: -{formatPrice(greenPointsDiscount)}</span>
-                </div>
-              </label>
-            </div>
-          )}
-
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100/50 text-xs font-medium text-slate-650">
             <div className="flex justify-between">
               <span>Đơn giá tour ({numPeople} người)</span>
@@ -259,18 +230,6 @@ export default function TongKetDonHang({
                 </span>
                 <span className="font-bold">
                   -{formatPrice(preVoucherTotal - tinhTongTien())}
-                </span>
-              </div>
-            )}
-
-            {useGreenPoints && (
-              <div className="flex justify-between text-green-700">
-                <span className="flex items-center space-x-1 font-bold">
-                  <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
-                  <span>Khấu trừ Green Points</span>
-                </span>
-                <span className="font-bold">
-                  -{formatPrice(greenPointsDiscount)}
                 </span>
               </div>
             )}

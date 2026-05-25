@@ -3,7 +3,7 @@ import {
   User, Calendar, Wallet,
   MapPin, Star, Clock, CreditCard,
   Phone, Edit, Gift, Ticket, X, Check, Bell, Key,
-  AlertTriangle, ShieldAlert, FileText, MessageSquare, ArrowRight, CheckCircle, ChevronDown, Search
+  AlertTriangle, ShieldAlert, FileText, MessageSquare, ArrowRight, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Search
 } from 'lucide-react';
 import { khService } from '../services/khService';
 import {
@@ -20,7 +20,36 @@ import { Link, useNavigate } from 'react-router';
 import { hasActiveSession } from '../services/api';
 
 type Tab = 'profile' | 'bookings' | 'vouchers' | 'complaints';
-type BookingFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
+type BookingFilter =
+  | 'all'
+  | 'CHO_XAC_NHAN'
+  | 'DA_XAC_NHAN'
+  | 'KET_THUC'
+  | 'CHO_HUY'
+  | 'DA_HUY'
+  | 'TU_CHOI_HOAN_TIEN'
+  | 'HET_HAN_GIU_CHO'
+  | 'THANH_TOAN_THAT_BAI';
+
+const taoDanhSachTrang = (totalPages: number, currentPage: number) => {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = Array.from(
+    new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1])
+  )
+    .filter(page => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  return pages.reduce<(number | 'ellipsis')[]>((items, page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) {
+      items.push('ellipsis');
+    }
+    items.push(page);
+    return items;
+  }, []);
+};
 
 interface ComplaintTicket {
   id: string;
@@ -402,7 +431,7 @@ export default function HoChieuSo() {
     }
   };
 
-  const getStatusBadge = (status: string, hasConfirmedTransfer = true) => {
+  const getStatusBadge = (status: string) => {
     if (status === 'DA_QUYET_TOAN') status = 'KET_THUC';
     if (status === 'CHO_HOAN_TIEN') status = 'CHO_HUY';
     if (status === 'TU_CHOI_HOAN_TIEN') status = 'Hủy thất bại';
@@ -421,9 +450,6 @@ export default function HoChieuSo() {
       case 'CHO_HOAN_TIEN':
         return <span className="px-3 py-1 bg-fuchsia-50 text-fuchsia-700 rounded-full text-xs font-bold border border-fuchsia-200">Chờ hoàn tiền</span>;
       case 'CHO_XAC_NHAN':
-        if (!hasConfirmedTransfer) {
-          return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold border border-slate-200">Chưa xác nhận chuyển khoản</span>;
-        }
         return (
           <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200/60 flex items-center space-x-1.5 animate-pulse">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -445,7 +471,7 @@ export default function HoChieuSo() {
     }
   };
 
-  const layTenTrangThaiDon = (status: string, hasConfirmedTransfer = true) => {
+  const layTenTrangThaiDon = (status: string) => {
     if (status === 'DA_QUYET_TOAN') status = 'KET_THUC';
     if (status === 'CHO_HOAN_TIEN') status = 'CHO_HUY';
     if (status === 'TU_CHOI_HOAN_TIEN') return 'Hủy thất bại';
@@ -455,7 +481,7 @@ export default function HoChieuSo() {
       case 'KET_THUC': return 'Đã hoàn thành';
       case 'DA_QUYET_TOAN': return 'Đã quyết toán';
       case 'DA_HUY': return 'Đã hủy';
-      case 'CHO_XAC_NHAN': return hasConfirmedTransfer ? 'Chờ xác nhận' : 'Chưa xác nhận chuyển khoản';
+      case 'CHO_XAC_NHAN': return 'Chờ xác nhận';
       case 'CHO_HUY': return 'Chờ hủy';
       case 'CHO_HOAN_TIEN': return 'Chờ hoàn tiền';
       case 'TU_CHOI_HOAN_TIEN': return 'Từ chối hoàn tiền';
@@ -723,18 +749,7 @@ export default function HoChieuSo() {
   // Filtered Bookings
   const filteredBookings = bookings.filter(booking => {
     // 1. Status Filter
-    let statusMatch = true;
-    if (bookingFilter !== 'all') {
-      if (bookingFilter === 'upcoming') {
-        statusMatch = ['CHO_XAC_NHAN', 'DA_XAC_NHAN'].includes(booking.status);
-      } else if (bookingFilter === 'completed') {
-        statusMatch = ['KET_THUC', 'DA_QUYET_TOAN'].includes(booking.status);
-      } else if (bookingFilter === 'cancelled') {
-        statusMatch = ['CHO_HUY', 'CHO_HOAN_TIEN', 'DA_HUY', 'TU_CHOI_HOAN_TIEN', 'HET_HAN_GIU_CHO', 'THANH_TOAN_THAT_BAI'].includes(booking.status);
-      } else {
-        statusMatch = (booking.status as string) === bookingFilter;
-      }
-    }
+    const statusMatch = bookingFilter === 'all' || booking.status === bookingFilter;
 
     if (!statusMatch) return false;
 
@@ -754,6 +769,7 @@ export default function HoChieuSo() {
   const bookingsPerPage = 5;
   const totalBookingPages = Math.ceil(filteredBookings.length / bookingsPerPage);
   const currentBookingPage = Math.min(bookingPage, Math.max(totalBookingPages, 1));
+  const bookingPageItems = taoDanhSachTrang(totalBookingPages, currentBookingPage);
   const pagedBookings = filteredBookings.slice(
     (currentBookingPage - 1) * bookingsPerPage,
     currentBookingPage * bookingsPerPage
@@ -1059,9 +1075,14 @@ export default function HoChieuSo() {
                         className="w-full pl-4 pr-10 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all appearance-none cursor-pointer shadow-sm"
                       >
                         <option value="all">Tất cả chuyến đi</option>
-                        <option value="upcoming">Sắp khởi hành</option>
-                        <option value="completed">Đã hoàn thành</option>
-                        <option value="cancelled">Đã hủy & Hoàn tiền</option>
+                        <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
+                        <option value="DA_XAC_NHAN">Đã xác nhận</option>
+                        <option value="KET_THUC">Đã hoàn thành</option>
+                        <option value="CHO_HUY">Chờ hủy</option>
+                        <option value="DA_HUY">Đã hủy</option>
+                        <option value="TU_CHOI_HOAN_TIEN">Từ chối hoàn tiền</option>
+                        <option value="HET_HAN_GIU_CHO">Hết hạn giữ chỗ</option>
+                        <option value="THANH_TOAN_THAT_BAI">Thanh toán thất bại</option>
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                         <ChevronDown className="w-3.5 h-3.5" />
@@ -1091,7 +1112,7 @@ export default function HoChieuSo() {
                                 <h3 className="font-extrabold text-lg text-gray-900 leading-snug">{booking.tourName}</h3>
                                 <p className="text-gray-500 text-xs font-semibold mt-1">Mã đặt tour: <span className="font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{booking.bookingCode}</span></p>
                               </div>
-                              {getStatusBadge(booking.status, booking.hasConfirmedTransfer)}
+                              {getStatusBadge(booking.status)}
                             </div>
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-4 text-sm text-gray-600">
@@ -1123,7 +1144,7 @@ export default function HoChieuSo() {
                               <span>Xem vé chi tiết</span>
                             </button>
 
-                            {['upcoming', 'DA_XAC_NHAN', 'CHO_XAC_NHAN'].includes(booking.status) && (
+                            {['DA_XAC_NHAN', 'CHO_XAC_NHAN'].includes(booking.status) && (
                               <button
                                 onClick={() => handleOpenCancelModal(booking)}
                                 className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1"
@@ -1170,23 +1191,29 @@ export default function HoChieuSo() {
                         <span className="text-xs font-bold text-slate-500">
                           Trang {currentBookingPage}/{totalBookingPages} • {filteredBookings.length} chuyến đi
                         </span>
-                        <div className="flex items-center gap-1.5">
+                        <nav aria-label="Phân trang chuyến đi" className="inline-flex items-center gap-2">
                           <button
                             type="button"
                             disabled={currentBookingPage === 1}
                             onClick={() => setBookingPage(prev => Math.max(1, prev - 1))}
-                            className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            aria-label="Trang trước"
+                            className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
                           >
-                            Trước
+                            <ChevronLeft className="size-3.5" />
                           </button>
-                          {Array.from({ length: totalBookingPages }, (_, idx) => idx + 1).map(page => (
+                          {bookingPageItems.map((page, index) => page === 'ellipsis' ? (
+                            <span key={`ellipsis-${index}`} className="flex size-9 items-center justify-center rounded-lg border border-slate-100 bg-white text-sm font-semibold text-slate-400">
+                              ...
+                            </span>
+                          ) : (
                             <button
                               key={page}
                               type="button"
                               onClick={() => setBookingPage(page)}
-                              className={`w-9 h-9 rounded-lg text-xs font-black border transition-colors ${page === currentBookingPage
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                              aria-current={page === currentBookingPage ? 'page' : undefined}
+                              className={`size-9 rounded-lg border bg-white text-sm font-semibold transition-colors ${page === currentBookingPage
+                                ? 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600'
+                                : 'border-slate-100 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                                 }`}
                             >
                               {page}
@@ -1196,11 +1223,12 @@ export default function HoChieuSo() {
                             type="button"
                             disabled={currentBookingPage === totalBookingPages}
                             onClick={() => setBookingPage(prev => Math.min(totalBookingPages, prev + 1))}
-                            className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            aria-label="Trang sau"
+                            className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
                           >
-                            Sau
+                            <ChevronRight className="size-3.5" />
                           </button>
-                        </div>
+                        </nav>
                       </div>
                     )}
                   </div>
@@ -1656,7 +1684,7 @@ export default function HoChieuSo() {
                       className="w-full h-44 object-cover"
                     />
                     <div className="absolute top-4 right-4">
-                      {getStatusBadge(selectedBookingForDetail.status, selectedBookingForDetail.hasConfirmedTransfer)}
+                      {getStatusBadge(selectedBookingForDetail.status)}
                     </div>
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
                       <h3 className="font-extrabold text-lg leading-tight">{selectedBookingForDetail.tourName}</h3>
@@ -1725,7 +1753,7 @@ export default function HoChieuSo() {
                       <span>Khởi hành</span>
                       <span className="font-bold text-right">{formatDate(selectedBookingForDetail.departureDate)}</span>
                       <span>Trạng thái</span>
-                      <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status, selectedBookingForDetail.hasConfirmedTransfer)}</span>
+                      <span className="font-bold text-right">{layTenTrangThaiDon(selectedBookingForDetail.status)}</span>
                       <span>Người đặt</span>
                       <span className="font-bold text-right">{selectedBookingForDetail.customerName || profile.fullName}</span>
                       <span>Số khách</span>
@@ -1822,7 +1850,7 @@ export default function HoChieuSo() {
                   </div>
 
                   {/* UC33/UC50: Refund / Cancellation state display */}
-                  {['cancelled', 'DA_HUY', 'CHO_HUY', 'CHO_HOAN_TIEN', 'TU_CHOI_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
+                  {['DA_HUY', 'CHO_HUY', 'CHO_HOAN_TIEN', 'TU_CHOI_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
                     <div className={`rounded-2xl p-4 space-y-2 border ${['CHO_HUY', 'CHO_HOAN_TIEN'].includes(selectedBookingForDetail.status)
                       ? 'bg-amber-50 border-amber-200 text-amber-850'
                       : selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN'
@@ -1842,7 +1870,7 @@ export default function HoChieuSo() {
                             Hủy thất bại
                           </>
                         )}
-                        {['cancelled', 'DA_HUY'].includes(selectedBookingForDetail.status) && (
+                        {selectedBookingForDetail.status === 'DA_HUY' && (
                           <>
                             <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
                             Đã hoàn tiền thành công
@@ -1852,7 +1880,7 @@ export default function HoChieuSo() {
                       <p className="text-[10px] text-gray-650 font-medium">
                         {selectedBookingForDetail.status === 'TU_CHOI_HOAN_TIEN' && "Yêu cầu hủy không được duyệt do không đáp ứng điều kiện hủy tour. Vui lòng liên hệ hỗ trợ nếu cần kiểm tra thêm."}
                         {['CHO_HUY', 'CHO_HOAN_TIEN'].includes(selectedBookingForDetail.status) && `Yêu cầu hủy tour của bạn đã được tiếp nhận và chuyển sang phòng ban đối soát tài chính. Ban quản trị đang xử lý hoàn tiền dự kiến: ${formatPrice(selectedBookingForDetail.totalAmount)}.`}
-                        {['cancelled', 'DA_HUY'].includes(selectedBookingForDetail.status) && `Số tiền hoàn trả đã được quyết toán và chuyển khoản thành công về ví/tài khoản của bạn. Trạng thái tour đã chính thức được đóng.`}
+                        {selectedBookingForDetail.status === 'DA_HUY' && `Số tiền hoàn trả đã được quyết toán và chuyển khoản thành công về ví/tài khoản của bạn. Trạng thái tour đã chính thức được đóng.`}
                       </p>
                     </div>
                   )}

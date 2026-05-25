@@ -30,6 +30,7 @@ export default function ChiTietTour() {
   // Reviews filters and likes state
   const [activeReviewFilter, setActiveReviewFilter] = useState<'all' | 'images' | '5star' | '4star' | '3star' | '2star' | '1star'>('all');
   const [helpfulCounts, setHelpfulCounts] = useState<Record<number, number>>({});
+  const [pendingHelpfulIndex, setPendingHelpfulIndex] = useState<number | null>(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -187,7 +188,7 @@ export default function ChiTietTour() {
 
   // Authentic Customer Reviews List is now fetched from the API
 
-  const handleHelpfulClick = (idx: number) => {
+  const toggleHelpful = (idx: number) => {
     setHelpfulCounts(prev => {
       const current = prev[idx] !== undefined ? prev[idx] : tourReviewsList[idx].helpful;
       const isAlreadyClicked = prev[idx] !== undefined && prev[idx] > tourReviewsList[idx].helpful;
@@ -196,6 +197,16 @@ export default function ChiTietTour() {
         [idx]: isAlreadyClicked ? current - 1 : current + 1
       };
     });
+  };
+
+  const handleHelpfulClick = (idx: number) => {
+    if (!hasActiveSession()) {
+      setPendingHelpfulIndex(idx);
+      setShowCuaSoXacThuc(true);
+      return;
+    }
+
+    toggleHelpful(idx);
   };
 
   const filteredReviewsList = tourReviewsList.filter((review) => {
@@ -782,6 +793,7 @@ export default function ChiTietTour() {
                   onClick={() => {
                     const isLoggedIn = hasActiveSession();
                     if (!isLoggedIn) {
+                      setPendingHelpfulIndex(null);
                       setShowCuaSoXacThuc(true);
                     } else {
                       setShowCuaSoDatTour(true);
@@ -809,10 +821,18 @@ export default function ChiTietTour() {
 
           {showCuaSoXacThuc && (
             <CuaSoXacThuc
-              onClose={() => setShowCuaSoXacThuc(false)}
+              onClose={() => {
+                setPendingHelpfulIndex(null);
+                setShowCuaSoXacThuc(false);
+              }}
               onLoginSuccess={() => {
                 setShowCuaSoXacThuc(false);
-                setShowCuaSoDatTour(true);
+                if (pendingHelpfulIndex !== null) {
+                  toggleHelpful(pendingHelpfulIndex);
+                  setPendingHelpfulIndex(null);
+                } else {
+                  setShowCuaSoDatTour(true);
+                }
               }}
             />
           )}

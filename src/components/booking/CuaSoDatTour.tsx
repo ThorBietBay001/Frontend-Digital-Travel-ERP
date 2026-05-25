@@ -94,10 +94,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
   const [bookingStatus, setBookingStatus] = useState('CHO_XAC_NHAN');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [useGreenPoints, setUseGreenPoints] = useState(false);
   const [expirationNotice, setExpirationNotice] = useState<'HOLD' | 'PAYMENT' | null>(null);
-
-  const greenPointsDiscount = (profile.greenPoints || 0) * 500;
 
   useEffect(() => {
     const loadBookingData = async () => {
@@ -422,7 +419,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
   };
 
   const getPaymentBrandInfo = () => {
-    const totalAmount = Math.max(0, tinhTongTien() - (useGreenPoints ? greenPointsDiscount : 0));
+    const totalAmount = tinhTongTien();
     switch (paymentMethod) {
       case 'ewallet':
         return {
@@ -739,10 +736,6 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
                       setSelectedVoucher={setSelectedVoucher}
                       tinhTongTien={tinhTongTien}
                       tinhDiemXanh={tinhDiemXanh}
-                      useGreenPoints={useGreenPoints}
-                      setUseGreenPoints={setUseGreenPoints}
-                      userGreenPoints={profile.greenPoints || 0}
-                      greenPointsDiscount={greenPointsDiscount}
                       extraServicesTotal={extraServicesTotal}
                       passengerFareSummary={passengerFareSummary}
                       currentStep={currentStep}
@@ -778,10 +771,6 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
                       setSelectedVoucher={setSelectedVoucher}
                       tinhTongTien={tinhTongTien}
                       tinhDiemXanh={tinhDiemXanh}
-                      useGreenPoints={useGreenPoints}
-                      setUseGreenPoints={setUseGreenPoints}
-                      userGreenPoints={profile.greenPoints || 0}
-                      greenPointsDiscount={greenPointsDiscount}
                       extraServicesTotal={extraServicesTotal}
                       passengerFareSummary={passengerFareSummary}
                       currentStep={currentStep}
@@ -819,10 +808,6 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
                       setSelectedVoucher={setSelectedVoucher}
                       tinhTongTien={tinhTongTien}
                       tinhDiemXanh={tinhDiemXanh}
-                      useGreenPoints={useGreenPoints}
-                      setUseGreenPoints={setUseGreenPoints}
-                      userGreenPoints={profile.greenPoints || 0}
-                      greenPointsDiscount={greenPointsDiscount}
                       extraServicesTotal={extraServicesTotal}
                       passengerFareSummary={passengerFareSummary}
                       currentStep={currentStep}

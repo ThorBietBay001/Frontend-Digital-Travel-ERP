@@ -79,9 +79,7 @@ export default function Header() {
             'DA_HUY': 'Đã hủy',
             'HOAN_THANH': 'Hoàn thành'
           };
-          const trangThaiText = booking.trangThai === 'CHO_XAC_NHAN' && !booking.daBaoChuyenKhoan
-            ? 'Chưa xác nhận chuyển khoản'
-            : statusMap[booking.trangThai] || booking.trangThai;
+          const trangThaiText = statusMap[booking.trangThai] || booking.trangThai;
           
           return {
             id: booking.maDatTour,
