@@ -14,10 +14,13 @@ import type { TourInstance } from './mockData';
 import type { TourThucTeResponse, CapNhatTourThucTeRequest } from '../../services/tour-instance';
 import { tourInstanceService } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { mapTourInstanceStatus } from '../../utils/statusMapping';
 
 const TourInstanceList: React.FC = () => {
+  const { user } = useAuth();
+  const { notify } = useNotification();
   const [data, setData] = useState<TourInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +111,10 @@ const TourInstanceList: React.FC = () => {
 
 
   const openModal = (mode: typeof modalState.mode, tour?: TourInstance) => {
+    if (mode === 'create' && user?.maVaiTro === 'DIEUHANH') {
+      notify('Bạn không có quyền khởi tạo tour thực tế. Vui lòng liên hệ Quản trị viên hoặc bộ phận Sản phẩm.', { type: 'error' });
+      return;
+    }
     setModalState({ isOpen: true, mode, selectedTour: tour });
   };
 
@@ -234,8 +241,9 @@ const TourInstanceList: React.FC = () => {
       align: 'center',
       width: '12%',
       render: (record) => {
-        const canEditOrDelete = record.status === 'CHO_KICH_HOAT';
-        const canBan = record.status === 'MO_BAN';
+        const isInternalRole = user?.maVaiTro === 'ADMIN' || user?.maVaiTro === 'SANPHAM';
+        const canEditOrDelete = isInternalRole && record.status === 'CHO_KICH_HOAT';
+        const canBan = isInternalRole && record.status === 'MO_BAN';
 
         return (
           <div className="flex items-center justify-center gap-1">
@@ -253,30 +261,48 @@ const TourInstanceList: React.FC = () => {
               variant="ghost"
               size="sm"
               icon={<Pencil size={18} />}
-              onClick={() => canEditOrDelete && openModal('edit', record)}
+              onClick={() => {
+                if (!isInternalRole) {
+                  notify('Bạn không có quyền chỉnh sửa cấu hình tour. Vui lòng liên hệ bộ phận Sản phẩm.', { type: 'error' });
+                  return;
+                }
+                canEditOrDelete && openModal('edit', record);
+              }}
               className={`p-2 ${canEditOrDelete ? 'text-[#faad14] hover:text-[#d48806] hover:bg-orange-50' : 'opacity-40 cursor-not-allowed'}`}
               aria-label="Sửa"
-              disabled={!canEditOrDelete}
+              disabled={user?.maVaiTro === 'DIEUHANH'}
             />
 
             <Button
               variant="ghost"
               size="sm"
               icon={<Ban size={18} />}
-              onClick={() => canBan && openModal('delete', record)}
+              onClick={() => {
+                if (!isInternalRole) {
+                  notify('Bạn không có quyền khóa tour. Vui lòng liên hệ Admin.', { type: 'error' });
+                  return;
+                }
+                canBan && openModal('delete', record);
+              }}
               className={`p-2 ${canBan ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'opacity-40 cursor-not-allowed'}`}
               aria-label="Khóa tour"
-              disabled={!canBan}
+              disabled={user?.maVaiTro === 'DIEUHANH'}
             />
 
             <Button
               variant="ghost"
               size="sm"
               icon={<Trash2 size={18} />}
-              onClick={() => canEditOrDelete && openModal('delete', record)}
+              onClick={() => {
+                if (!isInternalRole) {
+                  notify('Bạn không có quyền xóa tour. Vui lòng liên hệ Admin.', { type: 'error' });
+                  return;
+                }
+                canEditOrDelete && openModal('delete', record);
+              }}
               className={`p-2 ${canEditOrDelete ? 'text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50' : 'opacity-40 cursor-not-allowed'}`}
               aria-label="Xóa"
-              disabled={!canEditOrDelete}
+              disabled={user?.maVaiTro === 'DIEUHANH'}
             />
           </div>
         );
@@ -302,7 +328,13 @@ const TourInstanceList: React.FC = () => {
             <h1 className="text-[32px] font-bold text-[#121C2C]"> Quản lý Tour thực tế</h1>
             {/* <p className="text-gray-500 text-sm mt-1">Quản lý và theo dõi các chuyến đi cụ thể đang hoạt động</p> */}
           </div>
-          <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => openModal('create')}>
+          <Button
+            variant="primary"
+            icon={<PlusCircle size={18} />}
+            onClick={() => openModal('create')}
+            className={user?.maVaiTro === 'DIEUHANH' ? 'opacity-50 cursor-not-allowed grayscale' : ''}
+            title={user?.maVaiTro === 'DIEUHANH' ? 'Bạn không có quyền khởi tạo' : ''}
+          >
             Khởi tạo Tour
           </Button>
         </div>
