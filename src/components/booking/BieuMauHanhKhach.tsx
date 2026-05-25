@@ -14,6 +14,8 @@ interface PassengerFormProps {
   numPeople: number;
   thayDoiSoLuongKhach: (num: number) => void;
   availableSeats: number;
+  bookingNote: string;
+  setBookingNote: (note: string) => void;
 }
 
 export default function BieuMauHanhKhach({
@@ -23,7 +25,9 @@ export default function BieuMauHanhKhach({
   setBookingType,
   numPeople,
   thayDoiSoLuongKhach,
-  availableSeats
+  availableSeats,
+  bookingNote,
+  setBookingNote
 }: PassengerFormProps) {
   return (
     <div className="bg-white rounded-2xl p-6 border-t-4 border-t-blue-600 shadow-sm animate-fadeIn space-y-8">
@@ -107,9 +111,8 @@ export default function BieuMauHanhKhach({
 
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-extrabold ${
-                  index === 0 ? 'bg-blue-600' : 'bg-slate-500'
-                }`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-extrabold ${index === 0 ? 'bg-blue-600' : 'bg-slate-500'
+                  }`}>
                   {index + 1}
                 </span>
                 <span>Thông tin hành khách {index + 1}</span>
@@ -193,6 +196,26 @@ export default function BieuMauHanhKhach({
             </div>
           </div>
         ))}
+      </div>
+
+      <hr className="border-slate-100" />
+
+      <div>
+        <label htmlFor="booking-note" className="block text-[12px] font-black text-slate-500 mb-1 uppercase tracking-widest">
+          Ghi chú đặt tour
+        </label>
+        <textarea
+          id="booking-note"
+          value={bookingNote}
+          onChange={(event) => setBookingNote(event.target.value)}
+          maxLength={2000}
+          rows={3}
+          className="w-full resize-none bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
+          placeholder="Ví dụ: Vui lòng bố trí chỗ ngồi gần nhau, hỗ trợ giờ tập trung..."
+        />
+        <p className="mt-1 text-right text-[10px] font-medium text-slate-400">
+          {bookingNote.length}/2000 ký tự
+        </p>
       </div>
     </div>
   );

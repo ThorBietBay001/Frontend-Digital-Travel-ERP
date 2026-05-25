@@ -83,6 +83,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
   const [selectedGreenActions, setSelectedGreenActions] = useState<Record<string, number>>({});
   const [selectedExtraServices, setSelectedExtraServices] = useState<Record<string, number>>({});
   const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
+  const [bookingNote, setBookingNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const [timeRemaining, setTimeRemaining] = useState(60 * 10); // 10 phút
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -336,6 +337,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     try {
       const bookingResponse = await khService.datTour({
         maTourThucTe: tour.id,
+        ghiChu: bookingNote.trim() || undefined,
         danhSachDichVu: Object.entries(selectedExtraServices).map(([id, quantity]) => ({ maDichVuThem: id, soLuong: quantity })),
         danhSachNguoiDongHanh: passengers.slice(1).map(passenger => ({
           hoTen: passenger.name.trim(),
@@ -724,6 +726,8 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
                       numPeople={numPeople}
                       thayDoiSoLuongKhach={thayDoiSoLuongKhach}
                       availableSeats={tour.availableSeats}
+                      bookingNote={bookingNote}
+                      setBookingNote={setBookingNote}
                     />
                   </div>
 

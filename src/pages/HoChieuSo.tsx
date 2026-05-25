@@ -1786,13 +1786,19 @@ export default function HoChieuSo() {
                                 <span className="whitespace-nowrap">CCCD: {p.cccd || 'Chưa cập nhật'}</span>
                               </div>
                               <div className="pl-3 text-[10px] text-rose-600 font-bold leading-snug">
-                                Lưu ý y tế: <span className="text-slate-600 font-semibold">{p.ghiChuYTe || p.ghiChu || 'Không có'}</span>
+                                Lưu ý y tế: <span className="text-slate-600 font-semibold">{p.ghiChuYTe || 'Không có'}</span>
                               </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
+                    <div className="pt-2 border-t border-slate-100 space-y-1">
+                      <h6 className="font-bold text-slate-900">Ghi chú đặt tour</h6>
+                      <p className="rounded-xl bg-slate-50/70 border border-slate-100 px-3 py-2 text-[10px] font-semibold text-slate-600 leading-relaxed">
+                        {selectedBookingForDetail.note || 'Không có'}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Payment / Cost summary */}
