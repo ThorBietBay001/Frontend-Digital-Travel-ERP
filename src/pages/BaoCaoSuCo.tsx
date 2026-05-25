@@ -50,8 +50,14 @@ const formatIncidentTime = (time?: string) => {
   return `${formattedTime} - ${formattedDate}`;
 };
 
+const formatAllergyNote = (allergy: unknown): string => {
+  const value = String(allergy || '').trim();
+  if (!value) return '';
+  return /^dị ứng(?:\s*:|\s|$)/i.test(value) ? value : `Dị ứng ${value}`;
+};
+
 const buildHealthNotes = (p: any): string => {
-  return [p.ghiChuYTe, p.diUng]
+  return [p.ghiChuYTe, formatAllergyNote(p.diUng)]
     .map((note) => String(note || '').trim())
     .filter(Boolean)
     .join(' | ');

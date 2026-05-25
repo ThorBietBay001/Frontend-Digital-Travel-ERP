@@ -1,14 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { 
-  Compass, 
-  Calendar, 
-  Users, 
-  Leaf, 
-  DollarSign, 
-  AlertTriangle, 
-  Bell, 
+import {
+  Compass,
+  Calendar,
+  Users,
+  Leaf,
+  DollarSign,
+  AlertTriangle,
+  Bell,
   LogOut,
-  X, 
+  X,
   CheckCircle,
   Send
 } from 'lucide-react';
@@ -89,10 +89,16 @@ export default function App() {
   const [settlementNoteContent, setSettlementNoteContent] = useState('');
   const [settlementReceiptUrl, setSettlementReceiptUrl] = useState('');
 
+  const formatAllergyNote = (allergy: unknown): string => {
+    const value = String(allergy || '').trim();
+    if (!value) return '';
+    return /^dị ứng(?:\s*:|\s|$)/i.test(value) ? value : `Dị ứng ${value}`;
+  };
+
   const buildHealthNotes = (p: any): string => {
     const notes = [
       p.ghiChuYTe,
-      p.diUng
+      formatAllergyNote(p.diUng)
     ]
       .map((note) => String(note || '').trim())
       .filter(Boolean);
@@ -155,13 +161,34 @@ export default function App() {
     return (passRes?.data || []).map(mapPassenger);
   };
 
-  const hydrateTourPassengers = async (tour: Tour): Promise<Tour> => {
-    try {
-      const tourPassengers = await loadPassengersForTour(tour.code);
-      return { ...tour, passengers: tourPassengers, guestsCount: tourPassengers.length };
-    } catch {
-      return tour;
+  const hydrateTourDetails = async (tour: Tour): Promise<Tour> => {
+    const [passengerResult, detailResult] = await Promise.allSettled([
+      loadPassengersForTour(tour.code),
+      hdvService.layLichTrinhTourThucTe(tour.code)
+    ]);
+    const hydratedTour = { ...tour };
+
+    if (passengerResult.status === 'fulfilled') {
+      hydratedTour.passengers = passengerResult.value;
+      hydratedTour.guestsCount = passengerResult.value.length;
     }
+
+    if (detailResult.status === 'fulfilled') {
+      const detail = detailResult.value?.data ?? detailResult.value;
+      hydratedTour.name = detail?.tieuDeTour || hydratedTour.name;
+      hydratedTour.durationDays = detail?.thoiLuong;
+      hydratedTour.maxGuests = detail?.soKhachToiDa;
+      hydratedTour.availableSeats = detail?.choConLai;
+      hydratedTour.currentPrice = detail?.giaHienHanh;
+      hydratedTour.itinerary = (detail?.lichTrinh || []).map((item: any) => ({
+        day: item.ngayThu,
+        title: item.hoatDong || 'Chưa cập nhật hoạt động',
+        description: item.moTa || undefined,
+        menu: item.thucDon || undefined
+      }));
+    }
+
+    return hydratedTour;
   };
 
   const mapIncident = (i: any): IncidentType => ({
@@ -201,9 +228,9 @@ export default function App() {
       const upcoming = accepted.filter((t: any) => ['CHO_KICH_HOAT', 'MO_BAN', 'SAP_DIEN_RA'].includes(t.trangThaiTour));
       const past = accepted.filter((t: any) => t.trangThaiTour === 'KET_THUC' || t.trangThaiTour === 'DA_QUYET_TOAN');
 
-      setPendingTours(await Promise.all(pending.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
-      setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
-      setPastTours(await Promise.all(past.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
+      setPendingTours(await Promise.all(pending.map((t: any) => hydrateTourDetails(mapAssignmentToTour(t)))));
+      setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourDetails(mapAssignmentToTour(t)))));
+      setPastTours(await Promise.all(past.map((t: any) => hydrateTourDetails(mapAssignmentToTour(t)))));
 
       const [allIncRes, allExpRes, guideExplanationRes, settlementInfoRes] = await Promise.all([
         hdvService.layTatCaSuCo().catch(() => null),
@@ -217,7 +244,7 @@ export default function App() {
       setSettlementInfoRequests(Array.isArray(settlementInfoRes?.data) ? settlementInfoRes.data : []);
 
       if (ongoingTour) {
-        const mappedTour = await hydrateTourPassengers({ ...mapAssignmentToTour(ongoingTour), destination: 'Đang đi' });
+        const mappedTour = await hydrateTourDetails({ ...mapAssignmentToTour(ongoingTour), destination: 'Đang đi' });
         setCurrentTour(mappedTour);
         setPassengers(mappedTour.passengers || []);
       } else {
@@ -485,9 +512,9 @@ export default function App() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 sm:p-4">
         {/* Mobile Device Frame Mockup for Browser Viewing */}
         <div className="w-full max-w-[420px] min-h-screen sm:min-h-[840px] sm:max-h-[860px] sm:rounded-[40px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 bg-white flex flex-col overflow-hidden relative">
-          
+
           {/* DangNhap view */}
-          <DangNhap 
+          <DangNhap
             loginCode={loginCode}
             setLoginCode={setLoginCode}
             loginPassword={loginPassword}
@@ -505,13 +532,13 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 sm:p-4">
       {/* Mobile Device Frame Mockup for Browser Viewing */}
       <div className="w-full max-w-[420px] min-h-screen sm:min-h-[840px] sm:max-h-[860px] sm:rounded-[40px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 bg-slate-50 flex flex-col overflow-hidden relative">
-        
+
         {/* Global Premium Application Top Bar (Flat Design) */}
         {activeTab !== 'profile' && (
           <header className="bg-white px-4 py-3 flex justify-between items-center border-b border-slate-100 shadow-sm sticky top-0 z-40">
             <div className="flex items-center space-x-2.5">
               {/* HoSoCaNhan avatar button on the far left */}
-              <button 
+              <button
                 onClick={() => setActiveTab('profile')}
                 className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-sky-400 to-sky-500 border border-white text-white font-extrabold text-[11px] flex items-center justify-center transition active:scale-90 shadow-sm shadow-sky-100 shrink-0 ring-2 ring-sky-50"
                 title="Xem hồ sơ"
@@ -527,7 +554,7 @@ export default function App() {
 
             <div className="flex items-center space-x-2">
               {/* Notification Icon */}
-              <button 
+              <button
                 onClick={() => setNotificationOpen(!notificationOpen)}
                 className="relative p-1.5 hover:bg-slate-50 rounded-full text-slate-600 transition active:scale-90"
               >
@@ -540,7 +567,7 @@ export default function App() {
               </button>
 
               {/* Logout Icon button */}
-              <button 
+              <button
                 onClick={xuLyDangXuat}
                 className="p-1.5 hover:bg-rose-50 hover:text-rose-500 rounded-full text-slate-500 transition active:scale-90"
                 title="Đăng xuất"
@@ -565,14 +592,14 @@ export default function App() {
                 </div>
                 <div className="flex items-center space-x-2">
                   {allNotifications.length > 0 && (
-                    <button 
+                    <button
                       onClick={handleClearAllNotifications}
                       className="text-[10px] text-slate-400 hover:text-rose-500 font-bold transition"
                     >
                       Xóa hết
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={() => setNotificationOpen(false)}
                     className="p-1 rounded-full text-slate-400 hover:text-slate-600 transition"
                   >
@@ -589,10 +616,10 @@ export default function App() {
               ) : (
                 <div className="space-y-2">
                   {allNotifications.map(n => (
-                    <div 
-                      key={n.id} 
+                    <div
+                      key={n.id}
                       onClick={() => handleMarkNotificationRead(n.id)}
-                      className={`p-3 rounded-2xl border text-xs text-left cursor-pointer transition relative overflow-hidden flex items-start space-x-2 ${n.read ? 'bg-white border-slate-100 text-slate-500' : 'bg-sky-50/50 border-sky-100 text-slate-700 font-semibold'}`}
+                      className={`p-3 rounded-2xl border text-xs text-left cursor-pointer transition relative overflow-hidden flex items-start space-x-2 ${n.type === 'GUIDE_EXPLANATION_REQUEST' ? 'pb-12' : ''} ${n.read ? 'bg-white border-slate-100 text-slate-500' : 'bg-sky-50/50 border-sky-100 text-slate-700 font-semibold'}`}
                     >
                       {!n.read && (
                         <span className="w-1.5 h-1.5 bg-sky-500 rounded-full shrink-0 mt-1.5"></span>
@@ -614,15 +641,16 @@ export default function App() {
                         {n.type === 'GUIDE_EXPLANATION_REQUEST' && (
                           <button
                             type="button"
+                            title="Cập nhật nội dung"
+                            aria-label="Cập nhật nội dung"
                             onClick={(event) => {
                               event.stopPropagation();
                               handleMarkNotificationRead(n.id);
                               handleOpenGuideExplanation(n.supportRequest);
                             }}
-                            className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-extrabold text-white bg-sky-500 hover:bg-sky-600 px-2.5 py-1.5 rounded-lg transition active:scale-95"
+                            className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/70 bg-gradient-to-br from-sky-400 to-blue-600 text-white shadow-[0_6px_16px_rgba(14,165,233,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:from-sky-500 hover:to-blue-700 hover:shadow-[0_10px_20px_rgba(14,165,233,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 active:translate-y-0 active:scale-95"
                           >
-                            <Send size={12} />
-                            Cập nhật nội dung
+                            <Send size={17} strokeWidth={1.85} />
                           </button>
                         )}
                         {n.type === 'SETTLEMENT_INFO_REQUEST' && (
@@ -657,7 +685,7 @@ export default function App() {
                 </div>
               )}
 
-              <button 
+              <button
                 onClick={() => setNotificationOpen(false)}
                 className="w-full py-2 bg-sky-400 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-md transition"
               >
@@ -774,7 +802,7 @@ export default function App() {
         {/* Main Content Area (Scrollable PWA Viewport) */}
         <main className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
           {activeTab === 'dashboard' && (
-            <BangDieuKhien 
+            <BangDieuKhien
               currentTour={currentTour}
               upcomingTours={upcomingTours}
               pastTours={pastTours}
@@ -795,7 +823,7 @@ export default function App() {
           )}
 
           {activeTab === 'attendance' && (
-            <DiemDanh 
+            <DiemDanh
               currentTour={currentTour}
               passengers={passengers}
               setPassengers={setPassengers}
@@ -803,7 +831,7 @@ export default function App() {
           )}
 
           {activeTab === 'green' && (
-            <DiemXanh 
+            <DiemXanh
               maTour={currentTour?.code}
               passengers={passengers}
               setPassengers={setPassengers}
@@ -811,7 +839,7 @@ export default function App() {
           )}
 
           {activeTab === 'expense' && (
-            <QuanLyChiPhi 
+            <QuanLyChiPhi
               maTour={currentTour?.code}
               currentTour={currentTour}
               pastTours={pastTours}
@@ -821,7 +849,7 @@ export default function App() {
           )}
 
           {activeTab === 'incident' && (
-            <BaoCaoSuCo 
+            <BaoCaoSuCo
               maTour={currentTour?.code}
               currentTour={currentTour}
               pastTours={pastTours}
@@ -832,7 +860,7 @@ export default function App() {
           )}
 
           {activeTab === 'profile' && (
-            <HoSoCaNhan 
+            <HoSoCaNhan
               onBack={() => setActiveTab('dashboard')}
               onLogout={xuLyDangXuat}
             />
@@ -842,7 +870,7 @@ export default function App() {
         {/* Premium Bottom PWA Tab bar Navigation (Fluid & Styled) */}
         {activeTab !== 'profile' && (
           <nav className="fixed bottom-0 left-0 right-0 max-w-[420px] mx-auto sm:absolute sm:max-w-none bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-between items-center py-2.5 px-3 z-40 shadow-lg shadow-sky-900/5">
-            <button 
+            <button
               onClick={() => setActiveTab('dashboard')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'dashboard' ? 'text-sky-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
             >
@@ -850,7 +878,7 @@ export default function App() {
               <span className="text-[9px] uppercase tracking-wider">Tổng quan</span>
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('schedule')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'schedule' ? 'text-sky-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
             >
@@ -858,7 +886,7 @@ export default function App() {
               <span className="text-[9px] uppercase tracking-wider">Lịch trình</span>
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('attendance')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'attendance' ? 'text-sky-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
             >
@@ -866,7 +894,7 @@ export default function App() {
               <span className="text-[9px] uppercase tracking-wider">Điểm danh</span>
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('green')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'green' ? 'text-emerald-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
             >
@@ -874,7 +902,7 @@ export default function App() {
               <span className="text-[9px] uppercase tracking-wider">Điểm xanh</span>
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('expense')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'expense' ? 'text-amber-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
             >
@@ -882,7 +910,7 @@ export default function App() {
               <span className="text-[9px] uppercase tracking-wider">Chi phí</span>
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('incident')}
               className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'incident' ? 'text-rose-500 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
             >
