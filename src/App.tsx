@@ -33,9 +33,10 @@ type AppNotification = {
   text: string;
   time: string;
   read: boolean;
-  type: 'ASSIGNMENT_CONFIRMATION' | 'ACTION_RESULT' | 'GUIDE_EXPLANATION_REQUEST';
+  type: 'ASSIGNMENT_CONFIRMATION' | 'ACTION_RESULT' | 'GUIDE_EXPLANATION_REQUEST' | 'SETTLEMENT_INFO_REQUEST';
   tour?: Tour;
   supportRequest?: GuideExplanationRequest;
+  settlementRequest?: SettlementInfoRequest;
 };
 
 type GuideExplanationRequest = {
@@ -44,6 +45,14 @@ type GuideExplanationRequest = {
   loaiYeuCau?: string;
   noiDung?: string;
   trangThai?: string;
+};
+
+type SettlementInfoRequest = {
+  maQuyetToan?: string;
+  maTour?: string;
+  tenTour?: string;
+  ghiChu?: string;
+  hoaDonAnh?: string;
 };
 
 export default function App() {
@@ -67,6 +76,7 @@ export default function App() {
   const [pastTours, setPastTours] = useState<Tour[]>([]);
   const [pendingTours, setPendingTours] = useState<Tour[]>([]);
   const [guideExplanationRequests, setGuideExplanationRequests] = useState<GuideExplanationRequest[]>([]);
+  const [settlementInfoRequests, setSettlementInfoRequests] = useState<SettlementInfoRequest[]>([]);
   const [acceptingAssignmentIds, setAcceptingAssignmentIds] = useState<string[]>([]);
   const [rejectingAssignmentIds, setRejectingAssignmentIds] = useState<string[]>([]);
   const [submittingGuideRequestIds, setSubmittingGuideRequestIds] = useState<string[]>([]);
@@ -75,6 +85,9 @@ export default function App() {
   const [guideProfile, setGuideProfile] = useState<any>(null);
   const [selectedGuideRequest, setSelectedGuideRequest] = useState<GuideExplanationRequest | null>(null);
   const [guideExplanationContent, setGuideExplanationContent] = useState('');
+  const [selectedSettlementRequest, setSelectedSettlementRequest] = useState<SettlementInfoRequest | null>(null);
+  const [settlementNoteContent, setSettlementNoteContent] = useState('');
+  const [settlementReceiptUrl, setSettlementReceiptUrl] = useState('');
 
   const buildHealthNotes = (p: any): string => {
     const notes = [
@@ -192,14 +205,16 @@ export default function App() {
       setUpcomingTours(await Promise.all(upcoming.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
       setPastTours(await Promise.all(past.map((t: any) => hydrateTourPassengers(mapAssignmentToTour(t)))));
 
-      const [allIncRes, allExpRes, guideExplanationRes] = await Promise.all([
+      const [allIncRes, allExpRes, guideExplanationRes, settlementInfoRes] = await Promise.all([
         hdvService.layTatCaSuCo().catch(() => null),
         hdvService.layTatCaChiPhi().catch(() => null),
-        hdvService.layYeuCauGiaiTrinh().catch(() => null)
+        hdvService.layYeuCauGiaiTrinh().catch(() => null),
+        hdvService.layQuyetToanCanBoSung().catch(() => null)
       ]);
       setIncidents(Array.isArray(allIncRes?.data) ? allIncRes.data.map(mapIncident) : []);
       setExpenses(Array.isArray(allExpRes?.data) ? allExpRes.data.map(mapExpense) : []);
       setGuideExplanationRequests(Array.isArray(guideExplanationRes?.data) ? guideExplanationRes.data : []);
+      setSettlementInfoRequests(Array.isArray(settlementInfoRes?.data) ? settlementInfoRes.data : []);
 
       if (ongoingTour) {
         const mappedTour = await hydrateTourPassengers({ ...mapAssignmentToTour(ongoingTour), destination: 'Đang đi' });
@@ -327,6 +342,50 @@ export default function App() {
     }
   };
 
+  const handleOpenSettlementInfo = (request?: SettlementInfoRequest) => {
+    if (!request) return;
+    setSelectedSettlementRequest(request);
+    setSettlementNoteContent('');
+    setSettlementReceiptUrl(request.hoaDonAnh || '');
+    setNotificationOpen(false);
+  };
+
+  const handleSubmitSettlementInfo = async () => {
+    const maQuyetToan = selectedSettlementRequest?.maQuyetToan;
+    if (!maQuyetToan || !settlementNoteContent.trim()) {
+      alert('Vui lòng nhập ghi chú bổ sung.');
+      return;
+    }
+
+    setSubmittingGuideRequestIds(prev => [...prev, maQuyetToan]);
+    try {
+      await hdvService.boSungQuyetToan(maQuyetToan, {
+        ghiChu: settlementNoteContent.trim(),
+        hoaDonAnh: settlementReceiptUrl.trim() || undefined
+      });
+      setNotifications(prev => [
+        {
+          id: `settlement-info-sent-${maQuyetToan}-${Date.now()}`,
+          text: `Bạn đã gửi bổ sung quyết toán cho tour ${selectedSettlementRequest?.maTour || maQuyetToan}.`,
+          time: 'Vừa xong',
+          read: false,
+          type: 'ACTION_RESULT'
+        },
+        ...prev
+      ]);
+      setSelectedSettlementRequest(null);
+      setSettlementNoteContent('');
+      setSettlementReceiptUrl('');
+      await loadHdvData();
+    } catch (e) {
+      console.error('Failed to submit settlement info', e);
+      const apiMessage = (e as any)?.response?.data?.message || (e as any)?.response?.data?.error;
+      alert(apiMessage || 'Không thể gửi bổ sung quyết toán. Vui lòng thử lại.');
+    } finally {
+      setSubmittingGuideRequestIds(prev => prev.filter(id => id !== maQuyetToan));
+    }
+  };
+
   // Compute attendance stats to pass down
   const attendanceStats = useMemo(() => {
     const total = passengers.length;
@@ -375,9 +434,23 @@ export default function App() {
     });
   }, [guideExplanationRequests, readNotificationIds]);
 
+  const settlementInfoNotifications = useMemo<AppNotification[]>(() => {
+    return settlementInfoRequests.map(request => {
+      const id = `settlement-info-${request.maQuyetToan}`;
+      return {
+        id,
+        text: `Kế toán yêu cầu bổ sung quyết toán tour ${request.maTour}${request.tenTour ? ` - ${request.tenTour}` : ''}.`,
+        time: 'Chờ ghi chú và hóa đơn ảnh',
+        read: readNotificationIds.includes(id),
+        type: 'SETTLEMENT_INFO_REQUEST',
+        settlementRequest: request
+      };
+    });
+  }, [readNotificationIds, settlementInfoRequests]);
+
   const allNotifications = useMemo(() => {
-    return [...guideExplanationNotifications, ...assignmentNotifications, ...notifications];
-  }, [assignmentNotifications, guideExplanationNotifications, notifications]);
+    return [...settlementInfoNotifications, ...guideExplanationNotifications, ...assignmentNotifications, ...notifications];
+  }, [assignmentNotifications, guideExplanationNotifications, notifications, settlementInfoNotifications]);
 
   const handleMarkNotificationRead = (id: string) => {
     setReadNotificationIds(prev => prev.includes(id) ? prev : [...prev, id]);
@@ -552,6 +625,20 @@ export default function App() {
                             Cập nhật nội dung
                           </button>
                         )}
+                        {n.type === 'SETTLEMENT_INFO_REQUEST' && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleMarkNotificationRead(n.id);
+                              handleOpenSettlementInfo(n.settlementRequest);
+                            }}
+                            className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-extrabold text-white bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 rounded-lg transition active:scale-95"
+                          >
+                            <Send size={12} />
+                            Bổ sung quyết toán
+                          </button>
+                        )}
                       </div>
                       {!n.read && (
                         <button
@@ -621,6 +708,64 @@ export default function App() {
               >
                 <Send size={14} />
                 {submittingGuideRequestIds.includes(selectedGuideRequest.maYeuCau || '') ? 'Đang gửi...' : 'Gửi đến admin'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {selectedSettlementRequest && (
+          <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up shadow-2xl border border-amber-100 space-y-4">
+              <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">Bổ sung quyết toán</h3>
+                  <p className="text-[10px] text-slate-400 font-mono mt-1">
+                    {selectedSettlementRequest.maQuyetToan}
+                    {selectedSettlementRequest.maTour ? ` · ${selectedSettlementRequest.maTour}` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSettlementRequest(null)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 transition"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wide">
+                  Ghi chú gửi kế toán
+                </label>
+                <textarea
+                  value={settlementNoteContent}
+                  onChange={(event) => setSettlementNoteContent(event.target.value)}
+                  rows={4}
+                  className="w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 resize-none leading-relaxed"
+                  placeholder="Nhập ghi chú giải trình số liệu, chứng từ hoặc thông tin bổ sung..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wide">
+                  HoaDonAnh
+                </label>
+                <input
+                  value={settlementReceiptUrl}
+                  onChange={(event) => setSettlementReceiptUrl(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  placeholder="https://.../hoa-don.jpg"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSubmitSettlementInfo}
+                disabled={submittingGuideRequestIds.includes(selectedSettlementRequest.maQuyetToan || '')}
+                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-md transition inline-flex items-center justify-center gap-2"
+              >
+                <Send size={14} />
+                {submittingGuideRequestIds.includes(selectedSettlementRequest.maQuyetToan || '') ? 'Đang gửi...' : 'Gửi về admin'}
               </button>
             </div>
           </div>

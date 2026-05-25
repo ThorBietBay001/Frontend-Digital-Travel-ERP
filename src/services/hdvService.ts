@@ -63,6 +63,16 @@ export const hdvService = {
     return res.data;
   },
 
+  layQuyetToanCanBoSung: async () => {
+    const res = await api.get('/huong-dan-vien/quyet-toan/can-bo-sung');
+    return res.data;
+  },
+
+  boSungQuyetToan: async (maQuyetToan: string, data: { ghiChu: string; hoaDonAnh?: string }) => {
+    const res = await api.put(`/huong-dan-vien/quyet-toan/${maQuyetToan}/bo-sung`, data);
+    return res.data;
+  },
+
   layChiTietTour: async (_maTour: string) => {
     // Hiện chưa có endpoint chi tiết tour riêng cho HDV, tạm dùng danh sách tour.
     const res = await api.get('/huong-dan-vien/tour-cua-toi');
