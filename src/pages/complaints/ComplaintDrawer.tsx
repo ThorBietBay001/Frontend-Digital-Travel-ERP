@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, MessageSquare, AlertCircle, CheckCircle, XCircle, Check } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import type { Complaint } from './mockData';
+import { ordersService } from '../../services/orders';
+import { formatDate, formatDateTime } from '../../utils/dateHelpers';
 
 interface ComplaintDrawerProps {
   isOpen: boolean;
@@ -15,6 +17,23 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState('');
   const [finalNote, setFinalNote] = useState('');
+  
+  const [tourName, setTourName] = useState<string>('');
+  const [departureDate, setDepartureDate] = useState<string>('');
+
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Chờ xử lý';
+      case 'processing': return 'Đang xử lý';
+      case 'pending_info': return 'Chờ bổ sung';
+      case 'pending_guide': return 'Chờ giải trình';
+      case 'pending_review': return 'Chờ duyệt';
+      case 'resolved': return 'Đã giải quyết';
+      case 'rejected': return 'Từ chối';
+      case 'cancelled': return 'Đã hủy';
+      default: return 'Chờ xử lý';
+    }
+  };
 
   const formatComplaintContent = (content: string) => {
     return content
@@ -27,6 +46,15 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
     setActiveAction(null);
     setNoteContent('');
     setFinalNote('');
+    setTourName('');
+    setDepartureDate('');
+    
+    if (isOpen && complaint?.maDatTour) {
+      ordersService.chiTietDatTour(complaint.maDatTour).then(res => {
+        setTourName(res.tieuDeTour || '');
+        setDepartureDate(res.ngayKhoiHanh ? formatDate(res.ngayKhoiHanh) : '');
+      }).catch(e => console.error(e));
+    }
   }, [isOpen, complaint]);
 
   if (!isOpen || !complaint) return null;
@@ -58,7 +86,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
           ...complaint.timeline,
           { 
             action: `${actionTitle}: ${noteContent}`, 
-            timestamp: new Date().toLocaleString('vi-VN') 
+            timestamp: formatDateTime(new Date()) 
           }
         ]
       };
@@ -81,7 +109,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
           ...complaint.timeline,
           { 
             action: `Hoàn tất xử lý: ${status === 'resolved' ? 'Đã giải quyết' : 'Từ chối'}`, 
-            timestamp: new Date().toLocaleString('vi-VN') 
+            timestamp: formatDateTime(new Date()) 
           }
         ]
       };
@@ -106,8 +134,8 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-[#E1F1FF]">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-[#121C2C]">Chi tiết khiếu nại - {complaint.code}</h2>
-            <span className="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 text-gray-700">Trạng thái: {complaint.status}</span>
+            <h2 className="text-xl font-bold text-[#121C2C]">Chi tiết khiếu nại</h2>
+            <span className="px-2 py-1 text-xs font-semibold rounded-md bg-gray-100 text-gray-700">Trạng thái: {getStatusDisplay(complaint.status)}</span>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
             <X size={20} />
@@ -120,6 +148,27 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
           {/* Cột trái (60%) */}
           <div className="w-full md:w-[60%] flex flex-col h-full overflow-y-auto p-6 border-r border-[#E1F1FF]">
             
+            {/* Thông tin Tour */}
+            <div className="mb-6 bg-white border border-[#E1F1FF] rounded-lg p-4 shadow-sm">
+              <h3 className="font-bold text-[#121C2C] mb-3 text-sm flex items-center gap-2">
+                Thông tin Tour
+              </h3>
+              <div className="grid grid-cols-1 gap-2 text-sm text-gray-700">
+                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                  <span className="text-gray-500">Mã Đơn / KH:</span>
+                  <span className="font-medium">{complaint.maDatTour || complaint.customerName || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                  <span className="text-gray-500">Tên Tour:</span>
+                  <span className="font-medium text-right max-w-[200px] truncate" title={tourName}>{tourName || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center pb-1">
+                  <span className="text-gray-500">Ngày khởi hành:</span>
+                  <span className="font-medium">{departureDate || '—'}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Nội dung phản ánh */}
             <div className="mb-6">
               <h3 className="font-bold text-[#121C2C] mb-3 text-sm">Nội dung phản ánh</h3>

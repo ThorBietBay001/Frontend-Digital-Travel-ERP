@@ -14,6 +14,7 @@ import type { NhatKySuCoResponse } from '../../services/incidents';
 import { ChevronLeft, ChevronRight, AlertTriangle, Info } from 'lucide-react';
 import type { TourThucTeResponse } from '../../pages/tour-instance/mockData';
 import PowerBIConnectionModal from './PowerBIConnectionModal';
+import { formatDate } from '../../utils/dateHelpers';
 
 const revenueData = [
   { name: 'T1', value: 120000000 },
@@ -518,7 +519,7 @@ const Dashboard: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 mb-1">Ngày khởi hành</p>
-                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CalendarIcon size={14} className="text-blue-500" /> {selectedTour.ngayKhoiHanh ? new Date(selectedTour.ngayKhoiHanh).toLocaleDateString('vi-VN') : '---'}</p>
+                  <p className="font-semibold text-gray-800 flex items-center gap-1.5"><CalendarIcon size={14} className="text-blue-500" /> {formatDate(selectedTour.ngayKhoiHanh)}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 mb-1">Giá hiện hành</p>

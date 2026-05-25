@@ -135,30 +135,30 @@ const TourTemplateList: React.FC = () => {
     try {
       if (modalState.mode === 'create') {
         const payload: TaoTourMauRequest = {
-           tieuDe: tourData.title,
-           moTa: tourData.description,
-           thoiLuong: tourData.duration.days,
-           giaSan: tourData.basePrice,
-           lichTrinh: tourData.schedule.map((day, index) => ({
-             ngayThu: index + 1,
-             hoatDong: day.title,
-             moTa: day.description,
-             thucDon: JSON.stringify(day.meals)
-           }))
+          tieuDe: tourData.title,
+          moTa: tourData.description,
+          thoiLuong: tourData.duration.days,
+          giaSan: tourData.basePrice,
+          lichTrinh: tourData.schedule.map((day, index) => ({
+            ngayThu: index + 1,
+            hoatDong: day.title,
+            moTa: day.description,
+            thucDon: JSON.stringify(day.meals)
+          }))
         };
         await tourTemplateService.taoMoi(payload);
       } else if (modalState.mode === 'edit') {
         const payload: CapNhatTourMauRequest = {
-           tieuDe: tourData.title,
-           moTa: tourData.description,
-           thoiLuong: tourData.duration.days,
-           giaSan: tourData.basePrice
+          tieuDe: tourData.title,
+          moTa: tourData.description,
+          thoiLuong: tourData.duration.days,
+          giaSan: tourData.basePrice
         };
         await tourTemplateService.capNhat(tourData.id, payload);
 
         // Đồng bộ lịch trình thông qua các API riêng biệt
         const originalSchedule = modalState.selectedTour?.schedule || [];
-        
+
         // 1. Xóa các lịch trình bị thừa (giảm số ngày)
         for (const oldDay of originalSchedule) {
           if (oldDay.id && !tourData.schedule.find(d => d.id === oldDay.id)) {
@@ -170,16 +170,16 @@ const TourTemplateList: React.FC = () => {
         for (let i = 0; i < tourData.schedule.length; i++) {
           const day = tourData.schedule[i];
           const ltRequest: LichTrinhRequest = {
-             ngayThu: i + 1,
-             hoatDong: day.title,
-             moTa: day.description,
-             thucDon: JSON.stringify(day.meals)
+            ngayThu: i + 1,
+            hoatDong: day.title,
+            moTa: day.description,
+            thucDon: JSON.stringify(day.meals)
           };
 
           if (day.id) {
-             await tourTemplateService.suaLichTrinh(tourData.id, day.id, ltRequest);
+            await tourTemplateService.suaLichTrinh(tourData.id, day.id, ltRequest);
           } else {
-             await tourTemplateService.themLichTrinh(tourData.id, ltRequest);
+            await tourTemplateService.themLichTrinh(tourData.id, ltRequest);
           }
         }
       } else if (modalState.mode === 'copy') {
@@ -204,15 +204,15 @@ const TourTemplateList: React.FC = () => {
         closeModal();
         await getAll();
       } catch (err: any) {
-         alert('Lỗi: ' + (err.message || 'Xảy ra lỗi khi xóa'));
+        alert('Lỗi: ' + (err.message || 'Xảy ra lỗi khi xóa'));
       }
     }
   };
 
   // Lọc dữ liệu
   const filteredData = data.filter((tour) => {
-    const matchesSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          tour.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tour.code.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -272,11 +272,11 @@ const TourTemplateList: React.FC = () => {
 
   return (
     <MainLayout
-      activeMenu="Tour Mẫu"
-      expandedMenus={['Quản lý Sản phẩm Tour']}
+      activeMenu="Quản lý Tour mẫu"
+      expandedMenus={['Quản lý Sản phẩm']}
       breadcrumb={[
-        { label: 'Quản lý Sản phẩm Tour' },
-        { label: 'Tour Mẫu' },
+        { label: 'Quản lý Sản phẩm' },
+        { label: 'Quản lý Tour mẫu' },
       ]}
       userName="Admin Hệ Thống"
       userRole="Quản trị viên"
@@ -285,7 +285,7 @@ const TourTemplateList: React.FC = () => {
         {/* Header & Add Button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[32px] font-bold text-[#121C2C]">Tour Mẫu</h1>
+            <h1 className="text-[32px] font-bold text-[#121C2C]">Quản lý Tour mẫu</h1>
             {/* <p className="text-gray-500 text-sm mt-1">Quản lý và cấu trúc các khung chương trình du lịch sinh thái tiêu chuẩn</p> */}
           </div>
           <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => openModal('create')}>
@@ -296,15 +296,15 @@ const TourTemplateList: React.FC = () => {
         {/* Filter Toolbar */}
         <div className="bg-white p-6 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[280px]">
-            <SearchInput 
-              placeholder="Tìm kiếm theo mã hoặc tên tour mẫu..." 
+            <SearchInput
+              placeholder="Tìm kiếm theo mã hoặc tên tour mẫu..."
               value={searchTerm}
               onChange={setSearchTerm}
             />
           </div>
 
           <div className="w-[200px]">
-            <Select 
+            <Select
               options={[
                 { label: 'Mới nhất', value: 'newest' },
                 { label: 'Giá: Thấp đến cao', value: 'price_asc' },
@@ -318,11 +318,11 @@ const TourTemplateList: React.FC = () => {
         {/* Table & Pagination */}
         <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex-1 relative min-h-[300px]">
           {loading ? (
-             <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
-             </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00668A]"></div>
+            </div>
           ) : error ? (
-             <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
+            <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
           ) : (
             <Table<TourTemplate>
               columns={columns}
@@ -332,8 +332,8 @@ const TourTemplateList: React.FC = () => {
             />
           )}
         </div>
-        
-        <Pagination 
+
+        <Pagination
           current={page}
           pageSize={pageSize}
           total={filteredData.length}
@@ -341,15 +341,15 @@ const TourTemplateList: React.FC = () => {
         />
       </div>
 
-        {modalState.isOpen && (
-          <TourTemplateDetailModal
-            isOpen={modalState.isOpen}
-            mode={modalState.mode as 'create' | 'edit' | 'copy'}
-            initialData={modalState.selectedTour}
-            onSubmit={handleFormSubmit}
-            onClose={closeModal}
-          />
-        )}
+      {modalState.isOpen && (
+        <TourTemplateDetailModal
+          isOpen={modalState.isOpen}
+          mode={modalState.mode as 'create' | 'edit' | 'copy'}
+          initialData={modalState.selectedTour}
+          onSubmit={handleFormSubmit}
+          onClose={closeModal}
+        />
+      )}
 
       {/* Modal Xác nhận Xóa */}
       <Modal

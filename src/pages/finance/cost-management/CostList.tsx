@@ -114,16 +114,19 @@ const CostList: React.FC = () => {
     {
       key: 'id',
       title: 'Mã chi phí',
+      width: '12%',
       render: (record) => <span className="font-semibold text-gray-800">{record.id}</span>,
     },
     {
       key: 'tourCode',
       title: 'Mã Tour',
+      width: '12%',
       render: (record) => <span className="font-semibold text-[#00668A]">{record.tourCode}</span>,
     },
     {
       key: 'guide',
       title: 'HDV',
+      width: '22%',
       render: (record) => (
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-[#E8F6FF] text-[#00668A] font-semibold flex items-center justify-center">
@@ -139,11 +142,13 @@ const CostList: React.FC = () => {
       key: 'category',
       title: 'Hạng mục',
       dataIndex: 'category',
+      width: '18%',
     },
     {
       key: 'amount',
       title: 'Số tiền (VND)',
       align: 'right',
+      width: '12%',
       render: (record) => (
         <span className="font-semibold text-gray-800">{record.amount.toLocaleString('vi-VN')}</span>
       ),
@@ -151,6 +156,7 @@ const CostList: React.FC = () => {
     {
       key: 'status',
       title: 'Trạng thái / Cảnh báo',
+      width: '14%',
       render: (record) => {
         if (record.status === 'pending') {
           return <Badge label="Chờ duyệt" variant="info" />;
@@ -174,6 +180,7 @@ const CostList: React.FC = () => {
       key: 'actions',
       title: 'Hành động',
       align: 'center',
+      width: '10%',
       render: (record) => {
         if (record.status === 'approved' || record.status === 'rejected' || record.status === 'pending_info') {
           return (

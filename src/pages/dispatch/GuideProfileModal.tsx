@@ -10,6 +10,7 @@ import type { NhanVienResponse } from '../../services/system/accounts';
 import type { NangLucResponse } from '../../services/system/hr';
 import type { PhanCongResponse } from './mockData';
 import { formatApiError } from '../../utils/apiHelpers';
+import { formatDate } from '../../utils/dateHelpers';
 
 interface GuideProfileModalProps {
   isOpen: boolean;
@@ -106,7 +107,7 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
                       <div className="text-[#00668A] font-medium text-xs mb-0.5">{tour.maTourThucTe}</div>
                       <div className="font-medium text-gray-800">{tour.tenTour}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{tour.ngayKhoiHanh}</td>
+                    <td className="px-4 py-3 text-gray-600">{tour.ngayKhoiHanh ? formatDate(tour.ngayKhoiHanh) : ''}</td>
                     <td className="px-4 py-3">
                       <Badge label={statusObj.label} variant={statusObj.variant} dot={false} />
                     </td>
@@ -180,14 +181,14 @@ const GuideProfileModal: React.FC<GuideProfileModalProps> = ({ isOpen, onClose, 
                 <Cake size={16} className="text-gray-400 mt-0.5" />
                 <div>
                   <p className="text-xs text-gray-500">Ngày sinh</p>
-                  <p className="font-medium text-gray-800">{nhanVien?.ngaySinh || '—'}</p>
+                  <p className="font-medium text-gray-800">{nhanVien?.ngaySinh ? formatDate(nhanVien.ngaySinh) : '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Calendar size={16} className="text-gray-400 mt-0.5" />
                 <div>
                   <p className="text-xs text-gray-500">Ngày vào làm</p>
-                  <p className="font-medium text-gray-800">{nhanVien?.ngayVaoLam || '—'}</p>
+                  <p className="font-medium text-gray-800">{nhanVien?.ngayVaoLam ? formatDate(nhanVien.ngayVaoLam) : '—'}</p>
                 </div>
               </div>
             </div>

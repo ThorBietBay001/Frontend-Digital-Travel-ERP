@@ -5,6 +5,7 @@ import { FileText, Ban, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { RefundRequest } from './mockData';
 import { ordersService } from '../../../services/orders';
 import { useNotification } from '../../../context/NotificationContext';
+import { formatDate } from '../../../utils/dateHelpers';
 
 export interface RefundProcessingModalProps {
   isOpen: boolean;
@@ -196,7 +197,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
               </div>
               <div>
                 <div className="text-xs text-gray-500">Ngày khởi hành</div>
-                <div className="text-sm font-medium text-[#121C2C]">{orderInfo?.ngayKhoiHanh ? new Date(orderInfo.ngayKhoiHanh).toLocaleDateString('vi-VN') : 'Đang tải...'}</div>
+                <div className="text-sm font-medium text-[#121C2C]">{formatDate(orderInfo?.ngayKhoiHanh)}</div>
               </div>
             </div>
           </div>
@@ -221,6 +222,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
             </div>
           </div>
 
+
         </div>
 
         <div className="flex flex-col gap-4">
@@ -238,12 +240,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
                 <div className="text-xs text-gray-500">Mã giao dịch hoàn</div>
                 <div className="text-sm font-medium text-[#121C2C]">{refund.code}</div>
               </div>
-              {refund.reason && (
-                <div>
-                  <div className="text-xs text-gray-500">Lý do hủy</div>
-                  <div className="text-sm font-medium text-red-600 bg-red-50 p-2 rounded-md mt-1">{refund.reason}</div>
-                </div>
-              )}
+
               {refund.attachments?.length ? (
                 <div>
                   <div className="text-xs text-gray-500">Chứng từ đính kèm</div>

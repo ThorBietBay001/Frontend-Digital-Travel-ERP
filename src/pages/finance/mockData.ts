@@ -77,6 +77,7 @@ export interface ThanhToanResponse {
   ngayThanhToan?: string;
   payUrl?: string;
   thongBao?: string;
+  noiDung?: string;
 }
 
 export interface ChiPhiThucTeResponse {

@@ -45,12 +45,12 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/',
   },
   {
-    title: 'Quản lý Sản phẩm Tour',
+    title: 'Quản lý Sản phẩm',
     key: 'products',
     icon: Map,
     children: [
-      { title: 'Tour Mẫu', path: '/tour-template', key: 'tour-template' },
-      { title: 'Tour Thực Tế', path: '/tour-instance', key: 'tour-instance' },
+      { title: 'Quản lý Tour mẫu', path: '/tour-template', key: 'tour-template' },
+      { title: 'Quản lý Tour thực tế', path: '/tour-instance', key: 'tour-instance' },
     ],
   },
   {
@@ -155,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => toggleMenu(item.title)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-[8px] transition-colors ${
                     isActive
-                      ? 'bg-[#E8F6FF] border-l-[4px] border-l-[#89D4FF] text-[#89D4FF] font-bold'
+                      ? 'bg-[#E8F6FF] border-l-[4px] border-l-[#89D4FF] text-[#89D4FF] font-medium'
                       : 'text-gray-600 hover:bg-[#F9F9FF] font-medium'
                   }`}
                 >
@@ -174,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   to={item.path as string}
                   className={`flex items-center gap-3 px-4 py-3 rounded-[8px] transition-colors ${
                     isActive
-                      ? 'bg-[#E8F6FF] border-l-[4px] border-l-[#89D4FF] text-[#89D4FF] font-bold'
+                      ? 'bg-[#E8F6FF] border-l-[4px] border-l-[#89D4FF] text-[#89D4FF] font-medium'
                       : 'text-gray-600 hover:bg-[#F9F9FF] font-medium'
                   }`}
                 >
@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         to={child.path}
                         className={`flex items-center pl-[44px] pr-4 py-2.5 rounded-[8px] transition-colors text-[14px] ${
                           isChildActive
-                            ? 'text-[#89D4FF] font-semibold bg-[#FAFAFA]'
+                            ? 'text-[#89D4FF] font-medium bg-[#FAFAFA]'
                             : 'text-gray-500 hover:bg-[#F9F9FF] hover:text-gray-700 font-medium'
                         }`}
                       >

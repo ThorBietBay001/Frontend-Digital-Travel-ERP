@@ -16,6 +16,7 @@ import type { TourThucTeResponse } from '../../services/tour-instance';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
+import { formatDate } from '../../utils/dateHelpers';
 
 const PENDING_STATUSES = new Set(['CHO_KICH_HOAT']);
 
@@ -32,8 +33,8 @@ const mapTourToUI = (t: TourThucTeResponse): TourNeedGuide => ({
   id: t.maTourThucTe || '',
   code: t.maTourThucTe || '',
   name: t.tieuDeTour || '',
-  startDate: t.ngayKhoiHanh || '',
-  endDate: t.ngayKetThuc || '',
+  startDate: t.ngayKhoiHanh ? formatDate(t.ngayKhoiHanh) : '',
+  endDate: t.ngayKetThuc ? formatDate(t.ngayKetThuc) : '',
   duration: calcDurationDays(t.ngayKhoiHanh, t.ngayKetThuc),
   passengers: t.soKhachToiDa || 0,
   requiredSkills: [],
@@ -150,7 +151,7 @@ const AssignGuide: React.FC = () => {
       render: (record) => (
         <div className="flex flex-col text-sm">
           <span className="text-gray-800 font-medium">
-            {record.startDate} - {record.endDate}
+            {record.startDate} đến {record.endDate}
           </span>
           <span className="text-gray-500">
             [{record.duration}] - {record.passengers} khách
@@ -200,7 +201,7 @@ const AssignGuide: React.FC = () => {
         </div>
 
         <div className="bg-white p-4 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-center justify-between">
-          <div className="w-[300px]">
+          <div className="flex-1 min-w-[300px]">
             <SearchInput placeholder="Tìm mã hoặc tên tour..." value={searchTerm} onChange={setSearchTerm} />
           </div>
           <Button variant="secondary" onClick={fetchTours}>
@@ -231,7 +232,7 @@ const AssignGuide: React.FC = () => {
         availableGuides={availableGuides}
         guidesLoading={guidesLoading}
       />
-      
+
       {/* Success Modal */}
       <Modal
         isOpen={!!successData}
@@ -258,7 +259,7 @@ const AssignGuide: React.FC = () => {
       >
         {successData && (
           <div className="flex flex-col gap-4 p-2">
-            
+
             {/* Tour Info (Top) */}
             <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
               <div className="flex items-center gap-2 mb-3 pb-3 border-b border-[#E2E8F0]">
@@ -279,7 +280,7 @@ const AssignGuide: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Calendar size={16} className="text-gray-400 shrink-0" />
                   <span className="text-gray-600 w-24 shrink-0">Thời gian:</span>
-                  <span className="font-medium text-[#121C2C]">{successData.tour.startDate} - {successData.tour.endDate}</span>
+                  <span className="font-medium text-[#121C2C]">{successData.tour.startDate} đến {successData.tour.endDate}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users size={16} className="text-gray-400 shrink-0" />

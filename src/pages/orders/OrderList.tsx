@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { hasAccess } from '../../config/rolePermissions';
 import { formatApiError, unwrapPageContent } from '../../utils/apiHelpers';
+import { formatDate } from '../../utils/dateHelpers';
 
 const mapStatus = (s?: string): Order['status'] => {
   switch (s?.trim().toUpperCase()) {
@@ -56,12 +57,7 @@ const mapPaymentStatus = (s?: string, daBaoChuyenKhoan?: boolean): Order['paymen
   }
 };
 
-const formatDate = (value?: string): string => {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('vi-VN');
-};
+
 
 const mapToUI = (api: DonDatTourResponse): Order => ({
   id: api.maDatTour || '',
@@ -178,11 +174,13 @@ const OrderList: React.FC = () => {
     {
       key: 'orderCode',
       title: 'Mã Đơn',
+      width: '12%',
       render: (record) => <span className="font-bold text-[#00668A]">{record.orderCode}</span>,
     },
     {
       key: 'customer',
       title: 'Khách hàng',
+      width: '18%',
       render: (record) => (
         <div className="flex flex-col">
           <span className="font-semibold text-gray-800">{record.customerName}</span>
@@ -192,12 +190,14 @@ const OrderList: React.FC = () => {
     {
       key: 'tourName',
       title: 'Tour',
-      render: (record) => <span className="text-sm font-medium">{record.tourName}</span>,
+      width: '25%',
+      render: (record) => <span className="text-sm font-medium line-clamp-2" title={record.tourName}>{record.tourName}</span>,
     },
-    { key: 'bookingDate', title: 'Ngày đặt', dataIndex: 'bookingDate' },
+    { key: 'bookingDate', title: 'Ngày đặt', dataIndex: 'bookingDate', width: '10%' },
     {
       key: 'status',
       title: 'Trạng thái',
+      width: '12%',
       render: (record) => {
         switch (record.status) {
           case 'pending':
@@ -216,6 +216,7 @@ const OrderList: React.FC = () => {
     {
       key: 'paymentStatus',
       title: 'Thanh toán',
+      width: '12%',
       render: (record) => {
         switch (record.paymentStatus) {
           case 'paid':
@@ -235,6 +236,7 @@ const OrderList: React.FC = () => {
       key: 'actions',
       title: 'Hành động',
       align: 'center',
+      width: '11%',
       render: (record) => (
         <div className="flex items-center justify-center gap-2">
           <Button

@@ -176,6 +176,7 @@ const TourInstanceList: React.FC = () => {
     {
       key: 'code',
       title: 'Mã Tour',
+      width: '12%',
       render: (record) => (
         <span className="font-bold text-[#00668A]">{record.code}</span>
       ),
@@ -183,11 +184,13 @@ const TourInstanceList: React.FC = () => {
     {
       key: 'name',
       title: 'Tên Tour',
-      render: (record) => <span className="font-medium text-gray-800">{record.name}</span>
+      width: '28%',
+      render: (record) => <span className="font-medium text-gray-800 line-clamp-2" title={record.name}>{record.name}</span>
     },
     {
       key: 'startDate',
       title: 'Ngày khởi hành',
+      width: '12%',
       render: (record) => {
         const [year, month, day] = record.startDate.split('-');
         return <span>{`${day}/${month}/${year}`}</span>;
@@ -197,6 +200,7 @@ const TourInstanceList: React.FC = () => {
       key: 'seats',
       title: 'Số chỗ',
       align: 'center',
+      width: '10%',
       render: (record) => {
         const isFull = record.bookedSeats >= record.maxSeats;
         return (
@@ -210,7 +214,7 @@ const TourInstanceList: React.FC = () => {
       key: 'currentPrice',
       title: <span className="whitespace-nowrap">Giá bán (VNĐ)</span>,
       align: 'right',
-      width: '180px',
+      width: '14%',
       render: (record) => (
         <span className="font-bold text-gray-800 whitespace-nowrap">{record.currentPrice.toLocaleString('vi-VN')}Đ</span>
       ),
@@ -218,6 +222,7 @@ const TourInstanceList: React.FC = () => {
     {
       key: 'status',
       title: 'Trạng thái',
+      width: '12%',
       render: (record) => {
         const { label, variant } = mapTourInstanceStatus(record.status);
         return <Badge label={label} variant={variant} />;
@@ -227,6 +232,7 @@ const TourInstanceList: React.FC = () => {
       key: 'actions',
       title: 'Hành động',
       align: 'center',
+      width: '12%',
       render: (record) => {
         const canEditOrDelete = record.status === 'CHO_KICH_HOAT';
         const canBan = record.status === 'MO_BAN';
@@ -280,11 +286,11 @@ const TourInstanceList: React.FC = () => {
 
   return (
     <MainLayout
-      activeMenu="Tour Thực Tế"
-      expandedMenus={['Quản lý Sản phẩm Tour']}
+      activeMenu="Quản lý Tour thực tế"
+      expandedMenus={['Quản lý Sản phẩm']}
       breadcrumb={[
-        { label: 'Quản lý Sản phẩm Tour' },
-        { label: 'Tour Thực Tế' },
+        { label: 'Quản lý Sản phẩm' },
+        { label: 'Quản lý Tour thực tế' },
       ]}
       userName="Admin Hệ Thống"
       userRole="Quản trị viên"
@@ -293,7 +299,7 @@ const TourInstanceList: React.FC = () => {
         {/* Header & Add Button */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[32px] font-bold text-[#121C2C]">Tour Thực Tế</h1>
+            <h1 className="text-[32px] font-bold text-[#121C2C]"> Quản lý Tour thực tế</h1>
             {/* <p className="text-gray-500 text-sm mt-1">Quản lý và theo dõi các chuyến đi cụ thể đang hoạt động</p> */}
           </div>
           <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => openModal('create')}>
@@ -322,7 +328,7 @@ const TourInstanceList: React.FC = () => {
               placeholder="Trạng thái"
             />
           </div>
-          <div className="w-[200px]">
+          {/* <div className="w-[200px]">
             <Select
               options={[
                 { label: 'Tất cả tháng', value: 'all' },
@@ -334,7 +340,7 @@ const TourInstanceList: React.FC = () => {
               onChange={setMonthFilter}
               placeholder="Tháng khởi hành"
             />
-          </div>
+          </div> */}
         </div>
 
         {/* Table Area */}

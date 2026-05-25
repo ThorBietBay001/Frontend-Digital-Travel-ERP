@@ -12,6 +12,7 @@ import type { Column } from '../../components/ui/Table';
 import type { Complaint } from './mockData';
 import type { YeuCauHoTroResponse, XuLyHoTroRequest } from '../../services/complaints';
 import { complaintsService } from '../../services/complaints';
+import { formatDate } from '../../utils/dateHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 
@@ -52,14 +53,17 @@ const ComplaintList: React.FC = () => {
     return {
       id: api.maYeuCau || '',
       code: api.maYeuCau || '',
+      maDatTour: api.maDatTour || '',
       customerName: api.maDatTour || '',
       customerPhone: '',
       tourName: api.loaiYeuCau || '',
       guideName: api.maNhanVienXuLy,
-      sentDate: api.thoiDiemTao ? api.thoiDiemTao.split('T')[0] : '',
+      sentDate: api.thoiDiemTao ? formatDate(api.thoiDiemTao) : '',
       severity: 'medium',
       status: mapStatus(api.trangThai, api.noiDung),
-      description: api.noiDung || '',
+      description: (api.noiDung || '')
+        .replace(/\[Yêu cầu (?:KH bổ sung|HDV giải trình) lúc [^\]]+\]:.*?(?=\n\[|$)/gs, '')
+        .trim(),
       resolution: savedResolution || undefined,
       timeline: savedTimeline,
     };
@@ -121,41 +125,31 @@ const ComplaintList: React.FC = () => {
     {
       key: 'code',
       title: 'Mã KN',
+      width: '12%',
       render: (record) => <span className="font-bold text-[#00668A]">{record.code}</span>
     },
     {
-      key: 'sentDate',
-      title: 'Ngày gửi',
+      key: 'guideName',
+      title: 'Tên nhân viên',
+      width: '15%',
       render: (record) => (
-        <div className="flex flex-col">
-          <span>{record.sentDate}</span>
-          <span className="text-xs text-gray-500">{record.timeline[0]?.timestamp?.split(' - ')[1] || ''}</span>
-        </div>
+        <span className="font-medium text-gray-800">{record.guideName || '—'}</span>
       )
     },
     {
-      key: 'customerName',
-      title: 'Khách hàng / Mã ĐH',
+      key: 'description',
+      title: 'Nội dung',
+      width: '33%',
       render: (record) => (
-        <div className="flex flex-col">
-          <span className="font-bold">{record.customerName}</span>
-          <span className="text-xs text-gray-500">{record.customerPhone}</span>
-        </div>
-      )
-    },
-    {
-      key: 'tourName',
-      title: 'Tour/HDV',
-      render: (record) => (
-        <div className="flex flex-col">
-          <span>{record.tourName}</span>
-          {record.guideName && <span className="text-xs text-gray-500">HDV: {record.guideName}</span>}
-        </div>
+        <span className="text-sm text-gray-700 line-clamp-2" title={record.description}>
+          {record.description || '—'}
+        </span>
       )
     },
     {
       key: 'severity',
       title: 'Mức độ',
+      width: '13%',
       render: (record) => {
         let label = '';
         let variant: 'success' | 'warning' | 'error' | 'info' = 'info';
@@ -168,6 +162,7 @@ const ComplaintList: React.FC = () => {
     {
       key: 'status',
       title: 'Trạng thái',
+      width: '15%',
       render: (record) => {
         let label = '';
         let variant: 'success' | 'warning' | 'error' | 'info' | 'neutral' = 'info';
@@ -188,6 +183,8 @@ const ComplaintList: React.FC = () => {
     {
       key: 'actions',
       title: 'Hành động',
+      width: '12%',
+      align: 'center',
       render: (record) => {
         const isDone = record.status === 'resolved' || record.status === 'rejected' || record.status === 'cancelled';
         return (
@@ -268,10 +265,10 @@ const ComplaintList: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-[#E1F1FF] mb-6 flex flex-wrap gap-4 items-center">
-        <div className="w-64">
+        <div className="flex-1 min-w-[300px]">
           <SearchInput placeholder="Tìm mã khiếu nại, tên khách hàng..." value={search} onChange={setSearch} />
         </div>
-        <div className="w-48">
+        <div className="w-[200px]">
           <Select
             value={selectedStatus}
             onChange={setSelectedStatus}

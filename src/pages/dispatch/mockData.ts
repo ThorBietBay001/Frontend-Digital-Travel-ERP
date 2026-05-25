@@ -113,6 +113,7 @@ export interface Guide {
   strengths?: string[];
   experience?: string;
   schedule?: { tour: string; start: string; end: string }[];
+  phone?: string;
 }
 
 export const mockToursNeedGuide: TourNeedGuide[] = [

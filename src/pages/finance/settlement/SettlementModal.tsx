@@ -6,17 +6,9 @@ import { AlertTriangle, RefreshCw, FileText, CheckCircle } from 'lucide-react';
 import type { SettlementTour } from './mockData';
 import { tourInstanceService } from '../../../services/tour-instance';
 import { financeService } from '../../../services/finance';
+import { formatDate } from '../../../utils/dateHelpers';
 
-const formatDateStr = (dateString?: string) => {
-  if (!dateString) return 'Chưa cập nhật';
-  try {
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return dateString;
-    return `${d.getDate().toString().padStart(2, '0')} - ${(d.getMonth() + 1).toString().padStart(2, '0')} - ${d.getFullYear()}`;
-  } catch {
-    return dateString;
-  }
-};
+
 
 export interface SettlementModalProps {
   isOpen: boolean;
@@ -64,8 +56,8 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
         if (res) {
           setExtraDetails(prev => ({
             ...prev,
-            startDate: formatDateStr(res.ngayKhoiHanh),
-            endDate: formatDateStr(res.ngayKetThuc),
+            startDate: formatDate(res.ngayKhoiHanh),
+            endDate: formatDate(res.ngayKetThuc),
             passengerCount: res.soKhachToiDa || 0
           }));
         }

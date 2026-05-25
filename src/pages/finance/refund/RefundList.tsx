@@ -61,7 +61,7 @@ const RefundList: React.FC = () => {
           customerName: orderInfo?.tenKhachHang || 'Khách hàng',
           customerPhone: (orderInfo as any)?.soDienThoai || '',
           amount: t.soTien || 0,
-          reason: t.thongBao || '',
+          reason: '',
           status,
           refundMethod: t.phuongThuc === 'CHUYEN_KHOAN' ? 'gateway' : 'manual'
         };
@@ -156,11 +156,7 @@ const RefundList: React.FC = () => {
         <span className="font-semibold text-gray-800">{record.amount.toLocaleString('vi-VN')}</span>
       ),
     },
-    {
-      key: 'reason',
-      title: 'Lý do hủy',
-      dataIndex: 'reason',
-    },
+
     {
       key: 'status',
       title: 'Trạng Thái',

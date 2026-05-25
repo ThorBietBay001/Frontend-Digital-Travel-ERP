@@ -132,7 +132,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
                 <Calendar size={16} className="text-gray-400 mt-0.5" />
                 <div>
                   <p className="text-xs text-gray-500">Thời gian ({tour.duration})</p>
-                  <p className="font-medium text-gray-800">{tour.startDate} - {tour.endDate}</p>
+                  <p className="font-medium text-gray-800">{tour.startDate} đến {tour.endDate}</p>
                 </div>
               </div>
 

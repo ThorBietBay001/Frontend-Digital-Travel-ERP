@@ -68,6 +68,7 @@ export interface Complaint {
   id: string;
   code: string;
   customerName: string;
+  maDatTour?: string;
   customerPhone: string;
   tourName: string;
   guideName?: string;

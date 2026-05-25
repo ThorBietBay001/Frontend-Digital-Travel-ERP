@@ -8,6 +8,7 @@ import { ordersService } from '../../services/orders';
 import type { ChiTietDatTourResponse, DonDatTourResponse } from '../../services/orders';
 import { formatApiError } from '../../utils/apiHelpers';
 import { useNotification } from '../../context/NotificationContext';
+import { formatDateTime } from '../../utils/dateHelpers';
 
 interface OrderDetailModalProps {
   isOpen: boolean;
@@ -103,14 +104,7 @@ const isChildPassenger = (passenger: ChiTietDatTourResponse, referenceDate?: str
   return age !== undefined && age <= 11;
 };
 
-const formatDateTime = (value?: string): string => {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  const time = d.toLocaleTimeString('vi-VN', { hour12: false });
-  const date = d.toLocaleDateString('vi-VN');
-  return `${time}, ${date}`;
-};
+
 
 const getPaymentStatusLabel = (status: Order['paymentStatus']) => {
   switch (status) {

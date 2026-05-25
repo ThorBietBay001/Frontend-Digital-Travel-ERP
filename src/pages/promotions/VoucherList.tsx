@@ -206,24 +206,21 @@ const VoucherList: React.FC = () => {
   return (
     <MainLayout activeMenu="Quản lý Khuyến mãi" breadcrumb={[{ label: 'Quản lý Khuyến mãi' }]}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#00668A]">Quản lý Khuyến mãi</h1>
-          {/* <p className="text-gray-500 mt-1">Theo dõi và quản lý các chương trình ưu đãi, voucher cho khách hàng.</p> */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-[32px] font-bold text-[#121C2C]">Quản lý Khuyến mãi</h1>
+          <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => setIsCreateModalOpen(true)}>
+            Tạo Voucher mới
+          </Button>
         </div>
 
         <div className="bg-white rounded-[16px] p-6 shadow-[0px_4px_20px_rgba(137,212,255,0.08)]">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex gap-4">
-              <div className="w-[300px]">
-                <SearchInput placeholder="Tìm mã voucher, tên chương trình..." value={searchTerm} onChange={setSearchTerm} />
-              </div>
-              <div className="w-[200px]">
-                <Select options={statusOptions} value={filterStatus} onChange={setFilterStatus} />
-              </div>
+          <div className="flex gap-4 items-center mb-6">
+            <div className="flex-1 min-w-[300px]">
+              <SearchInput placeholder="Tìm mã voucher, tên chương trình..." value={searchTerm} onChange={setSearchTerm} />
             </div>
-            <Button variant="primary" icon={<PlusCircle size={18} />} onClick={() => setIsCreateModalOpen(true)}>
-              Tạo Voucher mới
-            </Button>
+            <div className="w-[200px]">
+              <Select options={statusOptions} value={filterStatus} onChange={setFilterStatus} />
+            </div>
           </div>
 
           <div className="relative min-h-[200px]">

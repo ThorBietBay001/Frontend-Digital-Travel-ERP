@@ -14,6 +14,7 @@ import type { Staff } from './mockData';
 import { roles } from './mockData';
 import { accountsService } from '../../../services/system/accounts';
 import type { NhanVienResponse } from '../../../services/system/accounts';
+import { formatDate } from '../../../utils/dateHelpers';
 import { useAuth } from '../../../context/AuthContext';
 import { hasAccess } from '../../../config/rolePermissions';
 
@@ -44,8 +45,8 @@ const StaffList: React.FC = () => {
           email: nv.email || '',
           phone: nv.soDienThoai || '',
           role: roleMap[nv.maVaiTro?.replace('ROLE_', '') || ''] || 'guide',
-          joinDate: nv.ngayVaoLam || '',
-          birthday: nv.ngaySinh || '',
+          joinDate: nv.ngayVaoLam ? formatDate(nv.ngayVaoLam) : '',
+          birthday: nv.ngaySinh ? formatDate(nv.ngaySinh) : '',
           cccd: nv.cccd || '',
         }));
         _setStaffList(mapped);

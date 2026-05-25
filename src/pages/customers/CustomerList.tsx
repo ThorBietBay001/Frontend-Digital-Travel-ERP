@@ -14,6 +14,7 @@ import type { HoChieuSoResponse } from '../../services/customers';
 import { customersService } from '../../services/customers';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
+import { formatDate } from '../../utils/dateHelpers';
 
 const mapTier = (s?: string): Customer['membershipTier'] => {
   switch (s?.toUpperCase()) {
@@ -51,7 +52,7 @@ const CustomerList: React.FC = () => {
     tourHistory: [],
     complaints: [],
     idCard: api.cccd || '',
-    birthday: api.ngaySinh ? api.ngaySinh.toString() : '',
+    birthday: api.ngaySinh ? formatDate(api.ngaySinh.toString()) : '',
   });
 
   const { user } = useAuth();

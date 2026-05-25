@@ -31,6 +31,7 @@ const mapNhanVienToGuide = (g: NhanVienResponse, nangLuc?: NangLucResponse): Gui
   id: g.maNhanVien || '',
   code: g.maNhanVien || '',
   name: g.hoTen || g.tenDangNhap || '',
+  phone: g.soDienThoai || '',
   languages: parseCommaList(nangLuc?.ngonNgu).length > 0 ? parseCommaList(nangLuc?.ngonNgu) : ['Tiếng Việt'],
   skills: [...parseCommaList(nangLuc?.chuyenMon), ...parseCommaList(nangLuc?.chungChi)],
   rating: nangLuc?.danhGia ?? 0,
@@ -129,11 +130,13 @@ const GuideList: React.FC = () => {
     {
       key: 'code',
       title: 'Mã HDV',
+      width: '15%',
       render: (record) => <span className="font-bold text-[#00668A]">{record.code}</span>,
     },
     {
       key: 'guide',
       title: 'Hướng dẫn viên',
+      width: '25%',
       render: (record) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#E8F6FF] text-[#00668A] flex items-center justify-center font-bold text-sm">
@@ -143,10 +146,17 @@ const GuideList: React.FC = () => {
         </div>
       ),
     },
+    {
+      key: 'phone',
+      title: 'Số điện thoại',
+      width: '15%',
+      render: (record) => <span className="text-sm font-medium text-gray-700">{record.phone || '—'}</span>,
+    },
 
     {
       key: 'rating',
       title: 'Đánh giá',
+      width: '15%',
       render: (record) => (
         <div className="flex items-center gap-1.5 text-sm">
           {record.rating > 0 ? (
@@ -164,7 +174,7 @@ const GuideList: React.FC = () => {
     {
       key: 'status',
       title: 'Trạng thái',
-      align: 'center',
+      width: '15%',
       render: (record) => {
         const { label, variant } = mapEmployeeStatus(record.status);
         return <Badge label={label} variant={variant} />;
@@ -173,9 +183,9 @@ const GuideList: React.FC = () => {
     {
       key: 'actions',
       title: 'Hành động',
-      align: 'right',
+      width: '15%',
       render: (record) => (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" icon={<Eye size={18} />} onClick={() => openProfileModal(record)} />
           <Button
             variant="ghost"
