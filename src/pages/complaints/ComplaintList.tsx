@@ -30,7 +30,7 @@ const mapStatus = (s?: string, noiDung?: string): Complaint['status'] => {
 };
 
 const ComplaintList: React.FC = () => {
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -275,13 +275,11 @@ const ComplaintList: React.FC = () => {
             options={[
               { value: 'all', label: 'Trạng thái: Tất cả' },
               { value: 'pending', label: 'Chờ xử lý' },
-              { value: 'processing', label: 'Đang xử lý' },
               { value: 'pending_info', label: 'Chờ bổ sung' },
               { value: 'pending_guide', label: 'Chờ giải trình' },
               { value: 'pending_review', label: 'Chờ duyệt' },
               { value: 'resolved', label: 'Đã giải quyết' },
-              { value: 'rejected', label: 'Từ chối' },
-              { value: 'cancelled', label: 'Đã hủy' }
+              { value: 'rejected', label: 'Từ chối' }
             ]}
           />
         </div>

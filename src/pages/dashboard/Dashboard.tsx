@@ -119,9 +119,10 @@ const Dashboard: React.FC = () => {
           tours: tours?.totalElements || prev.tours
         }));
 
-        // Fetch larger batch for featured calculation
-        const allToursResp = await tourInstanceService.danhSach({ page: 0, size: 200 }).catch(() => null);
+        // Fetch larger batch for featured calculation & top destinations
+        const allToursResp = await tourInstanceService.danhSach({ page: 0, size: 500 }).catch(() => null);
         if (allToursResp && allToursResp.content) {
+          // 1. Gói Tour Nổi Bật (Featured Tours)
           // Lọc các tour đang mở bán và còn chỗ
           const activeTours = allToursResp.content.filter(t => t.trangThai === 'MO_BAN' && typeof t.choConLai === 'number' && t.choConLai > 0);
           
@@ -140,23 +141,56 @@ const Dashboard: React.FC = () => {
 
           // Chỉ lấy 12 tour
           setFeaturedTours(uniqueFeatured.slice(0, 12));
-        }
 
-        if (templates && templates.content) {
-          // Top Điểm đến (Lấy từ tiêu đề tour mẫu và tạo phần trăm giả lập dựa trên số đánh giá)
-          const dests = templates.content.slice(3, 7).map((t, idx) => {
-            const fullName = t.tieuDe || 'Điểm đến ' + (idx + 1);
-            const shortName = fullName.split('-')[0].trim();
-            return {
-              name: shortName,
-              percent: Math.floor(Math.random() * 41) + 50 // 50% to 90%
-            };
-          });
-          if (dests.length > 0) {
-            setDestinations(dests.sort((a, b) => b.percent - a.percent));
+          // 2. Top Điểm Đến (Tính tổng khách đặt của các tour thực tế theo từng tour mẫu)
+          const validStatuses = ['DA_QUYET_TOAN', 'KET_THUC', 'MO_BAN', 'DANG_THUC_HIEN'];
+          const validTours = allToursResp.content.filter(t => t.trangThai && validStatuses.includes(t.trangThai.toUpperCase()));
+
+          const templateStats = new Map<string, { name: string, booked: number }>();
+          let totalBookedAll = 0;
+
+          for (const t of validTours) {
+            if (!t.maTourMau) continue;
+            
+            const soKhachToiDa = t.soKhachToiDa || 0;
+            const choConLai = t.choConLai || 0;
+            let booked = soKhachToiDa - choConLai;
+            if (booked < 0) booked = 0;
+            
+            if (booked > 0) {
+              // Lấy tên tour từ tieuDeTour, cắt chuỗi trước dấu '-' để lấy tên điểm đến ngắn gọn
+              const fullName = t.tieuDeTour || 'Chưa có tên';
+              const shortName = fullName.split('-')[0].trim();
+              
+              if (!templateStats.has(t.maTourMau)) {
+                templateStats.set(t.maTourMau, { name: shortName, booked: 0 });
+              }
+              const stat = templateStats.get(t.maTourMau)!;
+              stat.booked += booked;
+              totalBookedAll += booked;
+            }
+          }
+
+          if (totalBookedAll > 0) {
+            // Lấy ra 4 tour mẫu có số lượng khách đặt cao nhất
+            const sortedDestinations = Array.from(templateStats.values())
+              .sort((a, b) => b.booked - a.booked)
+              .slice(0, 4);
+              
+            // Tính % dựa trên số lượng khách đặt tour nhiều nhất
+            const maxBooked = sortedDestinations.length > 0 ? sortedDestinations[0].booked : 1;
+            
+            setDestinations(
+              sortedDestinations.map(stat => ({
+                name: stat.name,
+                percent: Math.round((stat.booked / maxBooked) * 100)
+              }))
+            );
           } else {
             setDestinations(topDestinations);
           }
+        } else {
+          setDestinations(topDestinations);
         }
 
         if (incidents) {

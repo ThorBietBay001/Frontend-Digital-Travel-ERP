@@ -39,7 +39,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
       setLocalRevenue(tour.totalRevenue);
       setLocalAllotment(tour.totalAllotmentCost);
       setLocalActual(tour.totalActualCost);
-      setGrossProfit(tour.totalRevenue - tour.totalAllotmentCost - tour.totalActualCost);
+      setGrossProfit(tour.totalRevenue - tour.totalActualCost);
       setNote('');
       setNoteError('');
       setConfirmOpen(false);
@@ -88,7 +88,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
   const isLoss = grossProfit < 0;
 
   const handleRecalculate = () => {
-    setGrossProfit(localRevenue - localAllotment - localActual);
+    setGrossProfit(localRevenue - localActual);
   };
 
   const handleRequireInfo = () => {

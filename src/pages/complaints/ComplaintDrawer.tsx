@@ -20,6 +20,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
   
   const [tourName, setTourName] = useState<string>('');
   const [departureDate, setDepartureDate] = useState<string>('');
+  const [realCustomerName, setRealCustomerName] = useState<string>('');
 
   const getStatusDisplay = (status: string) => {
     switch (status) {
@@ -53,6 +54,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
       ordersService.chiTietDatTour(complaint.maDatTour).then(res => {
         setTourName(res.tieuDeTour || '');
         setDepartureDate(res.ngayKhoiHanh ? formatDate(res.ngayKhoiHanh) : '');
+        setRealCustomerName(res.tenKhachHang || '');
       }).catch(e => console.error(e));
     }
   }, [isOpen, complaint]);
@@ -153,18 +155,22 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
               <h3 className="font-bold text-[#121C2C] mb-3 text-sm flex items-center gap-2">
                 Thông tin Tour
               </h3>
-              <div className="grid grid-cols-1 gap-2 text-sm text-gray-700">
-                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                  <span className="text-gray-500">Mã Đơn / KH:</span>
-                  <span className="font-medium">{complaint.maDatTour || complaint.customerName || '—'}</span>
+              <div className="grid grid-cols-1 gap-2.5 text-sm text-gray-700">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Mã đơn hàng:</span>
+                  <span className="font-medium">{complaint.maDatTour || '—'}</span>
                 </div>
-                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-500">Tên Tour:</span>
                   <span className="font-medium text-right max-w-[200px] truncate" title={tourName}>{tourName || '—'}</span>
                 </div>
-                <div className="flex justify-between items-center pb-1">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-500">Ngày khởi hành:</span>
                   <span className="font-medium">{departureDate || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Tên khách hàng:</span>
+                  <span className="font-medium text-right">{realCustomerName || complaint.customerName || '—'}</span>
                 </div>
               </div>
             </div>
@@ -234,14 +240,6 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
                 className="w-full text-left p-3 rounded-lg border border-[#FDBA74] bg-[#FFF7ED] text-[#9A3412] flex items-center gap-3 hover:bg-[#FFEDD5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
                 <AlertCircle size={18} /> Yêu cầu HDV giải trình
-              </button>
-
-              <button 
-                onClick={() => setActiveAction('Đề xuất bồi thường')}
-                disabled={isView}
-                className="w-full text-left p-3 rounded-lg border border-[#86EFAC] bg-[#F0FDF4] text-[#166534] flex items-center gap-3 hover:bg-[#DCFCE7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
-              >
-                <CheckCircle size={18} /> Đề xuất bồi thường
               </button>
 
               <button 

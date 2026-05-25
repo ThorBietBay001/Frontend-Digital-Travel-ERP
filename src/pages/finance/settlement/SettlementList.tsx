@@ -78,7 +78,7 @@ const SettlementList: React.FC = () => {
           startDate: '',
           endDate: q.ngayQuyetToan || '',
           totalRevenue: q.tongDoanhThu || 0,
-          totalAllotmentCost: 0,
+          totalAllotmentCost: q.giaCamKet || 0,
           totalActualCost: q.tongChiPhi || 0,
           passengerCount: 0,
           guideName: '',
@@ -99,7 +99,7 @@ const SettlementList: React.FC = () => {
           startDate: '',
           endDate: q.ngayQuyetToan || '',
           totalRevenue: q.tongDoanhThu || 0,
-          totalAllotmentCost: 0,
+          totalAllotmentCost: q.giaCamKet || 0,
           totalActualCost: q.tongChiPhi || 0,
           passengerCount: 0,
           guideName: '',
@@ -199,11 +199,19 @@ const SettlementList: React.FC = () => {
       ),
     },
     {
+      key: 'totalAllotmentCost',
+      title: 'Chi phí cam kết',
+      align: 'right',
+      render: (record) => (
+        <span className="font-semibold text-gray-500">{record.totalAllotmentCost.toLocaleString('vi-VN')}</span>
+      ),
+    },
+    {
       key: 'totalCost',
       title: 'Tổng chi phí',
       align: 'right',
       render: (record) => {
-        const totalCost = record.totalAllotmentCost + record.totalActualCost;
+        const totalCost = record.totalActualCost;
         const isLoss = totalCost > record.totalRevenue;
         return (
           <span className={`font-semibold ${isLoss ? 'text-red-600' : 'text-gray-800'}`}>
