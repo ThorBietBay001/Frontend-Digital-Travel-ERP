@@ -58,6 +58,11 @@ export const dispatchService = {
     return response.data.data ?? [];
   },
 
+  lichCongTacNhanVien: async (maNhanVien: string): Promise<PhanCongResponse[]> => {
+    const response = await api.get<{ data: PhanCongResponse[] }>(`/api/dieu-hanh/nhan-vien/${maNhanVien}/lich-cong-tac`);
+    return response.data.data ?? [];
+  },
+
   dongYPhanCong: async (maPhanCong: string): Promise<PhanCongResponse | undefined> => {
     const response = await api.post<ApiResponsePhanCongResponse>(`/api/huong-dan-vien/phan-cong/${maPhanCong}/dong-y`);
     return unwrapApiData(response);

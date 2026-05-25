@@ -110,13 +110,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
     onClose();
   };
 
-  const handleOverBudgetApproval = async () => {
-    if (!(await confirm('Trình duyệt vượt chi cho cấp quản lý?'))) {
-      return;
-    }
-    onSettle?.(tour.id, 'over_budget', note.trim() || undefined);
-    onClose();
-  };
+
 
   const handleConfirmSettle = () => {
     onSettle?.(tour.id, 'completed', note.trim() || undefined);
@@ -134,24 +128,11 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
     }
 
     return (
-      <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-amber-700">
-          {totalActualOverBudget && 'Cảnh báo: Tổng chi phí thực tế vượt ngân sách cam kết.'}
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="w-full flex justify-end">
+        <div className="flex gap-3">
           <Button variant="secondary" icon={<FileText size={16} />} onClick={handleRequireInfo}>
             Yêu cầu bổ sung
           </Button>
-          {totalActualOverBudget && (
-            <Button
-              variant="secondary"
-              className="border-amber-400 text-amber-700 hover:bg-amber-50"
-              icon={<AlertTriangle size={16} />}
-              onClick={handleOverBudgetApproval}
-            >
-              Trình duyệt vượt chi
-            </Button>
-          )}
           <Button
             variant="primary"
             className="bg-[#00668A] hover:bg-[#005173]"
@@ -234,6 +215,12 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
                   </span>
                 </div>
               </div>
+              {totalActualOverBudget && (
+                <div className="mt-4 p-3 bg-amber-50 rounded-lg text-sm text-amber-700 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-amber-500" />
+                  <span>Cảnh báo: Tổng chi phí thực tế vượt ngân sách cam kết.</span>
+                </div>
+              )}
             </div>
 
             {!readonly && (

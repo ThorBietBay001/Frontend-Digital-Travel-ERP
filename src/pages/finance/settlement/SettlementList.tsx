@@ -13,6 +13,7 @@ import type { SettlementTour } from './mockData';
 import { financeService } from '../../../services/finance';
 import type { QuyetToanResponse } from '../../../services/finance';
 import { useAuth } from '../../../context/AuthContext';
+import { useNotification } from '../../../context/NotificationContext';
 import { hasAccess } from '../../../config/rolePermissions';
 
 const SettlementList: React.FC = () => {
@@ -21,6 +22,8 @@ const SettlementList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
+
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedTour, setSelectedTour] = useState<SettlementTour | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -39,18 +42,36 @@ const SettlementList: React.FC = () => {
   };
 
   const { user } = useAuth();
-
+  const { notify } = useNotification();
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'finance')) return;
     try {
-      const res = await financeService.danhSach_6();
+      setError(null);
+      
+      let res;
+      try {
+        res = await financeService.danhSach_6({ page: 0, size: 100 });
+      } catch (e) {
+        console.error('Lỗi tải danh sách quyết toán:', e);
+        res = { content: [] };
+      }
+
+      let pendingRes;
+      try {
+        pendingRes = await financeService.tourCanQuyetToan({ page: 0, size: 100 });
+      } catch (e) {
+        console.error('Lỗi tải tour cần quyết toán:', e);
+        setError('Không thể tải danh sách tour cần quyết toán. Vui lòng thử lại sau.');
+        pendingRes = { content: [] };
+      }
+
       const mapped = (res?.content || []).map((q: QuyetToanResponse): SettlementTour => {
         let status: SettlementTour['status'] = 'pending';
         if (q.trangThai === 'DA_QUYET_TOAN') status = 'completed';
         else if (q.trangThai === 'CHUA_QUYET_TOAN') status = 'pending';
         
         return {
-          id: q.maQuyetToan || '',
+          id: q.maQuyetToan || q.maTour || '',
           code: q.maTour || '',
           name: q.tenTour || '',
           startDate: '',
@@ -67,9 +88,33 @@ const SettlementList: React.FC = () => {
           settlementNote: q.ghiChu
         };
       });
-      setTours(mapped);
-    } catch (e) {
+
+      const pendingMapped = (pendingRes?.content || []).map((q: QuyetToanResponse): SettlementTour => {
+        return {
+          id: q.maTour || '',
+          code: q.maTour || '',
+          name: q.tenTour || '',
+          startDate: '',
+          endDate: q.ngayQuyetToan || '',
+          totalRevenue: q.tongDoanhThu || 0,
+          totalAllotmentCost: 0,
+          totalActualCost: q.tongChiPhi || 0,
+          passengerCount: 0,
+          guideName: '',
+          guideCode: '',
+          approverName: q.tenNhanVien || '',
+          actualCostItems: [],
+          status: 'pending',
+          settlementNote: q.ghiChu
+        };
+      });
+
+      // Avoid duplicates just in case
+      const allTours = [...mapped, ...pendingMapped.filter(p => !mapped.some(m => m.code === p.code))];
+      setTours(allTours);
+    } catch (e: any) {
       console.error(e);
+      setError('Lỗi hệ thống, vui lòng thử lại sau');
     }
   };
 
@@ -77,21 +122,26 @@ const SettlementList: React.FC = () => {
 
   const handleSettle = async (id: string, status: 'completed' | 'pending_info' | 'over_budget', note?: string) => {
     try {
+      const tour = tours.find(t => t.id === id);
+      if (!tour) return;
+
+      // Luôn gọi taoQuyetToan để upsert (cập nhật ghi chú và các con số mới nhất)
+      const draft = await financeService.taoQuyetToan(tour.code, { 
+        maTour: tour.code,
+        ghiChu: note || '' 
+      });
+      let quyetToanId = draft.maQuyetToan || tour.id;
+
       if (status === 'completed') {
-        await financeService.chotQuyetToan(id);
+        const res = await financeService.chotQuyetToan(quyetToanId);
+        notify(`Quyết toán thành công! Mã: ${res.maQuyetToan}, Lợi nhuận: ${res.loiNhuan?.toLocaleString()} VND`, { type: 'success' });
+      } else if (status === 'pending_info') {
+        notify('Đã yêu cầu Hướng dẫn viên bổ sung chứng từ giải trình. Tour được chuyển sang trạng thái "Chờ bổ sung".', { type: 'info' });
+      } else if (status === 'over_budget') {
+        notify('Đã gửi yêu cầu trình duyệt vượt chi lên cấp quản lý. Vui lòng chờ phê duyệt.', { type: 'info' });
       }
-      setTours((prev) =>
-        prev.map((tour) => {
-          if (tour.id !== id) return tour;
-          if (status === 'completed') {
-            return { ...tour, status: 'completed', settlementNote: note };
-          }
-          if (status === 'pending_info') {
-            return { ...tour, settlementNote: note };
-          }
-          return { ...tour, status: 'pending_over_budget', settlementNote: note };
-        })
-      );
+      
+      await getAll();
     } catch (e) {
       alert('Lỗi chốt quyết toán. ' + (e instanceof Error ? e.message : ''));
     }
@@ -231,6 +281,12 @@ const SettlementList: React.FC = () => {
             />
           </div>
         </div>
+
+        {error && (
+          <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+            {error}
+          </div>
+        )}
 
         <Table columns={columns} dataSource={paginatedData} rowKey="id" emptyText="Không có tour cần quyết toán" />
 

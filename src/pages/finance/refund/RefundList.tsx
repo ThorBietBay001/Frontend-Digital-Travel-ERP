@@ -12,6 +12,7 @@ import type { Column } from '../../../components/ui/Table';
 import type { RefundRequest } from './mockData';
 import type { RefundData } from './RefundProcessingModal';
 import { financeService } from '../../../services/finance';
+import { ordersService } from '../../../services/orders';
 import type { ThanhToanResponse } from '../../../services/finance';
 import { useAuth } from '../../../context/AuthContext';
 import { hasAccess } from '../../../config/rolePermissions';
@@ -46,21 +47,26 @@ const RefundList: React.FC = () => {
     if (!hasAccess(user?.maVaiTro, 'finance')) return;
     try {
       const res = await financeService.danhSachChoHoanTien();
+      const ordersRes = await ordersService.danhSachTatCa({ page: 0, size: 500 }).catch(() => null);
+      const orders = ordersRes?.content || [];
+
       const mapped = (res?.content || []).map((t: ThanhToanResponse): RefundRequest => {
         const status: RefundRequest['status'] = (t.trangThai as RefundRequest['status']) || 'CHO_THANH_TOAN';
+        const orderInfo = orders.find(o => o.maDatTour === t.maDatTour);
 
         return {
           id: t.maGiaoDich || '',
           code: t.maGiaoDich || '',
           orderCode: t.maDatTour || '',
-          customerName: 'Khách hàng', // Mock if unavailable
-          customerPhone: '', // Mock
+          customerName: orderInfo?.tenKhachHang || 'Khách hàng',
+          customerPhone: (orderInfo as any)?.soDienThoai || '',
           amount: t.soTien || 0,
           reason: t.thongBao || '',
           status,
           refundMethod: t.phuongThuc === 'CHUYEN_KHOAN' ? 'gateway' : 'manual'
         };
       });
+
       setRefunds(mapped);
     } catch (e) {
       console.error(e);
@@ -85,6 +91,7 @@ const RefundList: React.FC = () => {
               status: 'DA_HOAN_TIEN',
               refundMethod: data?.method,
               bankAccount: data?.bankAccount,
+              bankName: data?.bankName,
               transactionCode: data?.transactionCode,
             };
           }
@@ -92,7 +99,7 @@ const RefundList: React.FC = () => {
         })
       );
     } catch (e) {
-      alert('Lỗi xử lý hoàn tiền. ' + (e instanceof Error ? e.message : ''));
+      throw e;
     }
   };
 
@@ -128,14 +135,15 @@ const RefundList: React.FC = () => {
     {
       key: 'customer',
       title: 'Khách Hàng',
+      width: '25%',
       render: (record) => (
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#E8F6FF] text-[#00668A] font-semibold flex items-center justify-center">
-            {record.customerName.charAt(0)}
+          <div className="w-9 h-9 flex-shrink-0 rounded-full bg-[#E8F6FF] text-[#00668A] font-semibold flex items-center justify-center">
+            {record.customerName.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <div className="font-semibold text-gray-800">{record.customerName}</div>
-            <div className="text-xs text-gray-500">{record.customerPhone}</div>
+          <div className="min-w-0">
+            <div className="font-semibold text-gray-800 truncate">{record.customerName}</div>
+            {record.customerPhone && <div className="text-xs text-gray-500 truncate">{record.customerPhone}</div>}
           </div>
         </div>
       ),
@@ -155,7 +163,8 @@ const RefundList: React.FC = () => {
     },
     {
       key: 'status',
-      title: 'Trạng thái',
+      title: 'Trạng Thái',
+      width: '15%',
       render: (record) => {
         const mappedStatus = mapTransactionStatus(record.status as string);
         return <Badge label={mappedStatus.label} variant={mappedStatus.variant} />;
@@ -163,8 +172,9 @@ const RefundList: React.FC = () => {
     },
     {
       key: 'actions',
-      title: 'Hành động',
+      title: 'Hành Động',
       align: 'center',
+      width: '12%',
       render: (record) => {
         if (record.status === 'CHO_THANH_TOAN' || record.status === 'CHO_HOAN_TIEN' || record.status === 'pending' || record.status === 'THANH_CONG') {
           return (
@@ -199,27 +209,8 @@ const RefundList: React.FC = () => {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-[32px] font-bold text-[#121C2C]">Quản Lý Yêu Cầu Hoàn Tiền</h1>
-            {/* <p className="text-sm text-gray-500 mt-1">Theo dõi trạng thái và xử lý các yêu cầu hoàn tiền từ khách hàng.</p> */}
           </div>
-          {/*<Button variant="secondary" icon={<Download size={18} />}>
-            Xuất file
-          </Button>*/}
         </div>
-
-        {/*<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-            <div className="text-sm text-gray-500">Yêu cầu chờ xử lý</div>
-            <div className="text-2xl font-bold text-[#00668A] mt-2">5</div>
-          </div>
-          <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-            <div className="text-sm text-gray-500">Tổng tiền cần hoàn</div>
-            <div className="text-2xl font-bold text-amber-600 mt-2">45.000.000 VND</div>
-          </div>
-          <div className="bg-white rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] p-6">
-            <div className="text-sm text-gray-500">Đã hoàn trong tháng</div>
-            <div className="text-2xl font-bold text-emerald-600 mt-2">120.000.000 VND</div>
-          </div>
-        </div>*/}
 
         <div className="bg-white p-6 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[260px]">
@@ -234,8 +225,6 @@ const RefundList: React.FC = () => {
               options={[
                 { label: 'Tất cả trạng thái', value: 'all' },
                 { label: 'Chờ thanh toán', value: 'CHO_THANH_TOAN' },
-                { label: 'Thành công', value: 'THANH_CONG' },
-                { label: 'Thất bại', value: 'THAT_BAI' },
                 { label: 'Đã hoàn tiền', value: 'DA_HOAN_TIEN' }
               ]}
               value={statusFilter}

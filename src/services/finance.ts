@@ -64,6 +64,10 @@ export const financeService = {
         const response = await api.get<ApiResponsePageQuyetToanResponse>('/api/ke-toan/quyet-toan', { params });
         return response.data.data;
     },
+    tourCanQuyetToan: async (params?: Record<string, any>) => {
+        const response = await api.get<ApiResponsePageQuyetToanResponse>('/api/ke-toan/tour-can-quyet-toan', { params });
+        return response.data.data;
+    },
     chiTiet_4: async (maQuyetToan: string) => {
         const response = await api.get<ApiResponseQuyetToanResponse>(`/api/ke-toan/quyet-toan/${maQuyetToan}`);
         return response.data.data;

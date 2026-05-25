@@ -114,7 +114,7 @@ const CostList: React.FC = () => {
     {
       key: 'id',
       title: 'Mã chi phí',
-      render: (record) => <span className="font-mono text-xs font-semibold text-gray-600">{record.id}</span>,
+      render: (record) => <span className="font-semibold text-gray-800">{record.id}</span>,
     },
     {
       key: 'tourCode',

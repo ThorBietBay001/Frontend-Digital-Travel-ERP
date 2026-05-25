@@ -197,7 +197,6 @@ const AssignGuide: React.FC = () => {
       <div className="flex flex-col h-full gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-[32px] font-bold text-[#121C2C]">Danh sách chờ phân bổ</h1>
-          <p className="text-gray-500 text-sm">Chỉ điều phối HDV cho tour ở trạng thái CHO_KICH_HOAT.</p>
         </div>
 
         <div className="bg-white p-4 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-center justify-between">
