@@ -15,6 +15,12 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState('');
   const [finalNote, setFinalNote] = useState('');
+
+  const formatComplaintContent = (content: string) => {
+    return content
+      .replace(/lúc (\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d+)?/g, 'lúc $1 $2')
+      .replace(/(\[(?:Yêu cầu HDV giải trình|HDV giải trình) lúc [^\]]+\]:)\s*/g, '$1 \n');
+  };
   
   useEffect(() => {
     setActiveAction(null);
@@ -117,7 +123,7 @@ const ComplaintDrawer: React.FC<ComplaintDrawerProps> = ({ isOpen, onClose, comp
             <div className="mb-6">
               <h3 className="font-bold text-[#121C2C] mb-3 text-sm">Nội dung phản ánh</h3>
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed shadow-inner">
-                {complaint.description}
+                {formatComplaintContent(complaint.description)}
               </div>
             </div>
 

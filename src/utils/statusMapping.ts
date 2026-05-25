@@ -61,6 +61,7 @@ export const mapSupportRequestStatus = (status?: string): StatusMapping => {
     case 'CHUA_XU_LY': return { label: 'Chưa xử lý', variant: 'warning' };
     case 'CHO_BO_SUNG': return { label: 'Chờ bổ sung', variant: 'neutral' };
     case 'CHO_GIAI_TRINH': return { label: 'Chờ giải trình', variant: 'neutral' };
+    case 'CHO_DUYET': return { label: 'Chờ duyệt', variant: 'warning' };
     case 'DA_XU_LY': return { label: 'Đã xử lý', variant: 'success' };
     case 'TU_CHOI': return { label: 'Từ chối', variant: 'error' };
     default: return { label: status || 'Không xác định', variant: 'neutral' };

@@ -73,7 +73,7 @@ export interface Complaint {
   guideName?: string;
   sentDate: string;
   severity: 'high' | 'medium' | 'low';
-  status: 'pending' | 'processing' | 'pending_info' | 'pending_guide' | 'resolved' | 'rejected' | 'cancelled';
+  status: 'pending' | 'processing' | 'pending_info' | 'pending_guide' | 'pending_review' | 'resolved' | 'rejected' | 'cancelled';
   description: string;
   attachments?: string[];
   timeline: { action: string; timestamp: string }[];

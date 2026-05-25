@@ -15,18 +15,21 @@ import { complaintsService } from '../../services/complaints';
 import { useAuth } from '../../context/AuthContext';
 import { hasAccess } from '../../config/rolePermissions';
 
-const mapStatus = (s?: string): Complaint['status'] => {
+const mapStatus = (s?: string, noiDung?: string): Complaint['status'] => {
+  const isGuideExplanation = !!noiDung?.includes('[Yêu cầu HDV giải trình');
   switch (s?.toUpperCase()) {
     case 'DA_XU_LY': return 'resolved';
     case 'TU_CHOI': return 'rejected';
-    case 'CHO_BO_SUNG': return 'pending_info';
+    case 'CHO_BO_SUNG': return isGuideExplanation ? 'pending_guide' : 'pending_info';
     case 'CHO_GIAI_TRINH': return 'pending_guide';
+    case 'CHO_DUYET': return 'pending_review';
     case 'CHUA_XU_LY': return 'pending';
     default: return 'pending';
   }
 };
 
 const ComplaintList: React.FC = () => {
+  const itemsPerPage = 10;
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +58,7 @@ const ComplaintList: React.FC = () => {
       guideName: api.maNhanVienXuLy,
       sentDate: api.thoiDiemTao ? api.thoiDiemTao.split('T')[0] : '',
       severity: 'medium',
-      status: mapStatus(api.trangThai),
+      status: mapStatus(api.trangThai, api.noiDung),
       description: api.noiDung || '',
       resolution: savedResolution || undefined,
       timeline: savedTimeline,
@@ -69,8 +72,18 @@ const ComplaintList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await complaintsService.danhSachYeuCauHoTro();
-      setComplaints(res && res.content ? res.content.map(mapToUI) : []);
+      const pageSize = 100;
+      const firstPage = await complaintsService.danhSachYeuCauHoTro({ page: 0, size: pageSize });
+      const totalPages = firstPage?.totalPages ?? 1;
+      const remainingPages = totalPages > 1
+        ? await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            complaintsService.danhSachYeuCauHoTro({ page: index + 1, size: pageSize })
+          )
+        )
+        : [];
+      const allComplaints = [firstPage, ...remainingPages].flatMap(page => page?.content ?? []);
+      setComplaints(allComplaints.map(mapToUI));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
       setError(msg);
@@ -87,6 +100,22 @@ const ComplaintList: React.FC = () => {
     const matchesStatus = selectedStatus === 'all' || c.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
+  const paginatedComplaints = filteredComplaints.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedStatus]);
+
+  React.useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const columns: Column<Complaint>[] = [
     {
@@ -147,6 +176,7 @@ const ComplaintList: React.FC = () => {
           case 'processing': label = 'Đang xử lý'; variant = 'info'; break;
           case 'pending_info': label = 'Chờ bổ sung'; variant = 'warning'; break;
           case 'pending_guide': label = 'Chờ giải trình'; variant = 'warning'; break;
+          case 'pending_review': label = 'Chờ duyệt'; variant = 'warning'; break;
           case 'resolved': label = 'Đã giải quyết'; variant = 'success'; break;
           case 'rejected': label = 'Từ chối'; variant = 'error'; break;
           case 'cancelled': label = 'Đã hủy'; variant = 'neutral'; break;
@@ -193,6 +223,7 @@ const ComplaintList: React.FC = () => {
         case 'rejected': apiStatus = 'TU_CHOI'; break;
         case 'pending_info': apiStatus = 'CHO_BO_SUNG'; break;
         case 'pending_guide': apiStatus = 'CHO_GIAI_TRINH'; break;
+        case 'pending_review': apiStatus = 'CHO_DUYET'; break;
         case 'pending': apiStatus = 'CHUA_XU_LY'; break;
         default: apiStatus = 'CHUA_XU_LY';
       }
@@ -202,6 +233,14 @@ const ComplaintList: React.FC = () => {
         ghiChu: updatedComplaint.resolution,
       };
       
+      if (updatedComplaint.status === 'pending_guide') {
+        const lastAction = updatedComplaint.timeline[updatedComplaint.timeline.length - 1]?.action || '';
+        const noiDung = lastAction.includes(':') ? lastAction.split(':').slice(1).join(':').trim() : lastAction;
+        await complaintsService.yeuCauHdvGiaiTrinh(updatedComplaint.id, noiDung || 'Vui lòng giải trình yêu cầu hỗ trợ này.');
+      } else {
+        await complaintsService.xuLyYeuCauHoTro(updatedComplaint.id, payload);
+      }
+
       // Save local state to persist across API reloads since Backend doesn't support these fields yet
       if (updatedComplaint.resolution) {
         localStorage.setItem(`complaint_res_${updatedComplaint.id}`, updatedComplaint.resolution);
@@ -209,8 +248,6 @@ const ComplaintList: React.FC = () => {
       if (updatedComplaint.timeline && updatedComplaint.timeline.length > 0) {
         localStorage.setItem(`complaint_timeline_${updatedComplaint.id}`, JSON.stringify(updatedComplaint.timeline));
       }
-
-      await complaintsService.xuLyYeuCauHoTro(updatedComplaint.id, payload);
       setSelectedComplaint(updatedComplaint);
       getAll();
     } catch (err: unknown) {
@@ -240,6 +277,7 @@ const ComplaintList: React.FC = () => {
               { value: 'processing', label: 'Đang xử lý' },
               { value: 'pending_info', label: 'Chờ bổ sung' },
               { value: 'pending_guide', label: 'Chờ giải trình' },
+              { value: 'pending_review', label: 'Chờ duyệt' },
               { value: 'resolved', label: 'Đã giải quyết' },
               { value: 'rejected', label: 'Từ chối' },
               { value: 'cancelled', label: 'Đã hủy' }
@@ -256,13 +294,13 @@ const ComplaintList: React.FC = () => {
         ) : error ? (
           <div className="flex items-center justify-center h-full text-red-500 p-8">{error}</div>
         ) : (
-          <Table<Complaint> dataSource={filteredComplaints} columns={columns} />
+          <Table<Complaint> dataSource={paginatedComplaints} columns={columns} />
         )}
         <div className="p-4 border-t border-[#E1F1FF]">
           <Pagination
             current={currentPage}
             total={filteredComplaints.length}
-            pageSize={10}
+            pageSize={itemsPerPage}
             onChange={setCurrentPage}
           />
         </div>

@@ -25,6 +25,13 @@ export const complaintsService = {
         const response = await api.put<ApiResponseYeuCauHoTroResponse>(`/api/kinh-doanh/yeu-cau-ho-tro/${maYeuCau}`, data);
         return response.data.data;
     },
+    yeuCauHdvGiaiTrinh: async (maYeuCau: string, noiDung: string) => {
+        const response = await api.post<ApiResponseYeuCauHoTroResponse>(
+            `/api/kinh-doanh/yeu-cau-ho-tro/${maYeuCau}/yeu-cau-hdv-giai-trinh`,
+            { noiDung }
+        );
+        return response.data.data;
+    },
     danhSachYeuCauHoTro: async (params?: Record<string, any>) => {
         const response = await api.get<ApiResponsePageYeuCauHoTroResponse>('/api/kinh-doanh/yeu-cau-ho-tro', { params });
         return response.data.data;
