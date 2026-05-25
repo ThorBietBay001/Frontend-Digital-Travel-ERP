@@ -94,20 +94,19 @@ export default function ChiTietTour() {
     if (meals && meals.includes('|')) {
       const parts = meals.split('|').map(s => s.trim()).filter(Boolean);
       return (
-        <div className="flex flex-wrap gap-1.5 mt-1">
+        <div className="flex flex-col gap-1 mt-1.5">
           {parts.map((p, i) => {
             const [k, ...rest] = p.split(':');
             const v = rest.join(':').trim();
             if (!v || v.toLowerCase() === 'null') return null;
             let icon = '🍽️';
-            let color = "text-slate-600";
-            if (k.trim().toLowerCase().includes('sáng')) { icon = '☕'; color = "text-amber-600"; }
-            else if (k.trim().toLowerCase().includes('trưa')) { icon = '🍲'; color = "text-orange-600"; }
-            else if (k.trim().toLowerCase().includes('chiều')) { icon = '🍵'; color = "text-emerald-600"; }
-            else if (k.trim().toLowerCase().includes('tối')) { icon = '🌙'; color = "text-indigo-600"; }
+            if (k.trim().toLowerCase().includes('sáng')) { icon = '☕'; }
+            else if (k.trim().toLowerCase().includes('trưa')) { icon = '🍲'; }
+            else if (k.trim().toLowerCase().includes('chiều')) { icon = '🍵'; }
+            else if (k.trim().toLowerCase().includes('tối')) { icon = '🌙'; }
             return (
-              <span key={i} className={`flex items-center gap-1 bg-white border border-slate-200 shadow-sm px-1.5 py-0.5 rounded-md text-[10.5px] font-bold ${color}`}>
-                <span>{icon}</span> {k.trim()}: <span className="text-slate-500 font-medium">{v}</span>
+              <span key={i} className="flex items-center gap-1 px-1 py-0.5 text-[10.5px] font-bold text-slate-900">
+                <span>{icon}</span> {k.trim()}: <span className="text-slate-900 font-medium">{v}</span>
               </span>
             );
           })}
@@ -421,7 +420,7 @@ export default function ChiTietTour() {
                 <span>Lịch trình</span>
               </h2>
 
-              <div className="divide-y divide-slate-100">
+              <div className="space-y-3 pt-2">
                 {tour.itinerary.map((day: any) => (
                   <button
                     key={day.day}
@@ -430,7 +429,7 @@ export default function ChiTietTour() {
                       setSelectedItineraryDay(day.day);
                       setShowItineraryModal(true);
                     }}
-                    className="w-full flex items-center justify-between py-4 text-left hover:bg-slate-50/50 px-2 rounded-xl transition-all group"
+                    className="w-full flex items-center justify-between p-4.5 text-left bg-blue-50/40 border border-blue-100 hover:border-blue-300 hover:bg-blue-50/80 rounded-2xl shadow-sm transition-all group"
                   >
                     <div className="space-y-1">
                       <span className="block font-black text-slate-800 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
@@ -438,16 +437,7 @@ export default function ChiTietTour() {
                           ? day.title
                           : `Ngày ${day.day}${day.title ? `: ${day.title}` : ''}`}
                       </span>
-                      <div className="mt-1">
-                        {typeof getDayMeals(tour.id, day.day, day.meals || day.menu) === 'string' ? (
-                          <span className="flex items-center text-slate-500 text-xs font-semibold space-x-1.5">
-                            <Utensils className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{getDayMeals(tour.id, day.day, day.meals || day.menu)}</span>
-                          </span>
-                        ) : (
-                          getDayMeals(tour.id, day.day, day.meals || day.menu)
-                        )}
-                      </div>
+
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
                   </button>
@@ -501,7 +491,7 @@ export default function ChiTietTour() {
                                   <span className="block font-black text-blue-600 text-sm sm:text-base">
                                     Ngày {day.day}
                                   </span>
-                                  {(!day.title?.toLowerCase().startsWith(`ngày ${day.day}`) || day.title.length > `ngày ${day.day}`.length + 2) && (
+                                  {day.title && (!day.title?.toLowerCase().startsWith(`ngày ${day.day}`) || day.title.length > `ngày ${day.day}`.length + 2) && (
                                     <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
                                       {day.title?.toLowerCase().startsWith(`ngày ${day.day}`)
                                         ? day.title.substring(`ngày ${day.day}`.length).replace(/^[\s:-]+/, '').trim()

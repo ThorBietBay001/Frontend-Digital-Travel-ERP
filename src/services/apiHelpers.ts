@@ -186,7 +186,7 @@ export const mapTourDetail = (item: ApiRecord, greenActions: ApiRecord[] = []): 
         title = hoatDongStr;
         activitiesStr = '';
       } else if (isTimeline || isMultiline) {
-        title = 'Lịch trình trong ngày';
+        title = '';
       } else if (hoatDongStr) {
         title = hoatDongStr.substring(0, 50) + (hoatDongStr.length > 50 ? '...' : '');
       }
