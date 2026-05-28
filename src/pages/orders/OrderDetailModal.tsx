@@ -128,6 +128,10 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
   const childTicketUnitPrice = api.tienVeTreEm && childPassengers.length > 0
     ? api.tienVeTreEm / childPassengers.length
     : undefined;
+  const explicitVoucherDiscount = api.soTienUuDai ?? api.soTienGiam ?? api.tienGiam ?? api.giaTriVoucher ?? 0;
+  const totalAmount = api.tongTien || 0;
+  const originalAmount = api.tongTienGoc ?? (totalAmount + explicitVoucherDiscount);
+  const voucherDiscount = explicitVoucherDiscount || Math.max(originalAmount - totalAmount, 0);
 
   return {
     id: api.maDatTour || '',
@@ -137,14 +141,15 @@ const mapApiToOrder = (api: DonDatTourResponse): Order => {
     tourName: api.tieuDeTour || '',
     departureDate: api.ngayKhoiHanh || '',
     bookingDate: formatDateTime(api.ngayDat),
-    totalAmount: api.tongTien || 0,
-    voucherCode: api.maVoucher,
-    voucherName: api.tenVoucher,
-    voucherDiscount: api.soTienGiam ?? api.tienGiam ?? api.giaTriVoucher ?? 0,
+    totalAmount,
+    originalAmount,
+    voucherCode: api.maCodeVoucher || api.maVoucher,
+    voucherName: api.tenVoucher || api.maVoucher,
+    voucherDiscount,
     childTicketCount: childPassengers.length || api.soTreEm || api.soLuongVeTreEm || 0,
     childTicketAmount: api.tienVeTreEm
       ?? childPassengers.reduce((sum, p) => sum + (p.giaVeTreEm ?? childTicketPrice ?? 0), 0),
-    greenPoints: api.soDiemXanh ?? api.diemXanh ?? 0,
+    greenPoints: api.diemXanhDuKien ?? api.soDiemXanh ?? api.diemXanh ?? 0,
     greenNote: api.ghiChuDiemXanh,
     additionalServices: api.chiTietDichVu?.map(formatAdditionalService).filter(Boolean),
     additionalServicesAmount: api.chiTietDichVu?.reduce((sum, s) => sum + (s.thanhTien ?? (s.donGia && s.soLuong ? s.donGia * s.soLuong : s.donGia) ?? 0), 0) || 0,
@@ -186,6 +191,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
     if (!maDatTour) return;
     setLoading(true);
     setError(null);
+    setOrder(null);
     try {
       const detail = await ordersService.chiTietDatTour(maDatTour);
       setOrder(mapApiToOrder(detail));
@@ -198,13 +204,16 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
   }, [maDatTour]);
 
   useEffect(() => {
-    if (!isOpen || !maDatTour) {
-      setOrder(null);
-      setError(null);
-      return;
-    }
+    if (!isOpen || !maDatTour) return;
 
-    loadDetail();
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void loadDetail();
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, maDatTour, loadDetail]);
 
   if (!isOpen) return null;
@@ -236,6 +245,9 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
   );
 
   const canApprovePayment = order?.status === 'pending' && order?.paymentStatus === 'paid';
+  const voucherDiscount = order?.voucherDiscount || 0;
+  const originalAmount = order ? order.originalAmount ?? (order.totalAmount + voucherDiscount) : 0;
+  const tourTicketAmount = order ? Math.max(originalAmount - (order.additionalServicesAmount || 0), 0) : 0;
 
   const handleApprovePayment = async () => {
     if (!order) return;
@@ -392,7 +404,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
               <div className="flex flex-col gap-2.5 pb-3 border-b border-[#E1F1FF]">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Vé tour:</span>
-                  <span className="font-medium text-gray-800 text-right">{formatCurrency(order.totalAmount + (order.voucherDiscount || 0) - (order.additionalServicesAmount || 0))}</span>
+                  <span className="font-medium text-gray-800 text-right">{formatCurrency(tourTicketAmount)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Cơ cấu hành khách:</span>
@@ -415,11 +427,11 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Số tiền gốc</span>
-                  <span className="font-medium text-gray-800 text-right">{formatCurrency(order.totalAmount + (order.voucherDiscount || 0))}</span>
+                  <span className="font-medium text-gray-800 text-right">{formatCurrency(originalAmount)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Ưu đãi voucher</span>
-                  <span className="font-medium text-green-600 text-right">-{formatCurrency(order.voucherDiscount || 0)}</span>
+                  <span className="font-medium text-green-600 text-right">-{formatCurrency(voucherDiscount)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Sau khi trừ</span>

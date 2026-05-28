@@ -27,7 +27,10 @@ export interface DonDatTourResponse {
   tenKhachHang?: string;
   ngayDat?: string;
   tongTien?: number;
+  tongTienGoc?: number;
+  soTienUuDai?: number;
   maVoucher?: string;
+  maCodeVoucher?: string;
   tenVoucher?: string;
   giaTriVoucher?: number;
   soTienGiam?: number;
@@ -38,6 +41,7 @@ export interface DonDatTourResponse {
   tienVeTreEm?: number;
   diemXanh?: number;
   soDiemXanh?: number;
+  diemXanhDuKien?: number;
   ghiChuDiemXanh?: string;
   trangThai?: string;
   maGiaoDich?: string;
@@ -142,6 +146,7 @@ export interface Order {
   departureDate: string;
   bookingDate: string;
   totalAmount: number;
+  originalAmount?: number;
   voucherCode?: string;
   voucherName?: string;
   voucherDiscount?: number;
