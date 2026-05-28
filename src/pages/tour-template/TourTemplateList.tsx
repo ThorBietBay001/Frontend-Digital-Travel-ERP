@@ -23,6 +23,7 @@ const TourTemplateList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
+  const apiPageSize = 100;
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -53,13 +54,18 @@ const TourTemplateList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await tourTemplateService.danhSach();
-      if (res && res.content) {
-        // Need to load without schedule first, schedule will be loaded on demand
-        setData(res.content.map(mapToUI));
-      } else {
-        setData([]);
+      const firstPage = await tourTemplateService.danhSach({ page: 0, size: apiPageSize });
+      const allTours = [...(firstPage?.content || [])];
+      const totalPages = firstPage?.totalPages || 0;
+
+      for (let pageIndex = 1; pageIndex < totalPages; pageIndex++) {
+        const res = await tourTemplateService.danhSach({ page: pageIndex, size: apiPageSize });
+        allTours.push(...(res?.content || []));
       }
+
+      // Need to load without schedule first, schedule will be loaded on demand
+      setData(allTours.map(mapToUI));
+      setPage(1);
     } catch (err: any) {
       setError(err.message || 'Lỗi khi tải dữ liệu');
     } finally {
@@ -299,7 +305,10 @@ const TourTemplateList: React.FC = () => {
             <SearchInput
               placeholder="Tìm kiếm theo mã hoặc tên tour mẫu..."
               value={searchTerm}
-              onChange={setSearchTerm}
+              onChange={(value) => {
+                setSearchTerm(value);
+                setPage(1);
+              }}
             />
           </div>
 
