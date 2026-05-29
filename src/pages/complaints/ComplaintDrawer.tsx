@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MessageSquare, AlertCircle, CheckCircle, XCircle, Check } from 'lucide-react';
+import { X, MessageSquare, AlertCircle, XCircle, Check } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import type { Complaint } from './mockData';
 import { ordersService } from '../../services/orders';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../../components/layouts/MainLayout';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map as MapIcon, CheckCircle2, XCircle, Clock, BarChart3 } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpRight, ArrowDownRight, MapPin, Wallet, ShoppingCart, Users, Map as MapIcon, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 // API Services
@@ -104,11 +104,10 @@ const Dashboard: React.FC = () => {
     // Fetch actual data from backend
     const fetchStats = async () => {
       try {
-        const [customers, orders, tours, templates, incidents] = await Promise.all([
+        const [customers, orders, tours, incidents] = await Promise.all([
           customersService.timKiemKhachHang({ page: 0, size: 1 }).catch(() => null),
           ordersService.danhSachTatCa({ page: 0, size: 1 }).catch(() => null),
           tourInstanceService.danhSach({ page: 0, size: 1 }).catch(() => null),
-          tourTemplateService.danhSach({ page: 0, size: 10, sort: 'DanhGia,desc' }).catch(() => null),
           incidentService.lichSuSuCoCuaHdv().catch(() => null)
         ]);
 
