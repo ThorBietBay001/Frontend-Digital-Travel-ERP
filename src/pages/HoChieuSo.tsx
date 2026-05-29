@@ -147,18 +147,27 @@ export default function HoChieuSo() {
         setVouchers(unwrapPageContent(vouchersRes).map(mapVoucher));
         setRedeemableVouchers(unwrapPageContent(redeemableVouchersRes).map(mapVoucher));
         setAllTours(unwrapPageContent(toursRes).map(mapPublicTour));
-        setComplaints(unwrapPageContent(complaintsRes).map((c: any) => ({
-          id: c.maYeuCau,
-          bookingId: c.maDatTour || '',
-          tourName: c.maDatTour || 'Đơn đặt tour',
-          category: c.loaiYeuCau === 'KHIEU_NAI' ? 'Khiếu nại' : c.loaiYeuCau === 'HOAN_TIEN' ? 'Hoàn tiền' : 'Hỗ trợ',
-          subject: c.loaiYeuCau || 'Yêu cầu hỗ trợ',
-          content: c.noiDung || '',
-          status: c.trangThai || 'CHUA_XU_LY',
-          createdAt: '',
-          updatedAt: '',
-          history: [`Trạng thái hiện tại: ${c.trangThai || 'CHUA_XU_LY'}`]
-        })));
+        setComplaints(unwrapPageContent(complaintsRes).map((c: any) => {
+          const requestTypeLabels: Record<string, string> = {
+            KHIEU_NAI: 'Khiếu nại',
+            HOAN_TIEN: 'Hoàn tiền',
+            HUY_TOUR: 'Hủy tour & Hoàn tiền'
+          };
+          const requestType = c.loaiYeuCau || 'HO_TRO';
+
+          return {
+            id: c.maYeuCau,
+            bookingId: c.maDatTour || '',
+            tourName: c.maDatTour || 'Đơn đặt tour',
+            category: requestTypeLabels[requestType] || 'Hỗ trợ',
+            subject: requestTypeLabels[requestType] || requestType || 'Yêu cầu hỗ trợ',
+            content: c.noiDung || '',
+            status: c.trangThai || 'CHUA_XU_LY',
+            createdAt: '',
+            updatedAt: '',
+            history: [`Trạng thái hiện tại: ${c.trangThai || 'CHUA_XU_LY'}`]
+          };
+        }));
       } catch (err) {
         console.error("Failed to load digital passport data:", err);
       }
