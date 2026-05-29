@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import MainLayout from '../../../components/layouts/MainLayout';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -43,7 +43,7 @@ const SettlementList: React.FC = () => {
 
   const { user } = useAuth();
   const { notify } = useNotification();
-  const getAll = async () => {
+  const getAll = useCallback(async () => {
     if (!hasAccess(user?.maVaiTro, 'finance')) return;
     try {
       setError(null);
@@ -116,13 +116,22 @@ const SettlementList: React.FC = () => {
       // Avoid duplicates just in case
       const allTours = [...mapped, ...pendingMapped.filter(p => !mapped.some(m => m.code === p.code))];
       setTours(allTours);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       setError('Lỗi hệ thống, vui lòng thử lại sau');
     }
-  };
+  }, [user?.maVaiTro]);
 
-  React.useEffect(() => { getAll(); }, [user]);
+  React.useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void getAll();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [getAll]);
 
   const handleSettle = async (id: string, status: 'completed' | 'pending_info' | 'over_budget', note?: string) => {
     try {

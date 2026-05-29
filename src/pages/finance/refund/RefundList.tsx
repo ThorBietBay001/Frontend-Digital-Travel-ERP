@@ -46,11 +46,21 @@ const RefundList: React.FC = () => {
   const getAll = async () => {
     if (!hasAccess(user?.maVaiTro, 'finance')) return;
     try {
-      const res = await financeService.danhSachChoHoanTien();
+      const refundPageSize = 100;
+      const firstPage = await financeService.danhSachChoHoanTien({ page: 0, size: refundPageSize });
+      const totalPages = firstPage?.totalPages ?? 1;
+      const remainingPages = totalPages > 1
+        ? await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, index) =>
+              financeService.danhSachChoHoanTien({ page: index + 1, size: refundPageSize })
+            )
+          )
+        : [];
+      const allRefunds = [firstPage, ...remainingPages].flatMap(page => page?.content ?? []);
       const ordersRes = await ordersService.danhSachTatCa({ page: 0, size: 500 }).catch(() => null);
       const orders = ordersRes?.content || [];
 
-      const mapped = (res?.content || []).map((t: ThanhToanResponse): RefundRequest => {
+      const mapped = allRefunds.map((t: ThanhToanResponse): RefundRequest => {
         const status: RefundRequest['status'] = (t.trangThai as RefundRequest['status']) || 'CHO_THANH_TOAN';
         const orderInfo = orders.find(o => o.maDatTour === t.maDatTour);
 

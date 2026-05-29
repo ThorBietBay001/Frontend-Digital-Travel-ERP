@@ -31,6 +31,8 @@ const mapStatus = (s?: string, noiDung?: string): Complaint['status'] => {
   }
 };
 
+const FINANCE_REQUEST_TYPES = new Set(['HUY_TOUR', 'HOAN_TIEN']);
+
 const ComplaintList: React.FC = () => {
   const itemsPerPage = 5;
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -112,7 +114,9 @@ const ComplaintList: React.FC = () => {
         incidentService.lichSuSuCoCuaHdv().catch(() => [] as NhatKySuCoResponse[]),
       ]);
       const mapped = [
-        ...complaintsRes.map(mapToUI),
+        ...complaintsRes
+          .filter(item => !FINANCE_REQUEST_TYPES.has((item.loaiYeuCau || '').toUpperCase()))
+          .map(mapToUI),
         ...incidents.map(mapIncidentToUI),
       ];
       setComplaints(mapped);

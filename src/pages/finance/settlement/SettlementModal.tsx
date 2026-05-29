@@ -6,6 +6,7 @@ import { AlertTriangle, RefreshCw, FileText, CheckCircle, Eye, DollarSign } from
 import type { SettlementTour } from './mockData';
 import { tourInstanceService } from '../../../services/tour-instance';
 import { financeService } from '../../../services/finance';
+import type { ChiPhiThucTeResponse } from '../../../services/finance';
 import { formatDate, formatDateTime } from '../../../utils/dateHelpers';
 import { useNotification } from '../../../context/NotificationContext';
 
@@ -27,6 +28,14 @@ interface WarningItem {
   loaiCanhBao: string;
   mucDo: string;
   noiDung: string;
+}
+
+interface WarningResponse {
+  maCanhBao?: string;
+  maChiPhi?: string;
+  loaiCanhBao?: string;
+  mucDo?: string;
+  noiDung?: string;
 }
 
 export interface SettlementModalProps {
@@ -51,6 +60,26 @@ const trangThaiVariants: Record<string, 'warning' | 'success' | 'error' | 'info'
   YEU_CAU_BO_SUNG: 'info',
 };
 
+const mapExpense = (expense: ChiPhiThucTeResponse, index: number): ExpenseItem => ({
+  maChiPhi: expense.maChiPhi || `${expense.maTour || 'CP'}-${index}`,
+  maTour: expense.maTour,
+  maNhanVien: expense.maNhanVien,
+  tenNhanVien: expense.tenNhanVien || 'Không xác định',
+  danhMuc: expense.danhMuc || 'Chưa phân loại',
+  thanhTien: expense.thanhTien || 0,
+  hoaDonAnh: expense.hoaDonAnh,
+  trangThaiDuyet: expense.trangThaiDuyet || 'CHO_DUYET',
+  ngayKhai: expense.ngayKhai,
+});
+
+const mapWarning = (warning: WarningResponse, index: number): WarningItem => ({
+  maCanhBao: warning.maCanhBao || `${warning.maChiPhi || 'CB'}-${index}`,
+  maChiPhi: warning.maChiPhi || '',
+  loaiCanhBao: warning.loaiCanhBao || 'BAT_THUONG',
+  mucDo: warning.mucDo || 'THAP',
+  noiDung: warning.noiDung || 'Cần kiểm tra khoản chi phí này.',
+});
+
 const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour, onSettle, readonly = false }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [note, setNote] = useState('');
@@ -58,7 +87,6 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
   const [localRevenue, setLocalRevenue] = useState(0);
   const [committedCost, setCommittedCost] = useState<number>(0);
   const [hdvActualCost, setHdvActualCost] = useState(0);
-  const [partnerActualCost, setPartnerActualCost] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [warnings, setWarnings] = useState<WarningItem[]>([]);
@@ -81,13 +109,15 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
         financeService.danhSachChiPhi({ maTour, size: 100 }),
         financeService.danhSachCanhBao({ maTour, size: 100 }).catch(() => ({ content: [] }))
       ]);
-      const expenseList = expenseRes?.content || [];
+      const expenseList = (expenseRes?.content || []).map(mapExpense);
       setExpenses(expenseList);
 
-      const warningsList = warningRes?.content || [];
+      const warningsList = ((warningRes?.content || []) as WarningResponse[]).map(mapWarning);
       setWarnings(warningsList);
 
-      const sumHdv = expenseList.reduce((s: number, e: ExpenseItem) => s + (e.thanhTien || 0), 0);
+      const sumHdv = expenseList
+        .filter((e) => e.trangThaiDuyet === 'DA_DUYET')
+        .reduce((s, e) => s + e.thanhTien, 0);
       setHdvActualCost(sumHdv);
 
       if (expenseList.length > 0) {
@@ -112,11 +142,15 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
   };
 
   useEffect(() => {
-    if (tour && isOpen) {
+    if (!tour || !isOpen) return;
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+
       setLocalRevenue(tour.totalRevenue);
       setCommittedCost(tour.giaCamKet || 0);
       setHdvActualCost(tour.totalActualCost);
-      setPartnerActualCost(0);
       setNote('');
       setNoteError('');
       setConfirmOpen(false);
@@ -141,12 +175,19 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
       }).catch(() => {});
 
       fetchData(tour.code);
-    }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [tour, isOpen]);
 
   if (!tour) return null;
 
-  const totalActualCost = hdvActualCost + partnerActualCost;
+  const pendingExpenseCost = expenses
+    .filter((expense) => expense.trangThaiDuyet !== 'DA_DUYET')
+    .reduce((sum, expense) => sum + expense.thanhTien, 0);
+  const totalActualCost = hdvActualCost;
   const actualGrossProfit = localRevenue - totalActualCost;
   const expectedGrossProfit = localRevenue - committedCost;
   const hdvExceeds15Pct = committedCost > 0 && hdvActualCost > committedCost * 1.15;
@@ -337,27 +378,17 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
                 </div>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Chi phí HDV nhập</span>
+                <span className="text-gray-500">Chi phí đã duyệt</span>
                 <span className="font-semibold text-gray-800">
                   {hdvActualCost.toLocaleString('vi-VN')} VND
                 </span>
               </div>
-              {!readonly && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Chi phí thực tế đối tác</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={partnerActualCost > 0 ? partnerActualCost.toLocaleString('vi-VN') : ''}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^0-9]/g, '');
-                        setPartnerActualCost(raw ? parseInt(raw, 10) : 0);
-                      }}
-                      placeholder="Nhập số tiền..."
-                      className="w-[200px] text-right rounded-[12px] border border-[#C5EAFF] px-4 py-2 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:border-[#89D4FF] focus:ring-[#89D4FF]/20"
-                    />
-                    <span className="text-gray-500">VND</span>
-                  </div>
+              {pendingExpenseCost > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Chi phí chưa tính vào quyết toán</span>
+                  <span className="font-semibold text-amber-700">
+                    {pendingExpenseCost.toLocaleString('vi-VN')} VND
+                  </span>
                 </div>
               )}
               <div className="border-t border-dashed border-[#E1F1FF] pt-3 space-y-2">
@@ -395,14 +426,14 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
                   <AlertTriangle size={16} className="text-red-500 shrink-0" />
                   <span className="font-semibold">
-                    Cảnh báo: Tổng chi phí HDV nhập ({hdvActualCost.toLocaleString('vi-VN')} VND) vượt quá 15% chi phí cam kết ({committedCost.toLocaleString('vi-VN')} VND).
+                    Cảnh báo: Tổng chi phí đã duyệt ({hdvActualCost.toLocaleString('vi-VN')} VND) vượt quá 15% chi phí cam kết ({committedCost.toLocaleString('vi-VN')} VND).
                   </span>
                 </div>
               )}
               {!hdvExceeds15Pct && committedCost > 0 && (
                 <div className="mt-4 p-3 bg-emerald-50 rounded-lg text-sm text-emerald-700 flex items-center gap-2">
                   <CheckCircle size={16} />
-                  <span>Tổng chi phí HDV nhập không vượt quá 15% chi phí cam kết.</span>
+                  <span>Tổng chi phí đã duyệt không vượt quá 15% chi phí cam kết.</span>
                 </div>
               )}
             </div>
@@ -449,7 +480,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
                         >
                           <td className="py-3 px-2 font-medium text-gray-800">{exp.danhMuc}</td>
                           <td className="py-3 px-2 text-right font-semibold text-gray-800">
-                            {exp.thanhTien.toLocaleString('vi-VN')}
+                            {exp.thanhTien.toLocaleString('vi-VN')} VND
                           </td>
                           <td className="py-3 px-2 text-gray-600">{exp.tenNhanVien}</td>
                           <td className="py-3 px-2 text-gray-600">{formatDateTime(exp.ngayKhai)}</td>
@@ -631,7 +662,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
               <span className="font-semibold">{committedCost.toLocaleString('vi-VN')} VND</span>
             </div>
             <div className="flex justify-between">
-              <span>Chi phí thực tế (HDV + Đối tác):</span>
+              <span>Chi phí thực tế đã duyệt:</span>
               <span className="font-semibold">{totalActualCost.toLocaleString('vi-VN')} VND</span>
             </div>
             <div className="flex justify-between border-t border-gray-200 pt-1">
