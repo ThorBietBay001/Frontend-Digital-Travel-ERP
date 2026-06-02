@@ -52,7 +52,7 @@ const formatExpenseDateTime = (value?: string) => {
 export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expenses, setExpenses }: ExpenseTrackerProps) {
   // Expense State
   const [expenseForm, setExpenseForm] = useState({
-    category: 'Ăn uống',
+    category: '',
     amount: '',
     notes: '',
     date: '19/05/2026'
@@ -61,6 +61,8 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
   const [expenseToast, setExpenseToast] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [receiptPhoto, setReceiptPhoto] = useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
@@ -96,13 +98,29 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
     }
   }, [maTour, reportableTours]);
 
-  // Simulated capture function
+  // File capture function
   const handleCaptureReceipt = () => {
-    setIsCapturing(true);
-    setTimeout(() => {
-      setReceiptPhoto('MOCK_RECEIPT_URL');
-      setIsCapturing(false);
-    }, 1200);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsCapturing(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPhoto(reader.result as string);
+        setReceiptFile(file);
+        setIsCapturing(false);
+      };
+      reader.onerror = () => {
+        setFormError("Lỗi khi đọc file ảnh. Vui lòng thử lại!");
+        setIsCapturing(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Helper: Format price currency
@@ -137,10 +155,22 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
     }
 
     try {
+      let uploadedPhotoUrl = "MOCK_RECEIPT_URL";
+      if (receiptFile) {
+        try {
+          const uploadRes = await hdvService.uploadFile(receiptFile);
+          uploadedPhotoUrl = uploadRes.url;
+        } catch (e) {
+          console.error("Lỗi upload ảnh", e);
+          setFormError("Không thể upload ảnh, vui lòng thử lại!");
+          return;
+        }
+      }
+
       const data = {
         danhMuc: expenseForm.category,
         thanhTien: amountVal,
-        hoaDonAnh: receiptPhoto,
+        hoaDonAnh: uploadedPhotoUrl,
         ghiChu: expenseForm.notes
       };
 
@@ -165,12 +195,13 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
 
         // Reset form
         setExpenseForm({
-          category: 'Ăn uống',
+          category: '',
           amount: '',
           notes: '',
           date: new Date().toLocaleDateString('vi-VN')
         });
         setReceiptPhoto(null);
+        setReceiptFile(null);
 
         setTimeout(() => {
           setExpenseToast(null);
@@ -300,7 +331,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
                   {/* Receipt image */}
                   <div className="mt-2 rounded-xl h-36 overflow-hidden bg-slate-100 border border-slate-200">
                     <img
-                      src={e.photoUrl === 'MOCK_RECEIPT_URL' ? "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?q=80&w=320" : "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=320"}
+                      src={(e.photoUrl && e.photoUrl !== 'MOCK_RECEIPT_URL') ? e.photoUrl : "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?q=80&w=320"}
                       alt="Receipt Proof"
                       className="w-full h-full object-cover"
                     />
@@ -383,7 +414,18 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <h3 className="font-bold text-slate-800 text-sm">Nhập chi phí thực tế</h3>
               <button
-                onClick={() => setExpenseModalOpen(false)}
+                onClick={() => {
+                  setExpenseModalOpen(false);
+                  setFormError(null);
+                  setExpenseForm({
+                    category: '',
+                    amount: '',
+                    notes: '',
+                    date: new Date().toLocaleDateString('vi-VN')
+                  });
+                  setReceiptPhoto(null);
+                  setReceiptFile(null);
+                }}
                 className="text-slate-400 hover:text-slate-600 font-bold text-xs"
               >
                 Đóng
@@ -399,18 +441,13 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
               )}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">Hạng mục chi</label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Ăn uống, Vé tham quan..."
                   value={expenseForm.category}
                   onChange={(e) => setExpenseForm(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:border-amber-400 font-bold text-slate-700"
-                >
-                  <option>Ăn uống</option>
-                  <option>Vé tham quan</option>
-                  <option>Xăng xe</option>
-                  <option>Lưu trú phát sinh</option>
-                  <option>Mua sắm chung</option>
-                  <option>Khác</option>
-                </select>
+                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:border-amber-400 bg-white font-black text-slate-800 text-xs select-text"
+                />
               </div>
 
               <div>
@@ -441,7 +478,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
                 {receiptPhoto ? (
                   <div className="relative rounded-2xl overflow-hidden h-28 bg-slate-900 border border-slate-200">
                     <img
-                      src="https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?q=80&w=320"
+                      src={receiptPhoto}
                       alt="Receipt Proof"
                       className="w-full h-full object-cover"
                     />
@@ -473,6 +510,14 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
                     )}
                   </button>
                 )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
               </div>
 
               <div className="pt-2">

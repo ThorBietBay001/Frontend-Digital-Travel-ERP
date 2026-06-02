@@ -1,4 +1,4 @@
-import api from './api';
+﻿import api from './api';
 
 export const hdvService = {
   // 1. Auth & hồ sơ cá nhân
@@ -73,7 +73,7 @@ export const hdvService = {
     return res.data;
   },
 
-  layChiTietTour: async (_maTour: string) => {
+  layChiTietTour: async () => {
     // Hiện chưa có endpoint chi tiết tour riêng cho HDV, tạm dùng danh sách tour.
     const res = await api.get('/huong-dan-vien/tour-cua-toi');
     return res.data;
@@ -135,6 +135,18 @@ export const hdvService = {
 
   taoChiPhi: async (maTour: string, data: any) => {
     const res = await api.post(`/huong-dan-vien/tour/${maTour}/chi-phi`, data);
+    return res.data;
+  },
+
+  // Upload ảnh hóa đơn
+  uploadFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/public/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res.data;
   },
 
