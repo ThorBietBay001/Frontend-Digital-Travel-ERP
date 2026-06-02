@@ -685,7 +685,7 @@ function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: numbe
       </div>
 
       <div className="p-6 flex flex-col flex-1">
-        <h3 className="font-bold text-base mb-2 text-gray-900 line-clamp-2 min-h-[3.75rem] leading-snug">{tour.name}</h3>
+        <h3 className="font-bold text-lg mb-2 text-gray-900 line-clamp-2 min-h-[4rem] leading-snug">{tour.name}</h3>
         <p className="text-gray-600 text-sm mb-2 flex items-center">
           <Clock className="w-4 h-4 mr-1 shrink-0 text-gray-500" />
           {tour.duration}
