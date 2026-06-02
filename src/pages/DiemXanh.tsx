@@ -7,7 +7,6 @@ interface GreenAction {
   id: string;
   name: string;
   points: number;
-  icon: string;
 }
 
 interface GreenPointsProps {
@@ -22,6 +21,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   const [selectedGreenActions, setSelectedGreenActions] = useState<string[]>([]);
   const [greenPhotoFile, setGreenPhotoFile] = useState<string | null>(null);
   const [isCapturingGreenPhoto, setIsCapturingGreenPhoto] = useState(false);
+  const [isSubmittingGreenAction, setIsSubmittingGreenAction] = useState(false);
   const [greenConfirmToast, setGreenConfirmToast] = useState<{ show: boolean; text: string; type?: 'success' | 'error' } | null>(null);
   const greenPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const activePassengers = useMemo(
@@ -30,22 +30,21 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
   );
 
   useEffect(() => {
-    hdvService.layDanhSachHanhDongXanh(maTour)
+    hdvService.layDanhSachHanhDongXanh()
       .then((res) => {
         const data = res?.data ?? res ?? [];
         const list = Array.isArray(data) ? data : [];
         const mapped: GreenAction[] = list.map((a: any) => ({
           id: a.maHanhDongXanh,
           name: a.tenHanhDong,
-          points: Number(a.diemCong) || 0,
-          icon: '+'
+          points: Number(a.diemCong) || 0
         }));
         setGreenActionsList(mapped);
       })
       .catch(() => {
         setGreenActionsList([]);
       });
-  }, [maTour]);
+  }, []);
 
   const toggleSelectGreenGuest = (code: string) => {
     setSelectedGreenGuests(prev =>
@@ -96,8 +95,17 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
     event.target.value = '';
   };
 
+  const resetGreenActionForm = () => {
+    setSelectedGreenGuests([]);
+    setSelectedGreenActions([]);
+    setGreenPhotoFile(null);
+    if (greenPhotoInputRef.current) {
+      greenPhotoInputRef.current.value = '';
+    }
+  };
+
   const submitGreenAction = async () => {
-    if (selectedGreenGuests.length === 0 || selectedGreenActions.length === 0 || !maTour) return;
+    if (selectedGreenGuests.length === 0 || selectedGreenActions.length === 0 || !maTour || isSubmittingGreenAction) return;
 
     const selectedPassengers = activePassengers.filter(p => selectedGreenGuests.includes(p.code));
     const selectablePassengers = selectedPassengers
@@ -119,6 +127,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
     const submissions = selectablePassengers.flatMap(({ passenger, maKhachHang }) =>
       actions.map(action => ({ passenger, maKhachHang, action }))
     );
+    setIsSubmittingGreenAction(true);
     const results = await Promise.allSettled(submissions.map(({ maKhachHang, action }) =>
       hdvService.luuHanhDongXanh(maTour, {
         maKhachHang,
@@ -135,9 +144,11 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         return totals;
       }, {});
       setPassengers(prev => prev.map(p => {
-        const points = p.maKhachHang ? pointsByCustomer[p.maKhachHang] : undefined;
+        const customerCode = p.maKhachHang || (!p.maNguoiDongHanh ? p.code : undefined);
+        const points = customerCode ? pointsByCustomer[customerCode] : undefined;
         return points ? { ...p, greenPoints: p.greenPoints + points } : p;
       }));
+      resetGreenActionForm();
     }
 
     const totalPoints = succeeded.reduce((sum, item) => sum + item.action.points, 0);
@@ -152,10 +163,8 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
         : 'Hành động xanh đã được ghi nhận trước đó.'
     });
 
-    setSelectedGreenGuests([]);
-    setSelectedGreenActions([]);
-    setGreenPhotoFile(null);
     setTimeout(() => setGreenConfirmToast(null), 4000);
+    setIsSubmittingGreenAction(false);
   };
 
   return (
@@ -233,10 +242,10 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
               key={a.id}
               onClick={() => toggleSelectGreenAction(a.id)}
               className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition ${selectedGreenActions.includes(a.id) ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center space-x-2">
-                <span className="text-base">{a.icon}</span>
+                <span className="text-base font-black leading-none">+</span>
                 <span>{a.name}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -303,7 +312,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
 
       <button
         onClick={submitGreenAction}
-        disabled={selectedGreenGuests.length === 0 || selectedGreenActions.length === 0}
+        disabled={selectedGreenGuests.length === 0 || selectedGreenActions.length === 0 || isSubmittingGreenAction}
         className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-100 transition disabled:opacity-50 disabled:shadow-none active:scale-95"
       >
         Ghi nhận & Tích điểm Hộ chiếu
