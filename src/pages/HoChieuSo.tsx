@@ -153,7 +153,10 @@ export default function HoChieuSo() {
             HOAN_TIEN: 'Hoàn tiền',
             HUY_TOUR: 'Hủy tour & Hoàn tiền'
           };
-          const requestType = c.loaiYeuCau || 'HO_TRO';
+          const rawRequestType = c.loaiYeuCau || 'HO_TRO';
+          const requestType = rawRequestType === 'HOAN_TIEN' && String(c.maDatTour || '').startsWith('DDT_HUY_')
+            ? 'HUY_TOUR'
+            : rawRequestType;
 
           return {
             id: c.maYeuCau,
@@ -544,14 +547,17 @@ export default function HoChieuSo() {
     const diffTime = depDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    let percent = 0;
-    if (diffDays < 2) {
-      percent = 100; // 100% penalty, meaning no refund (or not allowed to cancel)
-    } else if (diffDays < 7) {
-      percent = 50; // 50% penalty, refunds half
+    let refundPercent = 0;
+    if (diffDays > 15) {
+      refundPercent = 90;
+    } else if (diffDays >= 7) {
+      refundPercent = 70;
+    } else if (diffDays >= 3) {
+      refundPercent = 50;
     } else {
-      percent = 0; // 0% penalty, refunds all
+      refundPercent = 0;
     }
+    const percent = 100 - refundPercent;
 
     const penaltyAmount = (booking.totalAmount * percent) / 100;
     const refundAmount = booking.totalAmount - penaltyAmount;
@@ -575,7 +581,23 @@ export default function HoChieuSo() {
     }
 
     try {
-      await khService.yeuCauHuyTour(selectedBookingForCancel.id, { lyDo: cancellationReason.trim() });
+      const response = await khService.yeuCauHuyTour(selectedBookingForCancel.id, { lyDo: cancellationReason.trim() });
+      const yc = response.data || response;
+      if (yc && yc.maYeuCauHoTro) {
+        const newComplaint: ComplaintTicket = {
+          id: yc.maYeuCau || yc.maYeuCauHoTro || Date.now().toString(),
+          bookingId: selectedBookingForCancel.id,
+          tourName: selectedBookingForCancel.tourName || 'Đơn đặt tour',
+          category: 'Hủy tour & Hoàn tiền',
+          subject: 'Hủy tour & Hoàn tiền',
+          content: yc.noiDung || cancellationReason.trim(),
+          status: yc.trangThai || 'CHUA_XU_LY',
+          createdAt: yc.ngayTao || new Date().toISOString(),
+          updatedAt: yc.ngayCapNhat || yc.ngayTao || new Date().toISOString(),
+          history: yc.lichSuHoTro ? yc.lichSuHoTro.map((h: any) => `${h.thoiGian}: ${h.trangThaiCu} -> ${h.trangThaiMoi} (${h.nguoiXuLy || 'Hệ thống'})`) : ['Hệ thống ghi nhận yêu cầu hủy tour.']
+        };
+        setComplaints(prev => [newComplaint, ...prev]);
+      }
 
       setBookings(prev => prev.map(b =>
         b.id === selectedBookingForCancel.id
