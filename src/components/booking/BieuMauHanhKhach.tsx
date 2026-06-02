@@ -4,6 +4,7 @@ export interface PassengerData {
   idCard: string;
   email: string;
   dateOfBirth: string;
+  healthNote: string;
 }
 
 interface PassengerFormProps {
@@ -29,6 +30,18 @@ export default function BieuMauHanhKhach({
   bookingNote,
   setBookingNote
 }: PassengerFormProps) {
+  const today = new Date();
+  const maxDateOfBirth = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0')
+  ].join('-');
+
+  const handleDateOfBirthChange = (index: number, value: string) => {
+    const safeValue = value > maxDateOfBirth ? maxDateOfBirth : value;
+    thayDoiThongTinHanhKhach(index, 'dateOfBirth', safeValue);
+  };
+
   return (
     <div className="bg-white rounded-2xl p-6 border-t-4 border-t-blue-600 shadow-sm animate-fadeIn space-y-8">
       <div className="space-y-4">
@@ -188,11 +201,31 @@ export default function BieuMauHanhKhach({
                 <input
                   type="date"
                   required
+                  max={maxDateOfBirth}
                   value={passenger.dateOfBirth}
-                  onChange={(e) => thayDoiThongTinHanhKhach(index, 'dateOfBirth', e.target.value)}
+                  onChange={(e) => handleDateOfBirthChange(index, e.target.value)}
                   className="w-full bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
                 />
               </div>
+
+              {index > 0 && (
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">
+                    Lưu ý y tế / sức khỏe
+                  </label>
+                  <textarea
+                    value={passenger.healthNote}
+                    onChange={(e) => thayDoiThongTinHanhKhach(index, 'healthNote', e.target.value)}
+                    maxLength={1000}
+                    rows={2}
+                    className="w-full resize-none bg-slate-50/70 border-b-2 border-slate-200 focus:border-blue-600 px-4 py-2.5 outline-none text-sm text-slate-800 transition-all font-semibold rounded-t-xl rounded-b-none focus:bg-slate-100/60"
+                    placeholder="Ví dụ: Say xe, dị ứng hải sản, hen suyễn nhẹ, cần hỗ trợ khi leo bậc thang..."
+                  />
+                  <p className="mt-1 text-right text-[10px] font-medium text-slate-400">
+                    {passenger.healthNote.length}/1000 ký tự
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ))}

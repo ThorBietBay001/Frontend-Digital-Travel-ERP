@@ -24,7 +24,8 @@ const emptyPassenger: PassengerData = {
   phone: '',
   idCard: '',
   email: '',
-  dateOfBirth: ''
+  dateOfBirth: '',
+  healthNote: ''
 };
 
 const getStoredProfile = () => {
@@ -76,7 +77,8 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     phone: profile.phone || '',
     idCard: profile.idCard || '',
     email: profile.email || '',
-    dateOfBirth: profile.dateOfBirth || ''
+    dateOfBirth: profile.dateOfBirth || '',
+    healthNote: ''
   }]);
   const [extraServices, setExtraServices] = useState<ExtraService[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -114,7 +116,8 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
           phone: mappedProfile.phone || passenger.phone || '',
           idCard: mappedProfile.idCard || passenger.idCard || '',
           email: mappedProfile.email || passenger.email || '',
-          dateOfBirth: mappedProfile.dateOfBirth || passenger.dateOfBirth || ''
+          dateOfBirth: mappedProfile.dateOfBirth || passenger.dateOfBirth || '',
+          healthNote: passenger.healthNote || ''
         } : passenger));
 
         const [servicesResponse, vouchersResponse] = await Promise.all([
@@ -201,7 +204,8 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
         phone: profile.phone || '',
         idCard: profile.idCard || '',
         email: profile.email || '',
-        dateOfBirth: profile.dateOfBirth || ''
+        dateOfBirth: profile.dateOfBirth || '',
+        healthNote: ''
       } : { ...emptyPassenger })
     )));
   };
@@ -343,7 +347,8 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
           hoTen: passenger.name.trim(),
           soDienThoai: passenger.phone.trim(),
           cccd: passenger.idCard.trim() || undefined,
-          ngaySinh: passenger.dateOfBirth || undefined
+          ngaySinh: passenger.dateOfBirth || undefined,
+          ghiChu: passenger.healthNote.trim() || undefined
         })),
         danhSachHanhDongXanhChiTiet: Object.entries(selectedGreenActions).map(([id, quantity]) => ({
           maHanhDongXanh: id,
