@@ -25,7 +25,6 @@ interface DashboardProps {
 
 const PAGE_SIZE = 4;
 
-// Helper: Get passenger member rank labels (unified with DiemDanh.tsx)
 const layHuyHieuHangThanhVien = (rank: string) => {
   switch (rank) {
     case 'KIM_CUONG':
@@ -149,7 +148,6 @@ export default function BangDieuKhien({
     setPastPage(prev => Math.min(prev, totalPastPages));
   }, [totalPastPages]);
 
-  // Helper: Format price currency
   const formatCurrency = (val: number) => {
     return val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   };
@@ -309,7 +307,7 @@ export default function BangDieuKhien({
         </div>
       )}
 
-      {/* Upcoming LichTrinh (Lịch trình sắp khởi hành) */}
+      {/* Upcoming LichTrinh */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
           <span>Lịch trình đã nhận</span>
@@ -352,7 +350,7 @@ export default function BangDieuKhien({
         )}
       </div>
 
-      {/* Trip History (Lịch sử chuyến đi đã dẫn) */}
+      {/* Trip History */}
       <div className="space-y-2 mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
           <span>Lịch sử chuyến đi đã dẫn</span>
@@ -395,7 +393,7 @@ export default function BangDieuKhien({
         )}
       </div>
 
-      {/* --- GLOBAL POPUP: UPCOMING TOUR ITINERARY BOTTOM SHEET --- */}
+      {/* MODAL: UPCOMING TOUR ITINERARY BOTTOM SHEET */}
       {selectedUpcomingTour && createPortal(
         <div className="fixed inset-0 z-[100] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl animate-slide-up max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">
@@ -432,7 +430,7 @@ export default function BangDieuKhien({
               </div>
             </div>
 
-            {/* Ultra-Premium Segmented Tab Control */}
+            {/* Segmented Tab Control */}
             {selectedUpcomingTour.trangThaiChapNhan !== 'CHO_PHAN_HOI' && (
               <div className="bg-slate-50 p-1 rounded-xl flex space-x-1 border border-slate-100">
                 <button
@@ -476,7 +474,7 @@ export default function BangDieuKhien({
 
                       {guest.healthNotes && (
                         <div className="mt-1 text-rose-500 text-[11px] leading-relaxed text-left">
-                          <span className="font-extrabold">Lưu ý:</span>{' '}
+                          <span className="font-extrabold">🏥 Sức khỏe:</span>{' '}
                           <span className="font-semibold">{guest.healthNotes}</span>
                         </div>
                       )}

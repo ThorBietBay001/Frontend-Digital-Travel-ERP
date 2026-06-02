@@ -135,12 +135,12 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
   // Save absent reason
   const guiLyDoVangMat = async () => {
     if (absentReasonText === 'Lý do khác' && !customAbsentReason.trim()) {
-      return; // Enforce strict validation
+      return;
     }
     if (absentReasonModal.passenger && currentTour) {
       const code = absentReasonModal.passenger.code;
       const finalReason = absentReasonText === 'Lý do khác' ? customAbsentReason.trim() : absentReasonText;
-      
+
       try {
         await hdvService.diemDanhKhach(currentTour.code, {
           maKhachHang: code,
@@ -212,7 +212,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
         </div>
       </div>
 
-      {/* Redesign: Quiet white cards, condition-based action buttons, flat red medical text */}
+      {/* Passenger list */}
       <div className="space-y-2">
         {filteredPassengers.map((p, index) => {
           const isUnmarked = p.status === 'CHUA_DIEM_DANH';
@@ -287,7 +287,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
                 </div>
               )}
 
-              {/* Priority: Medical health warning text rendered as plain RED text */}
+              {/* Medical health warning */}
               {p.healthNotes && (
                 <div className="mt-2 text-rose-500 text-[11px] leading-relaxed">
                   <span className="font-extrabold">Lưu ý:</span>{' '}
@@ -339,12 +339,12 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
 
               {selectedPassenger.healthNotes ? (
                 <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-100">
-                  <span className="text-[11px] font-bold text-amber-800 block uppercase">🏥 Hồ sơ y tế & Lưu ý thực địa</span>
+                  <span className="text-[11px] font-bold text-amber-800 block uppercase">Lưu ý</span>
                   <p className="text-amber-900 mt-0.5 font-medium leading-relaxed">{selectedPassenger.healthNotes}</p>
                 </div>
               ) : (
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/50 text-slate-400 italic text-[11px]">
-                  Không có lưu ý đặc biệt về sức khỏe.
+                  Không có lưu ý đặc biệt.
                 </div>
               )}
             </div>
@@ -365,7 +365,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
         <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-              <h3 className="font-bold text-slate-800 text-sm">Cảnh Báo Sức Khỏe Nghiêm Trọng</h3>
+              <h3 className="font-bold text-slate-800 text-sm">Lưu ý hành khách</h3>
               <button
                 onClick={() => setHealthAcknowledgeModal({ show: false, passenger: null, targetStatus: 'DA_DIEM_DANH' })}
                 className="text-slate-400 hover:text-slate-600 font-bold text-xs"
