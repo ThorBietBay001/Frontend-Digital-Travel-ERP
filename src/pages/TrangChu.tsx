@@ -578,8 +578,8 @@ export default function TrangChu() {
                     type="button"
                     onClick={() => chuyenTrangTour(item)}
                     className={`size-9 rounded-lg border bg-white text-sm font-semibold transition-colors ${item === tourPage
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600'
-                        : 'border-slate-100 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600'
+                      : 'border-slate-100 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
                       }`}
                     aria-current={item === tourPage ? 'page' : undefined}
                   >
@@ -665,7 +665,7 @@ function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: numbe
   const dateRange = dinhDangKhoangNgay(tour.departureDate, tour.endDate);
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col h-full">
       <div className="relative">
         <img
           src={tour.image}
@@ -684,8 +684,8 @@ function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: numbe
         </div>
       </div>
 
-      <div className="p-6">
-        <h3 className="font-bold text-lg mb-2 text-gray-900">{tour.name}</h3>
+      <div className="p-6 flex flex-col flex-1">
+        <h3 className="font-bold text-base mb-2 text-gray-900 line-clamp-2 min-h-[3.75rem] leading-snug">{tour.name}</h3>
         <p className="text-gray-600 text-sm mb-2 flex items-center">
           <Clock className="w-4 h-4 mr-1 shrink-0 text-gray-500" />
           {tour.duration}
@@ -695,29 +695,33 @@ function TourCard({ tour, dinhDangGia }: { tour: any; dinhDangGia: (price: numbe
           <span>{dateRange}</span>
         </p>
 
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            {tour.originalPrice && (
-              <p className="text-gray-400 line-through text-sm">
-                {dinhDangGia(tour.originalPrice)}
+        <div className="mt-auto">
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              {tour.originalPrice ? (
+                <p className="text-gray-400 line-through text-xs h-4 mb-0.5">
+                  {dinhDangGia(tour.originalPrice)}
+                </p>
+              ) : (
+                <div className="h-4 mb-0.5"></div>
+              )}
+              <p className="text-blue-600 font-bold text-xl leading-none">
+                {dinhDangGia(tour.price)}
               </p>
-            )}
-            <p className="text-blue-600 font-bold text-xl">
-              {dinhDangGia(tour.price)}
-            </p>
+            </div>
+            <div className="flex items-center text-sm text-gray-600 font-medium pb-0.5">
+              <Users className="w-4 h-4 mr-1 text-gray-500" />
+              <span>{tour.availableSeats}/{tour.totalSeats} chỗ</span>
+            </div>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="w-4 h-4 mr-1" />
-            <span>{tour.availableSeats}/{tour.totalSeats} chỗ</span>
-          </div>
-        </div>
 
-        <Link
-          to={`/tour/${tour.id}`}
-          className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          Xem chi tiết
-        </Link>
+          <Link
+            to={`/tour/${tour.id}`}
+            className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Xem chi tiết
+          </Link>
+        </div>
       </div>
     </div>
   );

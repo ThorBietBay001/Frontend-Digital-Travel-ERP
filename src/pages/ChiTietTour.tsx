@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import {
-  Star, ArrowLeft, Check, X, Leaf, Eye, Utensils, ChevronRight, Compass, MapPin, ThumbsUp
+  Star, ArrowLeft, Check, X, Leaf, Eye, Utensils, ChevronRight, Compass, MapPin, ThumbsUp, ChevronLeft
 } from 'lucide-react';
 import type { Tour } from '../types';
 import { khService } from '../services/khService';
@@ -21,6 +21,8 @@ export default function ChiTietTour() {
   const [showCuaSoXacThuc, setShowCuaSoXacThuc] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [tourReviewsList, setTourReviewsList] = useState<any[]>([]);
+  const [reviewPage, setReviewPage] = useState(1);
+  const REVIEWS_PER_PAGE = 5;
 
   const handleBookingSessionExpired = useCallback(() => {
     setShowCuaSoDatTour(false);
@@ -47,7 +49,7 @@ export default function ChiTietTour() {
         const [tourResponse, greenResponse, reviewsResponse] = await Promise.all([
           khService.layChiTietTour(tourId),
           khService.getGreenActions(tourId).catch(() => ({ data: { content: [] } })),
-          khService.layDanhGiaTour(tourId).catch(() => ({ data: { content: [] } }))
+          khService.layDanhGiaTour(tourId, { size: 1000 }).catch(() => ({ data: { content: [] } }))
         ]);
 
         const greenActions = unwrapPageContent<any>(greenResponse);
@@ -240,6 +242,29 @@ export default function ChiTietTour() {
     if (activeReviewFilter === '1star') return review.rating === 1;
     return true;
   });
+  
+  const totalReviewPages = Math.ceil(filteredReviewsList.length / REVIEWS_PER_PAGE);
+  const paginatedReviews = filteredReviewsList.slice((reviewPage - 1) * REVIEWS_PER_PAGE, reviewPage * REVIEWS_PER_PAGE);
+  const reviewPageItems = (() => {
+    if (totalReviewPages <= 5) {
+      return Array.from({ length: totalReviewPages }, (_, index) => index + 1);
+    }
+    const visiblePages = new Set(
+      [1, totalReviewPages, reviewPage - 1, reviewPage, reviewPage + 1].filter(
+        (page) => page >= 1 && page <= totalReviewPages
+      )
+    );
+    return Array.from(visiblePages)
+      .sort((a, b) => a - b)
+      .reduce<(number | 'ellipsis')[]>((items, page, index, pages) => {
+        if (index > 0 && page - pages[index - 1] > 1) {
+          items.push('ellipsis');
+        }
+        items.push(page);
+        return items;
+      }, []);
+  })();
+
   const actualReviewCount = tourReviewsList.length;
   const displayReviewCount = actualReviewCount > 0 ? actualReviewCount : (tour?.reviews || 0);
   const actualRating = actualReviewCount
@@ -646,7 +671,10 @@ export default function ChiTietTour() {
               <div className="flex items-center justify-end">
                 <select
                   value={activeReviewFilter}
-                  onChange={(e) => setActiveReviewFilter(e.target.value as any)}
+                  onChange={(e) => {
+                    setActiveReviewFilter(e.target.value as any);
+                    setReviewPage(1);
+                  }}
                   className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
                 >
                   {[
@@ -667,8 +695,8 @@ export default function ChiTietTour() {
 
               {/* Clean Reviews List */}
               <div className="divide-y divide-slate-100">
-                {filteredReviewsList.map((review, idx) => {
-                  const originalIdx = tourReviewsList.findIndex(r => r.name === review.name);
+                {paginatedReviews.map((review, idx) => {
+                  const originalIdx = tourReviewsList.findIndex(r => r.id === review.id);
                   const likes = helpfulCounts[originalIdx] !== undefined ? helpfulCounts[originalIdx] : review.helpful;
                   const hasLiked = helpfulCounts[originalIdx] !== undefined && helpfulCounts[originalIdx] > review.helpful;
 
@@ -763,6 +791,57 @@ export default function ChiTietTour() {
                   </div>
                 )}
               </div>
+
+              {/* Review Pagination Controls */}
+              {totalReviewPages > 1 && (
+                <div className="mt-8 flex items-center justify-center pt-4 border-t border-slate-100">
+                  <nav aria-label="Phân trang đánh giá" className="inline-flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setReviewPage(Math.max(1, reviewPage - 1))}
+                      disabled={reviewPage === 1}
+                      className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:pointer-events-none disabled:bg-slate-100 disabled:text-slate-300"
+                      aria-label="Trang trước"
+                    >
+                      <ChevronLeft className="size-3.5" />
+                    </button>
+
+                    {reviewPageItems.map((item, index) => (
+                      item === 'ellipsis' ? (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="flex size-8 items-center justify-center rounded-lg border border-slate-100 bg-white text-xs font-semibold text-slate-400"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setReviewPage(item as number)}
+                          className={`size-8 rounded-lg border bg-white text-xs font-semibold transition-colors ${item === reviewPage
+                              ? 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600'
+                              : 'border-slate-100 text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                            }`}
+                          aria-current={item === reviewPage ? 'page' : undefined}
+                        >
+                          {item}
+                        </button>
+                      )
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setReviewPage(Math.min(totalReviewPages, reviewPage + 1))}
+                      disabled={reviewPage === totalReviewPages}
+                      className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:pointer-events-none disabled:bg-slate-100 disabled:text-slate-300"
+                      aria-label="Trang sau"
+                    >
+                      <ChevronRight className="size-3.5" />
+                    </button>
+                  </nav>
+                </div>
+              )}
             </div>
 
           </div>

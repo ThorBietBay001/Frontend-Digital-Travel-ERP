@@ -136,8 +136,8 @@ export const khService = {
   },
 
   // 8. Reviews
-  layDanhGiaTour: async (maTour: string) => {
-    const res = await api.get(`/public/tour/${maTour}/danh-gia`);
+  layDanhGiaTour: async (maTour: string, params?: any) => {
+    const res = await api.get(`/public/tour/${maTour}/danh-gia`, { params });
     return res.data;
   },
 
