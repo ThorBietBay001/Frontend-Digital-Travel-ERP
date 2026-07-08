@@ -47,6 +47,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
     setSystemMessage('');
   };
 
+  // UC57 - Đăng nhập: Lưu phiên xác thực
   const saveAuthSession = async (response: any) => {
     const data = unwrapData<any>(response);
     const token = data.accessToken || data.token;
@@ -138,6 +139,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
     return true;
   };
 
+  // UC55 - Quản lý truy cập tài khoản: Gửi form xác thực
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSystemMessage('');
@@ -224,6 +226,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
     }
   };
 
+  // UC59 - Quên mật khẩu: Gửi lại OTP
   const handleResendOtp = async () => {
     setIsLoading(true);
     try {
@@ -339,7 +342,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                     value={otp[idx] || ''}
                     onChange={(e) => {
                       const val = e.target.value;
-                      let nextOtp = otp.split('');
+                      const nextOtp = otp.split('');
                       nextOtp[idx] = val;
                       setOtp(nextOtp.join(''));
                       if (val && idx < 5) document.getElementById(`forgot-otp-${idx + 1}`)?.focus();
@@ -358,8 +361,8 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                     Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
                   </span>
                 ) : (
-                  <span 
-                    onClick={handleResendOtp} 
+                  <span
+                    onClick={handleResendOtp}
                     className="text-blue-600 font-bold hover:underline cursor-pointer"
                   >
                     Gửi lại OTP
@@ -383,7 +386,7 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                     value={otp[idx] || ''}
                     onChange={(e) => {
                       const val = e.target.value;
-                      let nextOtp = otp.split('');
+                      const nextOtp = otp.split('');
                       nextOtp[idx] = val;
                       setOtp(nextOtp.join(''));
                       if (val && idx < 5) document.getElementById(`reg-otp-${idx + 1}`)?.focus();
@@ -402,8 +405,8 @@ export default function CuaSoXacThuc({ onClose, onLoginSuccess }: AuthModalProps
                     Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
                   </span>
                 ) : (
-                  <span 
-                    onClick={handleResendOtp} 
+                  <span
+                    onClick={handleResendOtp}
                     className="text-blue-600 font-bold hover:underline cursor-pointer"
                   >
                     Gửi lại OTP

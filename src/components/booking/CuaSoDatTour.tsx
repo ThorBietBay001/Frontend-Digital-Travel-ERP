@@ -100,6 +100,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
   const [expirationNotice, setExpirationNotice] = useState<'HOLD' | 'PAYMENT' | null>(null);
 
   useEffect(() => {
+    // UC27 - Đặt tour: Tải dữ liệu đặt tour
     const loadBookingData = async () => {
       try {
         if (!hasActiveSession()) {
@@ -191,6 +192,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     setTimeout(() => setCopiedField(null), 1500);
   };
 
+  // UC27 - Đặt tour: Cập nhật số lượng khách
   const thayDoiSoLuongKhach = (num: number) => {
     if (num > tour.availableSeats) {
       setError(`Chỉ còn ${tour.availableSeats} chỗ trống! Vui lòng giảm số lượng hành khách.`);
@@ -210,12 +212,14 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     )));
   };
 
+  // UC27 - Đặt tour: Cập nhật thông tin hành khách
   const thayDoiThongTinHanhKhach = (index: number, field: string, value: string) => {
     setPassengers(prev => prev.map((passenger, idx) => (
       idx === index ? { ...passenger, [field]: value } : passenger
     )));
   };
 
+  // UC27 - Đặt tour: Chọn hành động xanh
   const chonHanhDongXanh = (actionId: string) => {
     setSelectedGreenActions(prev => {
       const next = { ...prev };
@@ -228,6 +232,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     });
   };
 
+  // UC27 - Đặt tour: Chọn dịch vụ thêm
   const chonDichVuThem = (serviceId: string) => {
     setSelectedExtraServices(prev => {
       const next = { ...prev };
@@ -284,6 +289,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     }, 0);
   };
 
+  // UC27 - Đặt tour: Tính tổng tiền đơn hàng
   const tinhTongTien = () => {
     let total = passengerFareSummary.total + extraServicesTotal;
     if (selectedVoucher) {
@@ -332,6 +338,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     return 'CHUYEN_KHOAN';
   };
 
+  // UC27 - Đặt tour: Gửi đơn đặt tour
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -394,6 +401,7 @@ export default function CuaSoDatTour({ tour, onClose, onSessionExpired }: Bookin
     }
   };
 
+  // UC29 - Thanh toán đơn hàng: Xác nhận chuyển khoản
   const handleConfirmTransfer = async () => {
     if (!createdBookingId) return;
 

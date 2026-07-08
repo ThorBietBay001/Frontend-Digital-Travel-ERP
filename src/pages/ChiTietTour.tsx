@@ -42,6 +42,7 @@ export default function ChiTietTour() {
   useEffect(() => {
     if (!tourId) return;
 
+    // UC26 - Xem chi tiết tour: Tải chi tiết tour
     const fetchTour = async () => {
       setLoading(true);
       setError('');

@@ -99,6 +99,7 @@ export default function HoChieuSo() {
   const [selectedVoucherForUse, setSelectedVoucherForUse] = useState<any>(null);
 
   useEffect(() => {
+    // UC21 - Xem thông tin hồ sơ số: Tải hồ sơ và lịch sử
     const fetchData = async () => {
       if (!hasActiveSession()) {
         navigate('/', { replace: true });
@@ -178,7 +179,7 @@ export default function HoChieuSo() {
     fetchData();
   }, [navigate]);
 
-  // Custom OTP verification modal states (UC23)
+  // UC23 - Cập nhật hồ sơ số: Trạng thái xác thực OTP
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpValue, setOtpValue] = useState(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState('');
@@ -186,23 +187,23 @@ export default function HoChieuSo() {
   const [expectedProfileOtp, setExpectedProfileOtp] = useState('');
   const [otpAction, setOtpAction] = useState<'profile' | 'password'>('profile');
 
-  // Booking detail modal (UC22)
+  // UC22 - Xem chi tiết lịch sử hành trình: Trạng thái chi tiết đặt tour
   const [selectedBookingForDetail, setSelectedBookingForDetail] = useState<Booking | null>(null);
   const [selectedTicketTour, setSelectedTicketTour] = useState<any>(null);
 
-  // Tour cancellation flow (UC32)
+  // UC32 - Hủy tour: Trạng thái hủy tour
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<Booking | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancellationPenalty, setCancellationPenalty] = useState({ percent: 0, amount: 0, refund: 0 });
 
-  // Tour review flow (UC35)
+  // UC35 - Đánh giá: Trạng thái đánh giá tour
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
   const [reviewStars, setReviewStars] = useState(5);
   const [reviewGuideStars, setReviewGuideStars] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [selectedReviewTags, setSelectedReviewTags] = useState<string[]>([]);
 
-  // Tour complaint flow (UC36)
+  // UC36 - Khiếu nại: Trạng thái khiếu nại tour
   const [selectedBookingForComplaint, setSelectedBookingForComplaint] = useState<Booking | null>(null);
   const [complaintCategory, setComplaintCategory] = useState('Hướng dẫn viên');
   const [complaintSubject, setComplaintSubject] = useState('');
@@ -219,7 +220,7 @@ export default function HoChieuSo() {
     5: 'Tuyệt vời'
   };
 
-  // UC60: Change password flow
+  // UC60 - Đổi mật khẩu: Trạng thái đổi mật khẩu
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -234,6 +235,7 @@ export default function HoChieuSo() {
     return err?.response?.data?.message || err?.message || fallback;
   };
 
+  // UC21 - Xem thông tin hồ sơ số: Tải lại hồ sơ
   const taiLaiHoSo = async () => {
     const profileResponse = await khService.layHoChieuSo();
     const loadedProfile = mapProfile(unwrapData<any>(profileResponse));
@@ -312,7 +314,7 @@ export default function HoChieuSo() {
     }
   };
 
-  // UC23: Triggers OTP verification modal
+  // UC23 - Cập nhật hồ sơ số: Mở xác thực lưu hồ sơ
   const handleSaveProfile = () => {
     if (editedProfile.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -331,7 +333,7 @@ export default function HoChieuSo() {
     setToast({ message: `Mã OTP xác thực của bạn là: ${generatedOtp}`, type: 'success' });
   };
 
-  // Verify OTP
+  // UC23 - Cập nhật hồ sơ số: Xác thực và lưu hồ sơ
   const handleVerifyOtp = async () => {
     const enteredCode = otpValue.join('');
     if (enteredCode === expectedProfileOtp || enteredCode === '123456') {
@@ -394,6 +396,7 @@ export default function HoChieuSo() {
     setToast({ message: `Mã OTP xác thực mới của bạn là: ${generatedOtp}`, type: 'info' });
   };
 
+  // UC60 - Đổi mật khẩu: Cập nhật mật khẩu
   const handleChangePassword = async () => {
     if (!currentPassword) {
       setPasswordError('Vui lòng nhập mật khẩu hiện tại!');
@@ -512,11 +515,12 @@ export default function HoChieuSo() {
     }
   };
 
-  // UC30: Redeem Green Points for Voucher
+  // UC30 - Quy đổi voucher: Tính điểm xanh cần đổi
   const tinhDiemCanDoiVoucher = (voucher: Voucher) => {
     return voucher.requiredGreenPoints;
   };
 
+  // UC30 - Quy đổi voucher: Đổi điểm lấy voucher
   const handleRedeemPoints = async (voucher: any, pointsRequired: number) => {
     if (profile.greenPoints < pointsRequired) {
       setToast({ message: 'Không đủ điểm xanh để quy đổi voucher này!', type: 'error' });
@@ -537,7 +541,7 @@ export default function HoChieuSo() {
     }
   };
 
-  // UC32: Handle open cancel modal & calculate penalty
+  // UC32 - Hủy tour: Mở xác nhận hủy và tính phí
   const handleOpenCancelModal = (booking: Booking) => {
     setSelectedBookingForCancel(booking);
     setCancellationReason('');
@@ -547,7 +551,7 @@ export default function HoChieuSo() {
     const diffTime = depDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    let refundPercent = 0;
+    let refundPercent: number;
     if (diffDays > 15) {
       refundPercent = 90;
     } else if (diffDays >= 7) {
@@ -565,7 +569,7 @@ export default function HoChieuSo() {
     setCancellationPenalty({ percent, amount: penaltyAmount, refund: refundAmount });
   };
 
-  // Confirm tour cancellation (UC32 / UC33)
+  // UC32 - Hủy tour: Xác nhận hủy tour
   const handleConfirmCancel = async () => {
     if (!selectedBookingForCancel) return;
 
@@ -605,7 +609,6 @@ export default function HoChieuSo() {
           : b
       ));
 
-      // UC48 in SPEC-Status-Flows.md: If booking is cancelled, return voucher to CO_HIEU_LUC
       setToast({ message: `Yêu cầu hủy tour đã được gửi! Trạng thái: Chờ hủy. Số tiền hoàn trả dự kiến: ${formatPrice(cancellationPenalty.refund)}.`, type: 'success' });
       setSelectedBookingForCancel(null);
     } catch (err: any) {
@@ -616,7 +619,7 @@ export default function HoChieuSo() {
   const isComplaintResolved = (status?: string) => ['DA_XU_LY', 'TU_CHOI'].includes(status || '');
   const hasPendingComplaint = (booking: Booking) => Boolean(booking.hasComplaint && !isComplaintResolved(booking.complaintStatus));
 
-  // UC35: Open review modal
+  // UC35 - Đánh giá: Mở form đánh giá tour
   const handleOpenReviewModal = (booking: Booking) => {
     if (booking.hasReviewed) {
       setToast({ message: 'Bạn đã đánh giá chuyến đi này rồi. Mỗi tour chỉ được đánh giá một lần.', type: 'info' });
@@ -687,7 +690,7 @@ export default function HoChieuSo() {
     );
   };
 
-  // Submit tour review (UC35)
+  // UC35 - Đánh giá: Gửi đánh giá tour
   const handleSubmitReview = async () => {
     if (!selectedBookingForReview) return;
 
@@ -716,7 +719,7 @@ export default function HoChieuSo() {
     }
   };
 
-  // UC36: Open complaint modal
+  // UC36 - Khiếu nại: Mở form khiếu nại tour
   const handleOpenComplaintModal = (booking: Booking) => {
     if (booking.hasComplaint) {
       setToast({ message: 'Bạn đã gửi khiếu nại cho chuyến đi này. Màn hình Khiếu nại sẽ cập nhật trạng thái xử lý.', type: 'info' });
@@ -729,7 +732,7 @@ export default function HoChieuSo() {
     setComplaintFileName('');
   };
 
-  // Submit complaint ticket (UC36)
+  // UC36 - Khiếu nại: Gửi khiếu nại
   const handleSubmitComplaint = async () => {
     if (!selectedBookingForComplaint) return;
 
@@ -788,7 +791,7 @@ export default function HoChieuSo() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       const searchStr = `
-        ${booking.tourName || ''} 
+        ${booking.tourName || ''}
         ${booking.bookingCode || ''}
         ${booking.id || ''}
       `.toLowerCase();
@@ -1064,7 +1067,7 @@ export default function HoChieuSo() {
                   </div>
                 </div>
 
-                {/* UC60: Đổi mật khẩu */}
+                {/* Đổi mật khẩu */}
                 <div className="border-t border-gray-100 pt-6 flex justify-center">
                   <button
                     onClick={() => { setShowChangePassword(true); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }}
@@ -1457,7 +1460,7 @@ export default function HoChieuSo() {
         </div>
       </div>
 
-      {/* UC23: Custom Premium OTP Verification Modal */}
+      {/* Custom Premium OTP Verification Modal */}
       {showOtpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-gray-100 relative text-center">
@@ -1528,8 +1531,8 @@ export default function HoChieuSo() {
                   Gửi lại OTP (00:{otpCountdown.toString().padStart(2, '0')})
                 </span>
               ) : (
-                <span 
-                  onClick={handleResendOtp} 
+                <span
+                  onClick={handleResendOtp}
                   className="text-blue-600 font-bold hover:underline cursor-pointer"
                 >
                   Gửi lại OTP
@@ -1675,7 +1678,7 @@ export default function HoChieuSo() {
         </div>
       )}
 
-      {/* UC22: Custom Detailed Booking Modal */}
+      {/* Custom Detailed Booking Modal */}
       {selectedBookingForDetail && (() => {
         const fullTour = selectedTicketTour || allTours.find(t => t.id === selectedBookingForDetail.tourId);
         const passengerDetails = selectedBookingForDetail.details || [];
@@ -1938,7 +1941,7 @@ export default function HoChieuSo() {
                     </div>
                   </div>
 
-                  {/* UC33/UC50: Refund / Cancellation state display */}
+                  {/* Refund / Cancellation state display */}
                   {['DA_HUY', 'CHO_HUY', 'CHO_HOAN_TIEN', 'TU_CHOI_HOAN_TIEN'].includes(selectedBookingForDetail.status) && (
                     <div className={`rounded-2xl p-4 space-y-2 border ${['CHO_HUY', 'CHO_HOAN_TIEN'].includes(selectedBookingForDetail.status)
                       ? 'bg-amber-50 border-amber-200 text-amber-850'
@@ -1980,7 +1983,7 @@ export default function HoChieuSo() {
         );
       })()}
 
-      {/* UC32: Cancellation Confirmation Modal */}
+      {/* Cancellation Confirmation Modal */}
       {selectedBookingForCancel && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl border border-gray-100 relative animate-fade-in text-center">
@@ -2048,7 +2051,7 @@ export default function HoChieuSo() {
         </div>
       )}
 
-      {/* UC35: Detailed Tour Review Modal */}
+      {/* Detailed Tour Review Modal */}
       {selectedBookingForReview && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl border border-gray-100 relative animate-fade-in">
@@ -2192,7 +2195,7 @@ export default function HoChieuSo() {
         </div>
       )}
 
-      {/* UC36: Tour Complaint Ticket Modal */}
+      {/* Tour Complaint Ticket Modal */}
       {selectedBookingForComplaint && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-8 shadow-2xl border border-gray-100 relative animate-fade-in">
@@ -2285,7 +2288,7 @@ export default function HoChieuSo() {
       {showChangePassword && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl w-full max-w-md p-7 shadow-2xl relative animate-slide-up border border-slate-100">
-            <button 
+            <button
               onClick={() => {
                 setShowChangePassword(false);
                 setPasswordError('');
@@ -2296,7 +2299,7 @@ export default function HoChieuSo() {
             >
               <X className="w-5 h-5" />
             </button>
-            
+
             <div className="text-center mb-7">
               <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Key className="w-7 h-7" />

@@ -22,6 +22,7 @@ export default function TrangChu() {
   useEffect(() => {
     let isMounted = true;
 
+    // UC25 - Tra cứu tour: Tải danh sách tour
     const fetchTours = async () => {
       try {
         const pageSize = 10;
@@ -65,6 +66,7 @@ export default function TrangChu() {
     return () => clearInterval(timer);
   }, []);
 
+  // UC25 - Tra cứu tour: Xử lý tìm kiếm
   const xuLyTimKiem = () => {
     let results = [...allTours];
 
@@ -113,6 +115,7 @@ export default function TrangChu() {
     setTimeout(() => cuonDenDanhSachTour(), 100);
   };
 
+  // UC25 - Tra cứu tour: Lọc theo điểm đến
   const xuLyLocDiemDen = (destName: string) => {
     const results = allTours.filter(tour =>
       tour.destination.toLowerCase().includes(destName.toLowerCase())
@@ -122,6 +125,7 @@ export default function TrangChu() {
     cuonDenDanhSachTour();
   };
 
+  // UC25 - Tra cứu tour: Lọc theo danh mục
   const xuLyLocDanhMuc = (categoryId: string) => {
     let results = [...allTours];
 
@@ -179,6 +183,7 @@ export default function TrangChu() {
     cuonDenDanhSachTour();
   };
 
+  // UC25 - Tra cứu tour: Áp dụng bộ lọc tìm kiếm
   const handleSearchFilter = (query: string) => {
     const results = allTours.filter(tour =>
       tour.name.toLowerCase().includes(query.toLowerCase()) ||

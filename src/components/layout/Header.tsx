@@ -72,6 +72,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    // UC25 - Tra cứu tour: Tải gợi ý tìm kiếm
     const fetchSuggestions = async () => {
       try {
         const res = await khService.layDanhSachTour({ size: 20 });
@@ -197,6 +198,7 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // UC25 - Tra cứu tour: Gửi tìm kiếm tour
   const handleSearchSubmit = () => {
     if (searchQuery.trim()) {
       window.location.href = `/?search=${encodeURIComponent(searchQuery)}`;
@@ -208,11 +210,13 @@ export default function Header() {
     suggestion.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // UC57 - Đăng nhập: Hoàn tất phiên khách hàng
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
     setShowAuthModal(false);
   };
 
+  // UC58 - Đăng xuất: Xóa phiên khách hàng
   const xuLyDangXuat = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userProfile');
@@ -241,6 +245,7 @@ export default function Header() {
     setIsMenuOpen(false);
   };
 
+  // UC39 - Giải quyết khiếu nại: Gửi bổ sung hỗ trợ
   const guiBoSungHoTro = async () => {
     if (!selectedSupportRequest?.maYeuCau || !supportReplyContent.trim()) {
       return;
