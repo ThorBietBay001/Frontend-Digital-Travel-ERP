@@ -104,6 +104,7 @@ export default function DiemXanh({ maTour, passengers, setPassengers }: GreenPoi
     }
   };
 
+  // UC42 - Xác nhận hành động xanh: Gửi xác nhận điểm xanh
   const submitGreenAction = async () => {
     if (selectedGreenGuests.length === 0 || selectedGreenActions.length === 0 || !maTour || isSubmittingGreenAction) return;
 

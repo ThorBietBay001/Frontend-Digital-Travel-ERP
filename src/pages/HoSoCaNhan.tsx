@@ -26,6 +26,7 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
   const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
+    // UC63 - Cập nhật năng lực nhân viên: Tải hồ sơ cá nhân
     const fetchProfile = async () => {
       try {
         const [resHoSo, resNangLuc, resTours] = await Promise.all([
@@ -98,6 +99,7 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
     return true;
   };
 
+  // UC60 - Đổi mật khẩu: Yêu cầu OTP đổi mật khẩu
   const requestPasswordOtp = async () => {
     setPasswordError(null);
     setPasswordSuccess(null);
@@ -155,6 +157,7 @@ export default function HoSoCaNhan({ onBack, onLogout }: ProfileProps) {
     }
   };
 
+  // UC60 - Đổi mật khẩu: Cập nhật mật khẩu
   const handleChangePassword = async () => {
     setPasswordError(null);
     setPasswordSuccess(null);

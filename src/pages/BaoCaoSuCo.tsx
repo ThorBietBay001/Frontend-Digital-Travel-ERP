@@ -250,6 +250,7 @@ export default function BaoCaoSuCo({
 
   const mapMucDo = (severity: string) => severity === 'Cao' ? 'SOS' : 'THAP';
 
+  // UC43 - Báo cáo sự cố: Gửi báo cáo sự cố
   const handleIncidentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTourCode) {

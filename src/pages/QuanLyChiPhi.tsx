@@ -128,7 +128,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
     return val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
   };
 
-  // Expense Submit
+  // UC44 - Cập nhật chi phí thực tế: Gửi chi phí phát sinh
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -407,7 +407,7 @@ export default function QuanLyChiPhi({ maTour, currentTour, pastTours = [], expe
         )}
       </div>
 
-      {/* --- GLOBAL POPUP: DAILY EXPENSE ADDITION MODAL FORM (UC44 POPUP) --- */}
+      {/* --- GLOBAL POPUP: DAILY EXPENSE ADDITION MODAL FORM --- */}
       {expenseModalOpen && createPortal(
         <div className="fixed inset-0 z-[100] bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl border border-slate-100">

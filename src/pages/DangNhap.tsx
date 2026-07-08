@@ -45,6 +45,7 @@ export default function DangNhap({
     return () => window.clearInterval(timer);
   }, [isOtpVerified, mode, otpCountdown]);
 
+  // UC59 - Quên mật khẩu: Gửi OTP đặt lại
   const issueForgotOtp = async (showResendMessage = false) => {
     if (!forgotEmail.trim()) {
       setErrorMsg('Vui lòng nhập email đã đăng ký.');

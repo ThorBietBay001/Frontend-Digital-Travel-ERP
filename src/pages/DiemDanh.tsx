@@ -54,6 +54,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
     return [...list].sort((a, b) => order[a.status] - order[b.status]);
   }, [passengers, attendanceSearch, attendanceFilter]);
 
+  // UC41 - Điểm danh khách hàng: Xác nhận cảnh báo sức khỏe
   const xacNhanCanhBaoSucKhoe = async () => {
     if (healthAcknowledgeModal.passenger && currentTour) {
       const targetP = healthAcknowledgeModal.passenger;
@@ -81,7 +82,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
     setHealthAcknowledgeModal({ show: false, passenger: null, targetStatus: 'DA_DIEM_DANH' });
   };
 
-  // Change attendance status
+  // UC41 - Điểm danh khách hàng: Cập nhật trạng thái khách
   const thayDoiTrangThaiDiemDanh = async (code: string, newStatus: 'DA_DIEM_DANH' | 'VANG' | 'CHUA_DIEM_DANH') => {
     const guest = passengers.find(p => p.code === code);
     if (!guest || !currentTour) return;
@@ -132,7 +133,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
     }
   };
 
-  // Save absent reason
+  // UC41 - Điểm danh khách hàng: Ghi nhận lý do vắng
   const guiLyDoVangMat = async () => {
     if (absentReasonText === 'Lý do khác' && !customAbsentReason.trim()) {
       return;
@@ -299,7 +300,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
         })}
       </div>
 
-      {/* --- GLOBAL POPUP: PASSENGER DETAILED CARD (UC40 BOTTOM SHEET) --- */}
+      {/* --- GLOBAL POPUP: PASSENGER DETAILED CARD --- */}
       {selectedPassenger && createPortal(
         <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl">
@@ -360,7 +361,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
         document.body
       )}
 
-      {/* --- GLOBAL POPUP: ATTENDANCE HEALTH WARNING ACKNOWLEDGEMENT (UC41 POPUP) --- */}
+      {/* --- GLOBAL POPUP: ATTENDANCE HEALTH WARNING ACKNOWLEDGEMENT --- */}
       {healthAcknowledgeModal.show && healthAcknowledgeModal.passenger && createPortal(
         <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal max-w-sm w-full p-4 rounded-3xl animate-slide-up max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
@@ -411,7 +412,7 @@ export default function DiemDanh({ currentTour, passengers, setPassengers }: Att
         document.body
       )}
 
-      {/* --- GLOBAL POPUP: ATTENDANCE ABSENT EXPLANATION (UC41 POPUP) --- */}
+      {/* --- GLOBAL POPUP: ATTENDANCE ABSENT EXPLANATION --- */}
       {absentReasonModal.show && absentReasonModal.passenger && createPortal(
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="glass-modal w-full max-w-[390px] p-5 rounded-3xl max-h-[82dvh] overflow-y-auto space-y-4 shadow-2xl">
