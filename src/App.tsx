@@ -25,11 +25,14 @@ import QuanLyChiPhi from './pages/QuanLyChiPhi';
 import BaoCaoSuCo from './pages/BaoCaoSuCo';
 import HoSoCaNhan from './pages/HoSoCaNhan';
 import { hdvService } from './services/hdvService';
+import { HDV_UNAUTHORIZED_EVENT } from './services/api';
 
 type TabType = 'dashboard' | 'schedule' | 'attendance' | 'green' | 'expense' | 'incident' | 'profile';
 
 const READ_NOTIFICATION_IDS_KEY = 'hdv-read-notification-ids';
 const DISMISSED_ASSIGNMENT_NOTIFICATION_IDS_KEY = 'hdv-dismissed-assignment-notification-ids';
+
+const isUnauthorizedError = (error: unknown) => (error as any)?.response?.status === 401;
 
 const layDanhSachIdDaLuu = (key: string): string[] => {
   try {
@@ -118,6 +121,35 @@ export default function App() {
   const [selectedSettlementRequest, setSelectedSettlementRequest] = useState<SettlementInfoRequest | null>(null);
   const [settlementNoteContent, setSettlementNoteContent] = useState('');
   const [settlementReceiptUrl, setSettlementReceiptUrl] = useState('');
+
+  const resetHdvSession = useCallback((message?: string) => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setActiveTab('dashboard');
+    setCurrentTour(null);
+    setUpcomingTours([]);
+    setPastTours([]);
+    setPendingTours([]);
+    setPassengers([]);
+    setExpenses([]);
+    setIncidents([]);
+    setNotifications([]);
+    setGuideExplanationRequests([]);
+    setSettlementInfoRequests([]);
+    setGuideProfile(null);
+    setSelectedGuideRequest(null);
+    setSelectedSettlementRequest(null);
+    setLoginError(message || null);
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      resetHdvSession('Phien dang nhap da het han. Vui long dang nhap lai.');
+    };
+
+    window.addEventListener(HDV_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(HDV_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, [resetHdvSession]);
 
   const formatAllergyNote = (allergy: unknown): string => {
     const value = String(allergy || '').trim();
@@ -297,6 +329,7 @@ export default function App() {
         setPassengers([]);
       }
     } catch (e) {
+      if (isUnauthorizedError(e)) return;
       console.error("Failed to fetch tour data", e);
     }
   }, [isLoggedIn]);
@@ -323,6 +356,7 @@ export default function App() {
         const res = await hdvService.layHoSo();
         setGuideProfile(res?.data || null);
       } catch (e) {
+        if (isUnauthorizedError(e)) return;
         console.error('Failed to fetch guide profile', e);
       }
     };
@@ -330,6 +364,7 @@ export default function App() {
     loadGuideProfile();
   }, [isLoggedIn]);
 
+  // UC37 - Điều phối HDV: Đồng ý nhận tour
   const handleAcceptAssignment = async (maPhanCong?: string) => {
     if (!maPhanCong) return;
     setAcceptingAssignmentIds(prev => [...prev, maPhanCong]);
@@ -356,6 +391,7 @@ export default function App() {
     }
   };
 
+  // UC37 - Điều phối HDV: Từ chối nhận tour
   const handleRejectAssignment = async (maPhanCong?: string) => {
     if (!maPhanCong) return;
     const confirmed = window.confirm('Bạn có chắc muốn từ chối yêu cầu điều phối này?');
@@ -392,6 +428,7 @@ export default function App() {
     setNotificationOpen(false);
   };
 
+  // UC39 - Giải quyết khiếu nại: Gửi giải trình HDV
   const handleSubmitGuideExplanation = async () => {
     const maYeuCau = selectedGuideRequest?.maYeuCau;
     if (!maYeuCau || !guideExplanationContent.trim()) {
@@ -432,6 +469,7 @@ export default function App() {
     setNotificationOpen(false);
   };
 
+  // UC48 - Quyết toán tour: Gửi bổ sung quyết toán
   const handleSubmitSettlementInfo = async () => {
     const maQuyetToan = selectedSettlementRequest?.maQuyetToan;
     if (!maQuyetToan || !settlementNoteContent.trim()) {
