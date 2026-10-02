@@ -25,16 +25,19 @@ export interface XuatDuLieuRequest {
 }
 
 export const powerBiService = {
+  // UC51 - Trích xuất dữ liệu phân tích: Lấy kho dữ liệu
   danhSachKhoDuLieu: async () => {
     const response = await api.get('/api/ke-toan/power-bi/kho-du-lieu');
     return response.data;
   },
 
+  // UC51 - Trích xuất dữ liệu phân tích: Lấy kết nối
   layThongTinKetNoi: async (maKho: string) => {
     const response = await api.get(`/api/ke-toan/power-bi/ket-noi?maKho=${maKho}`);
     return response.data;
   },
 
+  // UC51 - Trích xuất dữ liệu phân tích: Xuất dữ liệu
   xuatDuLieu: async (request: XuatDuLieuRequest) => {
     const response = await api.post('/api/ke-toan/power-bi/xuat-du-lieu', request, {
       responseType: 'blob'

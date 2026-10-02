@@ -64,6 +64,7 @@ const GreenActionList: React.FC = () => {
   };
   const closeModal = () => setModalState({ isOpen: false, mode: null, selectedAction: undefined });
 
+  // UC20 - Cấu hình hành động xanh: Lưu hành động xanh
   const handleFormSubmit = async (actionData: GreenAction) => {
     try {
       const payload: HanhDongXanhRequest = {
@@ -88,6 +89,7 @@ const GreenActionList: React.FC = () => {
     }
   };
 
+  // UC20 - Cấu hình hành động xanh: Xóa hành động xanh
   const handleDelete = async () => {
     if (modalState.selectedAction) {
       try {

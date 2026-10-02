@@ -48,11 +48,12 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ mode, initialData, onSubmit, 
       return;
     }
 
-    if (mode === 'create') {
-      formData.code = `DV00${Math.floor(Math.random() * 9) + 4}`; // Mã auto scale
-    }
-    
-    onSubmit(formData as Service);
+    const submitData = {
+      ...formData,
+      ...(mode === 'create' ? { code: `DV00${Math.floor(Math.random() * 9) + 4}` } : {})
+    };
+
+    onSubmit(submitData as Service);
   };
 
   return (
@@ -110,7 +111,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ mode, initialData, onSubmit, 
           />
           {errors.unit && <span className="text-xs text-red-500 mt-1 block">{errors.unit}</span>}
         </div>
-        
+
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">Đơn giá (VND) <span className="text-red-500">*</span></label>
           <input

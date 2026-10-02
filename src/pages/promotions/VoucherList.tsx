@@ -81,10 +81,10 @@ const VoucherList: React.FC = () => {
   }, [user?.maVaiTro]);
 
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     getAll();
   }, [getAll]);
 
+  // UC53 - Tạo voucher: Tạo mã ưu đãi
   const handleCreateVoucher = async (payload: VoucherRequest) => {
     try {
       await promotionsService.taoVoucher(payload);
@@ -101,6 +101,7 @@ const VoucherList: React.FC = () => {
     }
   };
 
+  // UC52 - Quản lý voucher: Vô hiệu hóa voucher
   const handleBanVoucher = async (voucher: Voucher) => {
     if (await confirm(`Bạn có chắc chắn muốn vô hiệu hóa voucher ${voucher.code}?`)) {
       try {

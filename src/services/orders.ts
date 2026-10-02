@@ -28,6 +28,7 @@ export interface DatTourListParams extends PageQueryParams {
 }
 
 export const ordersService = {
+  // UC34 - Tra cứu đơn hàng: Lọc đơn đặt tour
   danhSachTatCa: async (params?: DatTourListParams): Promise<PageDonDatTourResponse | undefined> => {
     const queryParams: Record<string, string | number> = {
       page: params?.page ?? 0,
@@ -43,7 +44,7 @@ export const ordersService = {
     return unwrapApiData(response);
   },
 
-  /** Backend chưa có GET /api/kinh-doanh/dat-tour/{id} — lấy từ danh sách theo mã đơn */
+  // UC34 - Tra cứu đơn hàng: Xem chi tiết đơn
   chiTietDatTour: async (maDatTour: string): Promise<DonDatTourResponse> => {
     const page = await ordersService.danhSachTatCa({ page: 0, size: 500 });
     const found = page?.content?.find((d) => d.maDatTour === maDatTour);
@@ -53,6 +54,7 @@ export const ordersService = {
     return found;
   },
 
+  // UC29 - Thanh toán đơn hàng: Xác nhận giao dịch
   xacNhanDon: async (maDatTour: string): Promise<DonDatTourResponse | undefined> => {
     const response = await api.put<ApiResponseDonDatTourResponse>(
       `/api/kinh-doanh/dat-tour/${maDatTour}/xac-nhan`,
@@ -61,6 +63,7 @@ export const ordersService = {
     return unwrapApiData(response);
   },
 
+  // UC29 - Thanh toán đơn hàng: Từ chối giao dịch
   tuChoiThanhToan: async (maDatTour: string): Promise<DonDatTourResponse | undefined> => {
     const response = await api.put<ApiResponseDonDatTourResponse>(
       `/api/kinh-doanh/dat-tour/${maDatTour}/tu-choi-thanh-toan`,

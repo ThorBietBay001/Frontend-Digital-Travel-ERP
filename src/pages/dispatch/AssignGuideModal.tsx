@@ -38,7 +38,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
           try {
             const cap = await dispatchService.nangLucHdv(g.maNhanVien);
             return { id: g.maNhanVien, cap };
-          } catch (e) {
+          } catch {
             return null;
           }
         })
@@ -59,7 +59,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
     const status = 'available';
 
     const cap = guideCaps[g.maNhanVien || ''] || {};
-    
+
     // Parse language and specializations into an array of skills
     let realSkills: string[] = [];
     if (cap.ngonNgu) realSkills = realSkills.concat(cap.ngonNgu.split(',').map((s: string) => s.trim()));
@@ -113,12 +113,12 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
       size="3xl"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-sm text-gray-700 font-sans">
-        
+
         {/* Left Column (35%) - Thông tin tour */}
         <div className="lg:col-span-4 flex flex-col gap-4">
           <div className="bg-[#F9F9FF] p-4 rounded-[12px] border border-[#E1F1FF]">
             <h3 className="font-bold text-[#121C2C] mb-3 border-b border-[#E1F1FF] pb-2">Thông tin yêu cầu</h3>
-            
+
             <div className="flex flex-col gap-3">
               <div className="flex items-start gap-2">
                 <MapPin size={16} className="text-gray-400 mt-0.5" />
@@ -127,7 +127,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
                   <p className="font-semibold text-[#00668A]">{tour.code}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-2">
                 <Calendar size={16} className="text-gray-400 mt-0.5" />
                 <div>
@@ -159,7 +159,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
               </div>
             </div>
           </div>
-          
+
           {tour.status === 'assigned' && tour.assignedGuide && (
             <div className="bg-[#FFF4F4] border border-[#FFD9D9] p-4 rounded-[12px]">
               <h3 className="font-bold text-[#BA1A1A] mb-2 flex items-center gap-2">
@@ -204,16 +204,16 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
             {!guidesLoading &&
             suggestedGuides.map(guide => {
               const isConflict = conflictGuideId === guide.maNhanVien;
-              
+
               return (
-                <div 
-                  key={guide.maNhanVien} 
+                <div
+                  key={guide.maNhanVien}
                   className={`flex flex-col gap-2 p-3 rounded-[12px] border transition-colors ${
                     isConflict ? 'bg-[#FFF4F4] border-[#BA1A1A]' : 'bg-white border-[#E1F1FF] hover:border-[#89D4FF]'
                   }`}
                 >
                   <div className="flex justify-between items-start gap-4">
-                    
+
                     <div className="flex gap-3">
                       <div className="w-12 h-12 bg-[#F4F9FF] text-[#00668A] text-lg font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm shrink-0">
                         {guide.hoTen?.charAt(0) || 'U'}
@@ -221,9 +221,9 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="font-bold text-[#121C2C]">{guide.hoTen}</p>
-                          <Badge 
-                            label={guide.status === 'available' ? 'Sẵn sàng' : guide.status === 'busy' ? 'Đang đi tour' : 'Đang nghỉ'} 
-                            variant={guide.status === 'available' ? 'success' : guide.status === 'busy' ? 'warning' : 'neutral'} 
+                          <Badge
+                            label={guide.status === 'available' ? 'Sẵn sàng' : guide.status === 'busy' ? 'Đang đi tour' : 'Đang nghỉ'}
+                            variant={guide.status === 'available' ? 'success' : guide.status === 'busy' ? 'warning' : 'neutral'}
                           />
                         </div>
                         <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -244,7 +244,7 @@ const AssignGuideModal: React.FC<AssignGuideModalProps> = ({
                     </div>
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <Button 
+                      <Button
                         variant="primary"
                         size="sm"
                         onClick={() => handleSelectGuide(guide)}

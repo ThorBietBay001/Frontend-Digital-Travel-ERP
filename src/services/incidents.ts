@@ -17,6 +17,7 @@ export interface NhatKySuCoResponse {
 }
 
 export const incidentService = {
+  // UC43 - Báo cáo sự cố: Lấy lịch sử sự cố HDV
   lichSuSuCoCuaHdv: async (mucDo?: string): Promise<NhatKySuCoResponse[]> => {
     const params = new URLSearchParams();
     if (mucDo) params.append('mucDo', mucDo);

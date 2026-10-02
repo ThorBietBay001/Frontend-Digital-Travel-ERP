@@ -75,6 +75,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
       ? { label: cost.warningMessage || 'Thiếu chứng từ', variant: 'error' as const }
       : null;
 
+  // UC47 - Phê duyệt chi phí thực tế: Từ chối chi phí
   const handleReject = async () => {
     if (!note.trim()) {
       setNoteError('Vui lòng nhập lý do từ chối');
@@ -89,6 +90,7 @@ const CostApprovalModal: React.FC<CostApprovalModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  // UC47 - Phê duyệt chi phí thực tế: Duyệt chi phí
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {

@@ -104,6 +104,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
     return Object.keys(nextErrors).length === 0;
   };
 
+  // UC62 - Tạo tài khoản nhân viên: Gửi biểu mẫu tài khoản
   const handleSubmit = async () => {
     if (!validateForm()) return;
     

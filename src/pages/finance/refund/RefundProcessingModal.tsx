@@ -64,6 +64,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
 
   if (!refund) return null;
 
+  // UC50 - Xử lý hoàn tiền: Từ chối hoàn tiền
   const handleReject = async () => {
     if (!(await confirm('Bạn có chắc chắn muốn từ chối yêu cầu hoàn tiền này?'))) {
       return;
@@ -94,6 +95,7 @@ const RefundProcessingModal: React.FC<RefundProcessingModalProps> = ({
     }
   };
 
+  // UC50 - Xử lý hoàn tiền: Xác nhận hoàn tiền
   const handleConfirmRefund = async () => {
     setErrorMessage('');
     setProcessing(true);

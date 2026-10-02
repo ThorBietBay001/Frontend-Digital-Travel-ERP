@@ -108,8 +108,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
                    };
                  });
 
-                 let desc = templateDetail.moTa || '';
-                 let short = desc;
+                 const desc = templateDetail.moTa || '';
+                 let short: string;
                  let included = '';
                  let notIncluded = '';
                  const incMatch = desc.match(/Bao gồm:\s*\n([\s\S]*?)(?:Không bao gồm:\s*\n|$)/);
@@ -204,8 +204,8 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
           };
         });
 
-        let desc = detail.moTa || '';
-        let short = desc;
+        const desc = detail.moTa || '';
+        let short: string;
         let included = '';
         let notIncluded = '';
         const incMatch = desc.match(/Bao gồm:\s*\n([\s\S]*?)(?:Không bao gồm:\s*\n|$)/);
@@ -228,7 +228,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
           currentPrice: detail.giaSan || template.giaSan || 0,
           schedule: parsedSchedule.length > 0 ? parsedSchedule : [{ title: 'Ngày 1: Chưa có thông tin', description: '', meals: { breakfast: '', lunch: '', dinner: '' } }],
         }));
-      } catch (err) {
+      } catch {
         alert('Lỗi lấy chi tiết tour mẫu');
       }
     }
@@ -259,7 +259,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
         trangThai: formData.status!,
         lichTrinh: formData.schedule,
       };
-      
+
       const createdTour = await tourInstanceService.taoMoi(payload);
       if (createdTour && createdTour.maTourThucTe) {
         setCreatedTourId(createdTour.maTourThucTe);
@@ -319,7 +319,7 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
       onClose();
       return;
     }
-    
+
     const newErrors: Record<string, string> = {};
     if (!formData.startDate) newErrors.startDate = 'Ngày khởi hành không được để trống';
     if ((formData.currentPrice || 0) < (formData.basePrice || 0)) {
@@ -525,10 +525,10 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
               <div key={index} className="bg-[#F9F9FF] border border-[#E1F1FF] p-4 rounded-lg flex flex-col gap-3 relative">
                 {!isFormDisabled && (
                   <div className="absolute top-4 right-4">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
                       icon={<Pencil size={16} />}
                       onClick={() => {
                         setEditingDayIndex(index);
@@ -599,18 +599,18 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
               )}
               {currentStep === 2 && (
                 <div className="min-h-[400px] animate-fadeIn">
-                  <TourInstanceServiceTab 
-                    services={formData.services || []} 
+                  <TourInstanceServiceTab
+                    services={formData.services || []}
                     onChange={(services) => handleChange('services', services)}
-                    isEditing={true} 
+                    isEditing={true}
                   />
                 </div>
               )}
               {currentStep === 3 && (
                 <div className="min-h-[400px] animate-fadeIn">
-                  <TourInstanceGreenActionTab 
-                    selectedActions={formData.greenActions || []} 
-                    onChange={(actions) => handleChange('greenActions', actions)} 
+                  <TourInstanceGreenActionTab
+                    selectedActions={formData.greenActions || []}
+                    onChange={(actions) => handleChange('greenActions', actions)}
                     isEditing={true}
                   />
                 </div>
@@ -687,16 +687,16 @@ const TourInstanceDetailModal: React.FC<TourInstanceFormProps> = ({
                 <>
                   {activeTab === 'info' && renderInfoForm()}
                   {activeTab === 'services' && (
-                    <TourInstanceServiceTab 
-                      services={formData.services || []} 
+                    <TourInstanceServiceTab
+                      services={formData.services || []}
                       onChange={(services) => handleChange('services', services)}
-                      isEditing={!isFormDisabled} 
+                      isEditing={!isFormDisabled}
                     />
                   )}
                   {activeTab === 'greenActions' && (
-                    <TourInstanceGreenActionTab 
-                      selectedActions={formData.greenActions || []} 
-                      onChange={(actions) => handleChange('greenActions', actions)} 
+                    <TourInstanceGreenActionTab
+                      selectedActions={formData.greenActions || []}
+                      onChange={(actions) => handleChange('greenActions', actions)}
                       isEditing={!isFormDisabled}
                     />
                   )}

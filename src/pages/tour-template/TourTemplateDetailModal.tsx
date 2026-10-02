@@ -51,8 +51,8 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
       return;
     }
     if (initialData) {
-      let desc = initialData.description || '';
-      let short = desc;
+      const desc = initialData.description || '';
+      let short: string;
       let included = '';
       let notIncluded = '';
 
@@ -147,7 +147,7 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
 
     if (!formData.title?.trim()) newErrors.title = 'Tên Tour Mẫu không được để trống';
     if (!formData.basePrice || formData.basePrice <= 0) newErrors.basePrice = 'Giá sàn phải lớn hơn 0';
-    
+
     formData.schedule?.forEach((day, index) => {
       const cacMocThoiGian = day.title.split(/\r?\n/).map((moc) => moc.trim()).filter(Boolean);
       if (cacMocThoiGian.length === 0) {
@@ -224,7 +224,7 @@ const TourTemplateDetailModal: React.FC<TourTemplateDetailModalProps> = ({
       {isOpen && (
         <form onSubmit={handleSubmit} className="flex flex-col h-[70vh]">
           {renderTabs()}
-          
+
           <div className="flex-1 overflow-y-auto pr-2 pb-4">
             {activeTab === 'info' && (
               <div className="flex flex-col gap-6">

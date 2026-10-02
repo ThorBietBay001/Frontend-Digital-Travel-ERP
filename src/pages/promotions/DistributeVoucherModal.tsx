@@ -53,7 +53,6 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
 
   useEffect(() => {
     if (!isOpen || !voucher) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedCustomers([]);
     setError(null);
     setDistributedCount(voucher.distributed);
@@ -101,7 +100,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
   if (!voucher) return null;
 
   const availableQuantity = Math.max(voucher.quantity - distributedCount, 0);
-  
+
   const filteredCustomers = customers.filter(c => filterTier === 'all' || c.tier === filterTier);
   const distributableCustomers = filteredCustomers.filter((customer) => !customer.hasVoucher);
   const distributedCustomers = filteredCustomers.filter((customer) => customer.hasVoucher);
@@ -169,9 +168,9 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     },
     { key: 'name', title: 'Họ tên', dataIndex: 'name' },
     { key: 'email', title: 'Email', dataIndex: 'email' },
-    { 
-      key: 'tier', 
-      title: 'Hạng thẻ', 
+    {
+      key: 'tier',
+      title: 'Hạng thẻ',
       render: (record) => {
         const tierColors: Record<string, string> = {
           'DONG': 'bg-[#f4e6de] text-[#8b5a2b] border-[#d2b48c]',
@@ -204,6 +203,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     }
   };
 
+  // UC54 - Phân phối và thu hồi voucher: Phân phối voucher
   const handleDistribute = async () => {
     if (!voucher || selectedCustomers.length === 0) return;
     setSubmitting(true);
@@ -256,6 +256,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
     }
   };
 
+  // UC54 - Phân phối và thu hồi voucher: Thu hồi voucher đã chọn
   const handleRevokeSelected = async () => {
     if (!voucher || selectedCustomers.length === 0) return;
     setRevokingCustomerId('bulk');
@@ -412,7 +413,7 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
             </h3>
             <div className="flex items-center gap-4">
               <div className="w-[200px]">
-                <Select 
+                <Select
                   options={[
                     { value: 'all', label: 'Tất cả hạng thẻ' },
                     { value: 'THANH_VIEN', label: 'Thành viên' },
@@ -420,9 +421,9 @@ const DistributeVoucherModal: React.FC<DistributeVoucherModalProps> = ({ isOpen,
                     { value: 'BAC', label: 'Bạc' },
                     { value: 'VANG', label: 'Vàng' },
                     { value: 'KIM_CUONG', label: 'Kim cương' }
-                  ]} 
-                  value={filterTier} 
-                  onChange={setFilterTier} 
+                  ]}
+                  value={filterTier}
+                  onChange={setFilterTier}
                 />
               </div>
               {!isRevokeMode && <span className="text-sm text-gray-500 whitespace-nowrap">Đã chọn: {selectedCustomers.length}</span>}

@@ -25,6 +25,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, acco
 
   const allowedPermissions = permissionsMap[selectedRole] || [];
 
+  // UC67 - Phân quyền truy cập: Lưu vai trò tài khoản
   const handleSave = async () => {
     try {
       const maVaiTro = ROLE_VALUE_MAP[selectedRole] || 'KINHDOANH';

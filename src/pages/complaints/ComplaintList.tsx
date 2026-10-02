@@ -53,7 +53,9 @@ const ComplaintList: React.FC = () => {
     let savedTimeline = [];
     try {
       if (savedTimelineStr) savedTimeline = JSON.parse(savedTimelineStr);
-    } catch (e) {}
+    } catch {
+      // Ignore invalid saved timeline data.
+    }
 
     return {
       id: api.maYeuCau || '',
@@ -196,8 +198,8 @@ const ComplaintList: React.FC = () => {
         if (record.source === 'incident') {
           return <Badge label="Đã ghi nhận" variant="neutral" />;
         }
-        let label = '';
-        let variant: 'success' | 'warning' | 'error' | 'info' | 'neutral' = 'info';
+        let label: string;
+        let variant: 'success' | 'warning' | 'error' | 'info' | 'neutral';
         switch (record.status) {
           case 'pending': label = 'Chờ xử lý'; variant = 'info'; break;
           case 'processing': label = 'Đang xử lý'; variant = 'info'; break;
@@ -260,12 +262,12 @@ const ComplaintList: React.FC = () => {
         case 'pending': apiStatus = 'CHUA_XU_LY'; break;
         default: apiStatus = 'CHUA_XU_LY';
       }
-      
+
       const payload: XuLyHoTroRequest = {
         trangThai: apiStatus,
         ghiChu: updatedComplaint.resolution,
       };
-      
+
       if (updatedComplaint.status === 'pending_guide') {
         const lastAction = updatedComplaint.timeline[updatedComplaint.timeline.length - 1]?.action || '';
         const noiDung = lastAction.includes(':') ? lastAction.split(':').slice(1).join(':').trim() : lastAction;

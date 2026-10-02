@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, Eye, EyeOff, Download, Database, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { powerBiService } from '../../services/power-bi';
-import type { 
-  PowerBiKhoDuLieuResponse, 
+import type {
+  PowerBiKhoDuLieuResponse,
   PowerBiKetNoiResponse,
   XuatDuLieuRequest
 } from '../../services/power-bi';
@@ -15,18 +15,18 @@ interface PowerBIConnectionModalProps {
 
 const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'connect' | 'download'>('connect');
-  
+
   // Data stores
   const [khoDuLieuList, setKhoDuLieuList] = useState<PowerBiKhoDuLieuResponse[]>([]);
   const [selectedKho, setSelectedKho] = useState<string>('');
-  
+
   // Connect Tab State
   const [connectionInfo, setConnectionInfo] = useState<PowerBiKetNoiResponse | null>(null);
   const [loadingConnection, setLoadingConnection] = useState(false);
   const [errorConnection, setErrorConnection] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
-  
+
   // Download Tab State
   const [downloadReq, setDownloadReq] = useState<XuatDuLieuRequest>({
     maKho: '',
@@ -35,13 +35,7 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
   const [loadingDownload, setLoadingDownload] = useState(false);
   const [errorDownload, setErrorDownload] = useState('');
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchKhoDuLieu();
-    }
-  }, [isOpen]);
-
-  const fetchKhoDuLieu = async () => {
+  async function fetchKhoDuLieu() {
     try {
       const res = await powerBiService.danhSachKhoDuLieu();
       if (res.data && res.data.length > 0) {
@@ -52,15 +46,9 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
     } catch (err) {
       console.error("Lỗi lấy danh sách kho dữ liệu", err);
     }
-  };
+  }
 
-  useEffect(() => {
-    if (activeTab === 'connect' && selectedKho) {
-      fetchConnectionInfo(selectedKho);
-    }
-  }, [activeTab, selectedKho]);
-
-  const fetchConnectionInfo = async (maKho: string) => {
+  async function fetchConnectionInfo(maKho: string) {
     setLoadingConnection(true);
     setErrorConnection('');
     try {
@@ -75,7 +63,19 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
     } finally {
       setLoadingConnection(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchKhoDuLieu();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (activeTab === 'connect' && selectedKho) {
+      fetchConnectionInfo(selectedKho);
+    }
+  }, [activeTab, selectedKho]);
 
   const handleCopy = () => {
     if (!connectionInfo) return;
@@ -92,9 +92,9 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
       const req: any = { ...downloadReq, maKho: selectedKho };
       if (!req.tuNgay) delete req.tuNgay;
       if (!req.denNgay) delete req.denNgay;
-      
+
       const response = await powerBiService.xuatDuLieu(req);
-      
+
       // Handle file download
       const contentDisposition = response.headers['content-disposition'];
       let filename = `PowerBI_Data_${Date.now()}`;
@@ -105,10 +105,10 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
         }
       }
 
-      const blob = new Blob([response.data], { 
-        type: req.dinhDang === 'EXCEL' 
-          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-          : 'text/csv' 
+      const blob = new Blob([response.data], {
+        type: req.dinhDang === 'EXCEL'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'text/csv'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -118,8 +118,8 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
       link.click();
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-    } catch (err) {
+
+    } catch {
       setErrorDownload('Có lỗi xảy ra khi xuất dữ liệu. Vui lòng thử lại.');
     } finally {
       setLoadingDownload(false);
@@ -148,8 +148,8 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
           <div className="flex gap-4 border-b border-gray-200 mb-6">
             <button
               className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === 'connect' 
-                  ? 'border-blue-600 text-blue-600' 
+                activeTab === 'connect'
+                  ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
               onClick={() => setActiveTab('connect')}
@@ -158,8 +158,8 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
             </button>
             <button
               className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === 'download' 
-                  ? 'border-blue-600 text-blue-600' 
+                activeTab === 'download'
+                  ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
               onClick={() => setActiveTab('download')}
@@ -171,7 +171,7 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
           {/* Common Filter: Kho dữ liệu */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Chọn nguồn dữ liệu (Kho)</label>
-            <select 
+            <select
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
               value={selectedKho}
               onChange={(e) => setSelectedKho(e.target.value)}
@@ -227,14 +227,14 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Password</label>
                     <div className="relative">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        readOnly 
-                        value={connectionInfo.password || ''} 
-                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 text-sm font-mono focus:outline-none pr-10" 
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        readOnly
+                        value={connectionInfo.password || ''}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 text-sm font-mono focus:outline-none pr-10"
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
                       >
@@ -242,7 +242,7 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
                       </button>
                     </div>
                   </div>
-                  
+
                   {connectionInfo.hetHan && (
                     <p className="text-xs text-orange-600 font-medium">Lưu ý: Thông tin đăng nhập này sẽ hết hạn vào lúc {new Date(connectionInfo.hetHan).toLocaleString('vi-VN')}</p>
                   )}
@@ -264,20 +264,20 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Từ ngày</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={downloadReq.tuNgay || ''}
                     onChange={(e) => setDownloadReq({...downloadReq, tuNgay: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm" 
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Đến ngày</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={downloadReq.denNgay || ''}
                     onChange={(e) => setDownloadReq({...downloadReq, denNgay: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm" 
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
                   />
                 </div>
               </div>
@@ -286,9 +286,9 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
                 <label className="block text-sm font-medium text-gray-700 mb-3">Định dạng file</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="format" 
+                    <input
+                      type="radio"
+                      name="format"
                       value="EXCEL"
                       checked={downloadReq.dinhDang === 'EXCEL'}
                       onChange={() => setDownloadReq({...downloadReq, dinhDang: 'EXCEL'})}
@@ -297,9 +297,9 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
                     <span className="text-gray-700 text-sm">Excel (.xlsx)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="format" 
+                    <input
+                      type="radio"
+                      name="format"
                       value="CSV"
                       checked={downloadReq.dinhDang === 'CSV'}
                       onChange={() => setDownloadReq({...downloadReq, dinhDang: 'CSV'})}
@@ -317,9 +317,9 @@ const PowerBIConnectionModal: React.FC<PowerBIConnectionModalProps> = ({ isOpen,
               )}
 
               <div className="pt-4 border-t border-gray-100 flex justify-end">
-                <Button 
-                  variant="primary" 
-                  onClick={handleDownload} 
+                <Button
+                  variant="primary"
+                  onClick={handleDownload}
                   disabled={loadingDownload || !selectedKho}
                   className="flex items-center gap-2 px-6"
                 >

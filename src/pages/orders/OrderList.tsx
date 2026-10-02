@@ -116,6 +116,7 @@ const OrderList: React.FC = () => {
 
   const canApprovePayment = (order: Order) => order.status === 'pending' && order.paymentStatus === 'paid';
 
+  // UC29 - Thanh toán đơn hàng: Duyệt thanh toán từ danh sách
   const handleApprovePayment = async (order: Order) => {
     const confirmed = await confirm(`Duyệt thanh toán cho đơn ${order.orderCode}?`);
     if (!confirmed) return;
@@ -140,6 +141,7 @@ const OrderList: React.FC = () => {
     }
   };
 
+  // UC29 - Thanh toán đơn hàng: Từ chối thanh toán từ danh sách
   const handleRejectPayment = async (order: Order) => {
     const confirmed = await confirm(`Từ chối thanh toán cho đơn ${order.orderCode}?`);
     if (!confirmed) return;
