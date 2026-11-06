@@ -19,10 +19,12 @@ export type {
 
 
 export const customersService = {
+    // UC24 - Tra cứu khách hàng: Tìm hồ sơ khách hàng
     timKiemKhachHang: async (params?: Record<string, any>) => {
         const response = await api.get<ApiResponsePageHoChieuSoResponse>('/api/kinh-doanh/khach-hang', { params });
         return response.data.data;
     },
+    // UC24 - Tra cứu khách hàng: Xem chi tiết hồ sơ
     chiTietKhachHang: async (maKhachHang: string) => {
         const response = await api.get<ApiResponseHoChieuSoResponse>(`/api/kinh-doanh/khach-hang/${maKhachHang}`);
         return response.data.data;

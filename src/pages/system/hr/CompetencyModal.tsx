@@ -121,6 +121,7 @@ const CompetencyModal: React.FC<CompetencyModalProps> = ({
     setDraftCompetencies((prev) => prev.filter((item) => item.id !== competencyId));
   };
 
+  // UC63 - Cập nhật năng lực nhân viên: Lưu năng lực
   const handleSave = async () => {
     if (!staff) return;
     try {

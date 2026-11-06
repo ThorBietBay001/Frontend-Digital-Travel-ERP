@@ -45,11 +45,12 @@ const GreenActionForm: React.FC<GreenActionFormProps> = ({ mode, initialData, on
       return;
     }
 
-    if (mode === 'create') {
-      formData.code = `HD00${Math.floor(Math.random() * 9) + 4}`;
-    }
-    
-    onSubmit(formData as GreenAction);
+    const submitData = {
+      ...formData,
+      ...(mode === 'create' ? { code: `HD00${Math.floor(Math.random() * 9) + 4}` } : {})
+    };
+
+    onSubmit(submitData as GreenAction);
   };
 
   return (

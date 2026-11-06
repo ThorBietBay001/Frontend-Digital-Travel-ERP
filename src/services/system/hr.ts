@@ -13,6 +13,7 @@ export type {
 };
 
 export const hrService = {
+  // UC63 - Cập nhật năng lực nhân viên: Lấy năng lực
   layNangLuc: async (maNhanVien: string): Promise<NangLucResponse | undefined> => {
     const response = await api.get<ApiResponseNangLucResponse>(
       `/api/dieu-hanh/nhan-vien/${maNhanVien}/nang-luc`
@@ -20,6 +21,7 @@ export const hrService = {
     return unwrapApiData(response);
   },
 
+  // UC63 - Cập nhật năng lực nhân viên: Lưu năng lực
   capNhatNangLuc: async (maNhanVien: string, data: NangLucRequest): Promise<NangLucResponse | undefined> => {
     const response = await api.put<ApiResponseNangLucResponse>(
       `/api/dieu-hanh/nhan-vien/${maNhanVien}/nang-luc`,

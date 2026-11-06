@@ -20,6 +20,7 @@ const Login: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
+  // UC57 - Đăng nhập: Gửi thông tin xác thực
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

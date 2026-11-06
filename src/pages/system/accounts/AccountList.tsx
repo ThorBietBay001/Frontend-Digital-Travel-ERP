@@ -102,6 +102,7 @@ const AccountList: React.FC = () => {
     return `TK-${String(accounts.length + 1).padStart(3, '0')}`;
   };
 
+  // UC66 - Tìm kiếm tài khoản: Tải danh sách nhân viên
   const fetchAccounts = async () => {
     if (!hasAccess(user?.maVaiTro, 'accounts')) return;
     try {
@@ -171,6 +172,7 @@ const AccountList: React.FC = () => {
     fetchAccounts();
   };
 
+  // UC64 - Xóa/Khóa tài khoản: Đổi trạng thái tài khoản
   const handleToggleStatus = async (account: Account) => {
     const nextStatus = account.status === 'HOAT_DONG' ? 'KHOA' : 'HOAT_DONG';
     const confirmed = await confirm(
@@ -186,11 +188,12 @@ const AccountList: React.FC = () => {
       }
       alert(`${nextStatus === 'KHOA' ? 'Khóa' : 'Mở khóa'} tài khoản thành công.`);
       fetchAccounts();
-    } catch (error) {
+    } catch {
       alert('Lỗi khi thao tác tài khoản');
     }
   };
 
+  // UC64 - Xóa/Khóa tài khoản: Khóa hoặc xóa tài khoản
   const handleDelete = async (account: Account) => {
     const canDelete = account.role === 'Khách hàng';
     if (!canDelete) {
@@ -367,7 +370,7 @@ const AccountList: React.FC = () => {
         </div>
 
         {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
-        
+
         <div className="bg-white p-6 rounded-[16px] shadow-[0px_4px_20px_rgba(137,212,255,0.08)] flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[280px]">
             <SearchInput

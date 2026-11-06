@@ -59,6 +59,7 @@ const AssignGuide: React.FC = () => {
 
   const { user } = useAuth();
 
+  // UC37 - Điều phối HDV: Tải tour cần phân công
   const fetchTours = async () => {
     if (!hasAccess(user?.maVaiTro, 'dispatch')) return;
     setLoading(true);
@@ -79,6 +80,7 @@ const AssignGuide: React.FC = () => {
     fetchTours();
   }, [user]);
 
+  // UC38 - Tra cứu HDV: Tải HDV khả dụng
   const openAssignModal = async (tour: TourNeedGuide) => {
     if (!hasAccess(user?.maVaiTro, 'dispatch')) return;
     setSelectedTour(tour);
@@ -104,6 +106,7 @@ const AssignGuide: React.FC = () => {
     }
   };
 
+  // UC37 - Điều phối HDV: Xác nhận phân công
   const handleAssign = async (tourId: string, guideId: string) => {
     try {
       await dispatchService.phanCong({ maTourThucTe: tourId, maNhanVien: guideId });

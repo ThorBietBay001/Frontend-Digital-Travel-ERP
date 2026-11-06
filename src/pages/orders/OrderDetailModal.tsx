@@ -249,6 +249,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
   const originalAmount = order ? order.originalAmount ?? (order.totalAmount + voucherDiscount) : 0;
   const tourTicketAmount = order ? Math.max(originalAmount - (order.additionalServicesAmount || 0), 0) : 0;
 
+  // UC29 - Thanh toán đơn hàng: Xác nhận thanh toán
   const handleApprovePayment = async () => {
     if (!order) return;
     const confirmed = await confirm(`Duyệt thanh toán cho đơn ${order.orderCode}?`);
@@ -275,6 +276,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, ma
     }
   };
 
+  // UC29 - Thanh toán đơn hàng: Từ chối thanh toán
   const handleRejectPayment = async () => {
     if (!order) return;
     const confirmed = await confirm(`Từ chối thanh toán cho đơn ${order.orderCode}?`);

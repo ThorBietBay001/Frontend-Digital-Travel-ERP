@@ -8,7 +8,6 @@ import { Button } from '../../components/ui/Button';
 import { customersService } from '../../services/customers';
 import { ordersService } from '../../services/orders';
 import { tourInstanceService } from '../../services/tour-instance';
-import { tourTemplateService } from '../../services/tour-template';
 import { incidentService } from '../../services/incidents';
 import type { NhatKySuCoResponse } from '../../services/incidents';
 import { ChevronLeft, ChevronRight, AlertTriangle, Info } from 'lucide-react';
@@ -53,7 +52,7 @@ function formatVietnameseCurrencyShort(value: number) {
 
 function getTimeAgo(dateInput: any): string {
   if (!dateInput) return 'Vừa xong';
-  
+
   let time: number;
   if (Array.isArray(dateInput)) {
     const [year, month, day, hour = 0, minute = 0, second = 0] = dateInput;
@@ -124,7 +123,7 @@ const Dashboard: React.FC = () => {
           // 1. Gói Tour Nổi Bật (Featured Tours)
           // Lọc các tour đang mở bán và còn chỗ
           const activeTours = allToursResp.content.filter(t => t.trangThai === 'MO_BAN' && typeof t.choConLai === 'number' && t.choConLai > 0);
-          
+
           // Sắp xếp theo chỗ còn lại tăng dần (gần full nhất lên đầu)
           activeTours.sort((a, b) => (a.choConLai || 0) - (b.choConLai || 0));
 
@@ -150,17 +149,17 @@ const Dashboard: React.FC = () => {
 
           for (const t of validTours) {
             if (!t.maTourMau) continue;
-            
+
             const soKhachToiDa = t.soKhachToiDa || 0;
             const choConLai = t.choConLai || 0;
             let booked = soKhachToiDa - choConLai;
             if (booked < 0) booked = 0;
-            
+
             if (booked > 0) {
               // Lấy tên tour từ tieuDeTour, cắt chuỗi trước dấu '-' để lấy tên điểm đến ngắn gọn
               const fullName = t.tieuDeTour || 'Chưa có tên';
               const shortName = fullName.split('-')[0].trim();
-              
+
               if (!templateStats.has(t.maTourMau)) {
                 templateStats.set(t.maTourMau, { name: shortName, booked: 0 });
               }
@@ -213,7 +212,7 @@ const Dashboard: React.FC = () => {
 
   const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year: number, month: number) => {
-    let day = new Date(year, month, 1).getDay();
+    const day = new Date(year, month, 1).getDay();
     return day === 0 ? 6 : day - 1; // Convert to Mon=0 ... Sun=6
   };
 
@@ -354,7 +353,7 @@ const Dashboard: React.FC = () => {
                 <h3 className="font-bold text-lg text-gray-800">Gói Tour Nổi Bật</h3>
               </div>
               <div className="relative flex items-center group flex-1">
-                <button 
+                <button
                   onClick={() => setCurrentFeaturedIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentFeaturedIndex === 0}
                   className="absolute left-0 -ml-4 z-10 p-2 bg-white border border-gray-100 rounded-full shadow-md text-gray-600 disabled:opacity-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
@@ -363,7 +362,7 @@ const Dashboard: React.FC = () => {
                 </button>
 
                 <div className="overflow-hidden w-full px-2 py-1">
-                  <div 
+                  <div
                     className="flex gap-4 transition-transform duration-500 ease-in-out w-full"
                     style={{ transform: `translateX(calc(-${currentFeaturedIndex * 100}% - ${currentFeaturedIndex * 16}px))` }}
                   >
@@ -390,7 +389,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => setCurrentFeaturedIndex(prev => Math.min(Math.ceil(featuredTours.length / 4) - 1, prev + 1))}
                   disabled={featuredTours.length <= 4 || currentFeaturedIndex >= Math.ceil(featuredTours.length / 4) - 1}
                   className="absolute right-0 -mr-4 z-10 p-2 bg-white border border-gray-100 rounded-full shadow-md text-gray-600 disabled:opacity-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
@@ -509,7 +508,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-800 break-words">
-                          <span className="font-semibold">{incident.maHdvBaoCao || 'HDV'}</span> đã báo cáo sự cố 
+                          <span className="font-semibold">{incident.maHdvBaoCao || 'HDV'}</span> đã báo cáo sự cố
                           <span className="font-medium text-gray-600 block mt-0.5 italic">"{incident.moTa || incident.loaiSuCo || 'Không có nội dung'}"</span>
                         </p>
                         <p className="text-xs text-gray-400 mt-1">{incident.thoiGianBaoCao ? getTimeAgo(incident.thoiGianBaoCao) : 'Vừa xong'}</p>

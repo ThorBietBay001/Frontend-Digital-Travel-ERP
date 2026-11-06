@@ -72,6 +72,7 @@ const ServiceList: React.FC = () => {
   };
   const closeModal = () => setModalState({ isOpen: false, mode: null, selectedService: undefined });
 
+  // UC16 - Thêm dịch vụ: Lưu dịch vụ bổ sung
   const handleFormSubmit = async (serviceData: Service) => {
     try {
       if (modalState.mode === 'create') {
@@ -98,6 +99,7 @@ const ServiceList: React.FC = () => {
     }
   };
 
+  // UC18 - Xóa dịch vụ: Xóa dịch vụ bổ sung
   const handleDelete = async () => {
     if (!modalState.selectedService) return;
     try {

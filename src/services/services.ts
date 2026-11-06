@@ -30,41 +30,49 @@ export type {
 };
 
 export const servicesService = {
+  // TODO - Tra cứu loại phòng
   danhSachLoaiPhong: async (): Promise<LoaiPhongResponse[]> => {
     const response = await api.get<ApiResponseListLoaiPhongResponse>('/api/san-pham/loai-phong');
     return unwrapApiData(response) ?? [];
   },
 
+  // TODO - Tạo loại phòng
   taoLoaiPhong: async (data: LoaiPhongRequest): Promise<LoaiPhongResponse | undefined> => {
     const response = await api.post<ApiResponseLoaiPhongResponse>('/api/san-pham/loai-phong', data);
     return unwrapApiData(response);
   },
 
+  // TODO - Cập nhật loại phòng
   capNhatLoaiPhong: async (id: string, data: LoaiPhongRequest): Promise<LoaiPhongResponse | undefined> => {
     const response = await api.put<ApiResponseLoaiPhongResponse>(`/api/san-pham/loai-phong/${id}`, data);
     return unwrapApiData(response);
   },
 
+  // TODO - Xóa loại phòng
   xoaLoaiPhong: async (id: string): Promise<void> => {
     const response = await api.delete<ApiResponseVoid>(`/api/san-pham/loai-phong/${id}`);
     unwrapApiData(response);
   },
 
+  // UC19 - Tra cứu dịch vụ: Lấy danh mục dịch vụ
   danhSachDichVuThem: async (): Promise<DichVuThemResponse[]> => {
     const response = await api.get<ApiResponseListDichVuThemResponse>('/api/san-pham/dich-vu-them');
     return unwrapApiData(response) ?? [];
   },
 
+  // UC16 - Thêm dịch vụ: Tạo dịch vụ bổ sung
   taoDichVuThem: async (data: DichVuThemRequest): Promise<DichVuThemResponse | undefined> => {
     const response = await api.post<ApiResponseDichVuThemResponse>('/api/san-pham/dich-vu-them', data);
     return unwrapApiData(response);
   },
 
+  // UC17 - Sửa thông tin dịch vụ: Cập nhật dịch vụ
   capNhatDichVuThem: async (id: string, data: DichVuThemRequest): Promise<DichVuThemResponse | undefined> => {
     const response = await api.put<ApiResponseDichVuThemResponse>(`/api/san-pham/dich-vu-them/${id}`, data);
     return unwrapApiData(response);
   },
 
+  // UC18 - Xóa dịch vụ: Xóa dịch vụ bổ sung
   xoaDichVuThem: async (id: string): Promise<void> => {
     const response = await api.delete<ApiResponseVoid>(`/api/san-pham/dich-vu-them/${id}`);
     unwrapApiData(response);

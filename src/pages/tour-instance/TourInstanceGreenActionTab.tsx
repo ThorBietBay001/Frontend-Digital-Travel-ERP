@@ -79,7 +79,7 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
           setCustomActionName('');
           setCustomActionPoints(0);
         }
-      } catch (err: any) {
+      } catch {
         alert("Không thể lưu hành động xanh. Vui lòng thử lại.");
       } finally {
         setLoading(false);
@@ -104,19 +104,19 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
                   {isEditing ? (
                     <div className="flex items-center gap-2">
                       <Leaf size={14} className="text-green-600"/>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         min={0}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-green-600 font-bold focus:outline-none" 
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-green-600 font-bold focus:outline-none"
                         value={action.defaultPoints}
                         onChange={(e) => handleUpdatePoints(action.id, parseInt(e.target.value) || 0)}
                       />
                       <span className="text-xs text-gray-500">điểm</span>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        icon={<Trash2 size={16} />} 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        icon={<Trash2 size={16} />}
                         className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 ml-2"
                         onClick={() => handleToggleAction(action, false)}
                       />
@@ -144,18 +144,18 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
               {availableActions.map(action => {
                 const isSelected = selectedActions.some(a => a.id === action.id);
                 return (
-                  <div 
-                    key={action.id} 
+                  <div
+                    key={action.id}
                     className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-[#89D4FF] bg-blue-50/30' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                     onClick={() => handleToggleAction(action, !isSelected)}
                   >
                     <div className="flex items-center gap-3 w-full">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-4 h-4 text-[#00668A] rounded border-gray-300 focus:ring-[#89D4FF] cursor-pointer"
                         checked={isSelected}
-                        onChange={() => {}} 
-                        onClick={(e) => e.stopPropagation()} 
+                        onChange={() => {}}
+                        onClick={(e) => e.stopPropagation()}
                       />
                       <div className="flex-1" onClick={(e) => { e.stopPropagation(); handleToggleAction(action, !isSelected); }}>
                         <div className="font-medium text-sm text-gray-800">{action.name}</div>
@@ -171,27 +171,27 @@ const TourInstanceGreenActionTab: React.FC<TourInstanceGreenActionTabProps> = ({
               {/* Ô Thêm Hành Động Khác Inline */}
               <div className="flex items-center justify-between p-3 border rounded-lg border-gray-200 bg-white shadow-sm mt-1">
                 <div className="flex items-start gap-3 w-full">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="w-4 h-4 mt-1 text-[#00668A] rounded border-gray-300 focus:ring-[#89D4FF] cursor-pointer"
-                    checked={false} 
+                    checked={false}
                     onChange={(e) => handleAddCustomAction(e.target.checked)}
                   />
                   <div className="flex-1">
-                    <input 
-                      type="text" 
-                      placeholder="Thêm hành động khác (Nhập tên hành động)..." 
+                    <input
+                      type="text"
+                      placeholder="Thêm hành động khác (Nhập tên hành động)..."
                       className="w-full font-medium text-sm text-gray-800 border-b border-gray-200 focus:border-[#89D4FF] outline-none pb-1 bg-transparent"
                       value={customActionName}
                       onChange={e => setCustomActionName(e.target.value)}
                     />
                     <div className="text-xs text-gray-500 flex items-center gap-2 mt-2">
-                      <span>Mặc định:</span> 
+                      <span>Mặc định:</span>
                       <div className="flex items-center text-green-600 gap-1">
-                        <Leaf size={12} /> 
+                        <Leaf size={12} />
                         <span className="font-medium">+</span>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           min={0}
                           className="w-16 border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-green-400 font-medium"
                           value={customActionPoints || ''}

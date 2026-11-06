@@ -68,6 +68,7 @@ const CreateTourInstanceWizard: React.FC<CreateTourInstanceWizardProps> = ({ isO
     }
   };
 
+  // UC11 - Khởi tạo tour thực tế từ tour mẫu: Chọn tour mẫu
   const handleTemplateSelect = async (templateId: string) => {
     const template = templates.find(t => t.maTourMau === templateId);
     if (template) {
@@ -93,7 +94,7 @@ const CreateTourInstanceWizard: React.FC<CreateTourInstanceWizardProps> = ({ isO
           currentPrice: template.giaSan || 0,
           schedule: parsedSchedule.length > 0 ? parsedSchedule : [{ title: 'Ngày 1: Chưa có thông tin', description: '', meals: { breakfast: '', lunch: '', dinner: '' } }],
         }));
-      } catch (err) {
+      } catch {
         alert('Lỗi lấy chi tiết tour mẫu');
       }
     }
@@ -121,6 +122,7 @@ const CreateTourInstanceWizard: React.FC<CreateTourInstanceWizardProps> = ({ isO
     return Object.keys(newErrors).length === 0;
   };
 
+  // UC11 - Khởi tạo tour thực tế từ tour mẫu: Tạo chuyến tour
   const createTour = async () => {
     const payload: TaoTourThucTeRequest = {
       maTourMau: formData.templateId,

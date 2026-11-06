@@ -83,7 +83,7 @@ const GuideList: React.FC = () => {
             if (!g.maNhanVien) return mapNhanVienToGuide(g);
             const nangLuc = await hrService.layNangLuc(g.maNhanVien);
             return mapNhanVienToGuide(g, nangLuc);
-          } catch (e) {
+          } catch {
             return mapNhanVienToGuide(g);
           }
         })

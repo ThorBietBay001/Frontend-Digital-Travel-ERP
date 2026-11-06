@@ -86,31 +86,27 @@ const RefundList: React.FC = () => {
   React.useEffect(() => { getAll(); }, [user]);
 
   const handleProcessRefund = async (id: string, action: 'complete' | 'reject', data?: RefundData) => {
-    try {
-      if (action === 'complete') {
-        await financeService.xacNhanHoanTien(id);
-      } else if (action === 'reject') {
-        await financeService.tuChoiHoanTien(id);
-      }
-      setRefunds((prev) =>
-        prev.map((refund) => {
-          if (refund.id !== id) return refund;
-          if (action === 'complete') {
-            return {
-              ...refund,
-              status: 'DA_HOAN_TIEN',
-              refundMethod: data?.method,
-              bankAccount: data?.bankAccount,
-              bankName: data?.bankName,
-              transactionCode: data?.transactionCode,
-            };
-          }
-          return { ...refund, status: 'TU_CHOI' };
-        })
-      );
-    } catch (e) {
-      throw e;
+    if (action === 'complete') {
+      await financeService.xacNhanHoanTien(id);
+    } else if (action === 'reject') {
+      await financeService.tuChoiHoanTien(id);
     }
+    setRefunds((prev) =>
+      prev.map((refund) => {
+        if (refund.id !== id) return refund;
+        if (action === 'complete') {
+          return {
+            ...refund,
+            status: 'DA_HOAN_TIEN',
+            refundMethod: data?.method,
+            bankAccount: data?.bankAccount,
+            bankName: data?.bankName,
+            transactionCode: data?.transactionCode,
+          };
+        }
+        return { ...refund, status: 'TU_CHOI' };
+      })
+    );
   };
 
   const filteredData = useMemo(() => {

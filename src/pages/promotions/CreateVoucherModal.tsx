@@ -28,7 +28,6 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
 
   useEffect(() => {
     if (!isOpen) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCode(initialData?.code || '');
     setName(initialData?.name || '');
     setQuantity(initialData?.quantity || '');
@@ -60,6 +59,7 @@ const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({ isOpen, onClose
     return Object.keys(newErrors).length === 0;
   };
 
+  // UC53 - Tạo voucher: Gửi biểu mẫu tạo voucher
   const handleSubmit = async () => {
     if (!validate()) return;
 

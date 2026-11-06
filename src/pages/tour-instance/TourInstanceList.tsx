@@ -121,6 +121,7 @@ const TourInstanceList: React.FC = () => {
     setCloseReason('');
   };
 
+  // UC13 - Sửa tour thực tế: Lưu thông tin tour thực tế
   const handleFormSubmit = async (tourData: TourInstance) => {
     const wasCreate = modalState.mode === 'create';
     try {
@@ -147,6 +148,7 @@ const TourInstanceList: React.FC = () => {
     }
   };
 
+  // UC12 - Xóa tour thực tế: Hủy tour thực tế
   const handleDelete = async () => {
     if (modalState.selectedTour) {
       try {
@@ -264,7 +266,7 @@ const TourInstanceList: React.FC = () => {
                   notify('Bạn không có quyền chỉnh sửa cấu hình tour. Vui lòng liên hệ bộ phận Sản phẩm.', { type: 'error' });
                   return;
                 }
-                canEditOrDelete && openModal('edit', record);
+                if (canEditOrDelete) openModal('edit', record);
               }}
               className={`p-2 ${canEditOrDelete ? 'text-[#faad14] hover:text-[#d48806] hover:bg-orange-50' : 'opacity-40 cursor-not-allowed'}`}
               aria-label="Sửa"
@@ -280,7 +282,7 @@ const TourInstanceList: React.FC = () => {
                   notify('Bạn không có quyền khóa tour. Vui lòng liên hệ Admin.', { type: 'error' });
                   return;
                 }
-                canBan && openModal('delete', record);
+                if (canBan) openModal('delete', record);
               }}
               className={`p-2 ${canBan ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'opacity-40 cursor-not-allowed'}`}
               aria-label="Khóa tour"
@@ -296,7 +298,7 @@ const TourInstanceList: React.FC = () => {
                   notify('Bạn không có quyền xóa tour. Vui lòng liên hệ Admin.', { type: 'error' });
                   return;
                 }
-                canEditOrDelete && openModal('delete', record);
+                if (canEditOrDelete) openModal('delete', record);
               }}
               className={`p-2 ${canEditOrDelete ? 'text-gray-500 hover:text-[#BA1A1A] hover:bg-red-50' : 'opacity-40 cursor-not-allowed'}`}
               aria-label="Xóa"

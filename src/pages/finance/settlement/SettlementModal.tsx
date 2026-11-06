@@ -102,6 +102,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
 
   const { notify } = useNotification();
 
+  // UC48 - Quyết toán tour: Tải dữ liệu quyết toán
   const fetchData = async (maTour: string) => {
     setLoading(true);
     try {
@@ -192,6 +193,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
   const expectedGrossProfit = localRevenue - committedCost;
   const hdvExceeds15Pct = committedCost > 0 && hdvActualCost > committedCost * 1.15;
 
+  // UC45 - Tính lợi nhuận gộp: Tính lợi nhuận tour
   const handleCalculate = async () => {
     if (!committedCost || committedCost <= 0) {
       setNoteError('Vui lòng nhập Chi phí cam kết trước khi tính toán.');
@@ -214,6 +216,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
     }
   };
 
+  // UC48 - Quyết toán tour: Yêu cầu bổ sung chứng từ
   const handleRequireInfo = () => {
     if (!note.trim()) {
       setNoteError('Vui lòng nhập nội dung yêu cầu');
@@ -223,6 +226,7 @@ const SettlementModal: React.FC<SettlementModalProps> = ({ isOpen, onClose, tour
     onClose();
   };
 
+  // UC48 - Quyết toán tour: Chốt quyết toán
   const handleConfirmSettle = async () => {
     try {
       const draft = await financeService.taoQuyetToan(tour.code, {

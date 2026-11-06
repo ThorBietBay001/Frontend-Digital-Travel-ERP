@@ -58,6 +58,7 @@ export interface NhatKyHeThongQueryParams extends PageQueryParams {
 }
 
 export const logsService = {
+  // UC68 - Xem nhật ký hệ thống: Lọc nhật ký
   nhatKyHeThong: async (params?: NhatKyHeThongQueryParams): Promise<PageNhatKyHeThongResponse | undefined> => {
     const response = await api.get<ApiResponsePageNhatKyHeThongResponse>('/api/quan-tri/nhat-ky-he-thong', {
       params: { page: 0, size: 500, sort: 'taiKhoan,desc', ...params },

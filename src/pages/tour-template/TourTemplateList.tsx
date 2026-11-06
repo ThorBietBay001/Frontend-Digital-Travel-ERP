@@ -91,7 +91,7 @@ const TourTemplateList: React.FC = () => {
     }
   };
 
-  // Xử lý đóng/mở Modal
+  // UC06 - Tra cứu tour mẫu: Mở chi tiết tour mẫu
   const openModal = async (mode: typeof modalState.mode, tour?: TourTemplate) => {
     if ((mode === 'edit' || mode === 'copy') && tour?.id) {
       setLoading(true);
@@ -136,7 +136,7 @@ const TourTemplateList: React.FC = () => {
     setModalState({ isOpen: false, mode: null, selectedTour: undefined });
   };
 
-  // Submit hành động form
+  // UC02 - Thêm mới tour mẫu: Lưu tour mẫu
   const handleFormSubmit = async (tourData: TourTemplate) => {
     try {
       if (modalState.mode === 'create') {
@@ -202,7 +202,7 @@ const TourTemplateList: React.FC = () => {
     }
   };
 
-  // Xóa tour
+  // UC05 - Xóa tour mẫu: Xóa tour mẫu
   const handleDelete = async () => {
     if (modalState.selectedTour) {
       try {
