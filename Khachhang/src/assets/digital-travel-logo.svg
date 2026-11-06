@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Digital Travel</title>
+  <defs>
+    <linearGradient id="sky" x1="10" y1="8" x2="55" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="22" y1="52" x2="52" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10b981"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#sky)"/>
+  <path d="M10 39.5c10-12.4 20.6-17 43-18.5-10.3 5.4-18.2 11.1-23.5 18l-5.8 7.4-3.2-10.1L10 39.5Z" fill="#fff"/>
+  <path d="M31 49.5c5.2-11.5 14-18.3 23-20.7-2.1 11-10.2 19.3-23 20.7Z" fill="url(#leaf)"/>
+  <path d="M31.2 49.1c5.8-6 12.1-11.7 19.1-16.1" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" opacity=".72"/>
+</svg>

@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# 🎨 Frontend - Digital Travel ERP
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Kho lưu trữ giao diện người dùng (Frontend Monorepo) chuẩn hóa cho hệ thống **Digital Travel ERP**, tập trung cả 3 phân hệ người dùng trên cùng một kho lưu trữ duy nhất.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📁 Cấu trúc kho lưu trữ
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+Frontend-Digital-Travel-ERP/
+├── Admin/                   # Cổng Quản trị viên & Nhân viên nghiệp vụ
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.ts
+├── HDV/                     # Cổng Ứng dụng Hướng dẫn viên du lịch
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.ts
+└── Khachhang/               # Cổng Web Khách hàng đặt tour & tra cứu
+    ├── src/
+    ├── public/
+    ├── package.json
+    └── vite.config.ts
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🚀 Hướng dẫn khởi chạy các phân hệ
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Yêu cầu môi trường: **Node.js 20+** và **npm**.
+
+### 1. Phân hệ Quản trị (`Admin/`)
+```bash
+cd Admin
+npm install
+npm run dev
+# Mở trình duyệt: http://localhost:5173
 ```
+
+### 2. Phân hệ Hướng dẫn viên (`HDV/`)
+```bash
+cd HDV
+npm install
+npm run dev -- --port 5174
+# Mở trình duyệt: http://localhost:5174
+```
+
+### 3. Phân hệ Khách hàng (`Khachhang/`)
+```bash
+cd Khachhang
+npm install
+npm run dev -- --port 5175
+# Mở trình duyệt: http://localhost:5175
+```
+
+---
+
+## ⚙️ Cấu hình API Backend Proxy
+
+Mặc định cả 3 ứng dụng đều cấu hình reverse proxy chuyển tiếp các yêu cầu `/api` về cổng `8080` của Backend (`http://localhost:8080`).
+
+---
+
+## 🧪 Kiểm tra mã nguồn
+
+* `npm run lint`: Chạy ESLint kiểm tra lỗi cú pháp và chuẩn code.
+* `npm run build`: Biên dịch TypeScript và đóng gói Vite sản phẩm ra thư mục `dist/`.
